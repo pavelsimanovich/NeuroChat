@@ -7,4 +7,19 @@ spring:
       chat:
         options:
           model: llama3.2
-          temperature: 0.7
+          temperature: 0.8
+  datasource:
+    url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
+    username: ${MYSQL_ROOT_USER:root}
+    password: ${MYSQL_ROOT_PASSWORD:123456789}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+logging:
+  level:
+    org.springframework.web: debug
+    org.hibernate: error
