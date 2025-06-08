@@ -1,6 +1,7 @@
 package com.ps.ollamaai.repository;
 
 import com.ps.ollamaai.domain.ChatMessage;
+import com.ps.ollamaai.llm.history.HistoryEntry;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,9 +19,24 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, String
     @Query("DELETE FROM ChatMessage cm WHERE cm.room.id = :roomId")
     void deleteByRoomId(@Param("roomId") String roomId);
 
-    List<ChatMessage> findByRoomIdOrderByOrderAsc(String roomId);
-
     @Query("SELECT MAX(m.order) FROM ChatMessage m WHERE m.room.id = :roomId")
     Optional<Long> findLastOrderByRoomId(@Param("roomId") String roomId);
+
+    @Query("""
+        SELECT new com.ps.ollamaai.llm.history.HistoryEntry (
+            q.content as prompt,
+            a.content as response
+        )
+        FROM ChatMessage q
+        LEFT JOIN ChatMessage a ON 
+            a.room.id = q.room.id AND 
+            a.type = 'AI_RESPONSE' AND 
+            a.order = q.order + 1
+        WHERE 
+            q.type = 'USER_MESSAGE' AND
+            q.room.id = :roomId          
+        ORDER BY q.timestamp DESC
+        """)
+    List<HistoryEntry> findHistoryByRoomId(@Param("roomId") String roomId);
 
 }

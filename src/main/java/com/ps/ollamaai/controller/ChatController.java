@@ -1,9 +1,11 @@
 package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.ChatMessage;
+import com.ps.ollamaai.domain.User;
 import com.ps.ollamaai.dto.ChatMessageDto;
 import com.ps.ollamaai.dto.ChatMessageRequest;
 import com.ps.ollamaai.service.ChatService;
+import com.ps.ollamaai.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -19,6 +21,7 @@ public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
+    private final UserService userService;
 
     @MessageMapping("/chat/{roomId}/send")
     public void sendMessage(
@@ -26,10 +29,11 @@ public class ChatController {
             @Payload ChatMessageRequest request,
             Principal principal
     ) {
+        final User user = userService.findByEmail(principal.getName());
         // Сохраняем сообщение в БД
-        ChatMessage savedMessage = chatService.saveUserMessage(
+        final ChatMessage savedMessage = chatService.saveUserMessage(
                 roomId,
-                principal.getName(),
+                user.getId(),
                 request.getContent()
         );
 

@@ -9,9 +9,9 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -25,12 +25,7 @@ public class ChatService {
         ChatRoom room = new ChatRoom();
         room.setUserId(userId);
         room.setTitle(title);
-        room.setAiActive(true);
         return roomRepository.save(room);
-    }
-
-    public Optional<ChatRoom> findRoomById(String roomId) {
-        return roomRepository.findById(roomId);
     }
 
     public List<ChatRoom> getUserRooms(String userId) {
@@ -40,14 +35,6 @@ public class ChatService {
     public void deleteRoom(String roomId) {
         messageRepository.deleteByRoomId(roomId);
         roomRepository.deleteById(roomId);
-    }
-
-    public ChatRoom toggleAi(String roomId) {
-        ChatRoom room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
-
-        room.setAiActive(!room.isAiActive());
-        return roomRepository.save(room);
     }
 
     private ChatMessage generateAiResponse(String roomId, String userMessage) {
@@ -66,7 +53,9 @@ public class ChatService {
     }
 
     public List<ChatMessage> getRoomMessages(String roomId) {
-        return messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        List<ChatMessage> byRoomIdOrderByTimestampAsc = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        byRoomIdOrderByTimestampAsc.forEach(mes -> formatMessageContent(mes.getContent()));
+        return byRoomIdOrderByTimestampAsc;
     }
 
     public ChatMessage saveUserMessage(String roomId, String userId, String content) {
@@ -84,15 +73,26 @@ public class ChatService {
         message.setContent(content);
         message.setOrder(lastOrder + 1); // Увеличиваем порядок
 
-        ChatMessage savedMessage = messageRepository.save(message);
+        ChatMessage userMessage = messageRepository.save(message);
+        ChatMessage aiResponse = generateAiResponse(roomId, content);
+        aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
+        messageRepository.save(aiResponse);
+        return aiResponse;
+    }
 
-        if (room.isAiActive()) {
-            ChatMessage aiResponse = generateAiResponse(roomId, content);
-            aiResponse.setOrder(savedMessage.getOrder() + 1); // Следующий порядковый номер
-            messageRepository.save(aiResponse);
-            return aiResponse;
-        }
+    private String formatMessageContent(String text) {
+        if (text == null) return "";
 
-        return savedMessage;
+        // Экранирование HTML-тегов (для безопасности)
+        String escaped = HtmlUtils.htmlEscape(text);
+
+        // Замена переносов строк на <br>
+        escaped = escaped.replace("\n", "<br>");
+
+        // Форматирование списков (пример для маркированных списков)
+        escaped = escaped.replace("• ", "&bull; ");  // Для маркированных списков
+        escaped = escaped.replaceAll("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>");
+
+        return escaped;
     }
 }

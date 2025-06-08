@@ -21,8 +21,8 @@ public class IndexController {
     }
 
     @GetMapping("/home")
-    public String home(Model model, @AuthenticationPrincipal UserDetails currentUse) {
-        User user = userService.findByEmail(currentUse.getUsername());
+    public String home(Model model, @AuthenticationPrincipal UserDetails currentUser) {
+        User user = userService.findByEmail(currentUser.getUsername());
         model.addAttribute("userId", user.getId());
         return "home";
     }

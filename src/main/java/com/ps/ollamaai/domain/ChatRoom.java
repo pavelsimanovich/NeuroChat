@@ -2,7 +2,6 @@ package com.ps.ollamaai.domain;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,8 +30,6 @@ public class ChatRoom implements Serializable {
     private String userId;
     private String title;
     private Instant createdAt = Instant.now();
-    @Column(name = "ai_active", nullable = false)
-    private boolean aiActive = true;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference

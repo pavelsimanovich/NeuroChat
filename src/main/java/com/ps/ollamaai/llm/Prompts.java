@@ -12,6 +12,10 @@ public class Prompts {
             
             """;
 
+    public static final String PROMPT_GENERAL_INSTRUCTIONS = """
+            You have to answer on `user_main_prompt` without reasoning.
+            """;
+
     public static final String PROMPT_CONVERSATION_HISTORY_INSTRUCTIONS = """        
             The object `conversational_history` below represents the past interaction between the user and you (the LLM).
             Each `history_entry` is represented as a pair of `prompt` and `response`.
