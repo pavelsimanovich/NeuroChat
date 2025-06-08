@@ -45,9 +45,7 @@ public class ChatApiController {
     }
 
     @DeleteMapping("/rooms/{roomId}")
-    public ResponseEntity<Void> deleteRoom(
-            @PathVariable String roomId
-    ) {
+    public ResponseEntity<Void> deleteRoom(@PathVariable String roomId) {
         chatService.deleteRoom(roomId);
         return ResponseEntity.noContent().build();
     }

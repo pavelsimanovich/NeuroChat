@@ -13,7 +13,6 @@ public class Prompts {
             """;
 
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
-            You have to answer on `user_main_prompt` without any reasoning.
             """;
 
     public static final String PROMPT_CONVERSATION_HISTORY_INSTRUCTIONS = """        

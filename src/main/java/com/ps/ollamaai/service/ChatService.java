@@ -54,7 +54,7 @@ public class ChatService {
 
     public List<ChatMessage> getRoomMessages(String roomId) {
         List<ChatMessage> byRoomIdOrderByTimestampAsc = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
-        byRoomIdOrderByTimestampAsc.forEach(mes -> formatMessageContent(mes.getContent()));
+        byRoomIdOrderByTimestampAsc.forEach(mes -> mes.setContent(formatMessageContent(mes.getContent())));
         return byRoomIdOrderByTimestampAsc;
     }
 
@@ -88,10 +88,13 @@ public class ChatService {
 
         // Замена переносов строк на <br>
         escaped = escaped.replace("\n", "<br>");
+        escaped = escaped.replaceAll("&lt;think&gt;(.+?)&lt;/think&gt;",
+                "<a style=\"color: darkgrey;\">Мышление...<br>$1</a>");
 
         // Форматирование списков (пример для маркированных списков)
-        escaped = escaped.replace("• ", "&bull; ");  // Для маркированных списков
         escaped = escaped.replaceAll("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>");
+        escaped = escaped.replaceAll("```(.+?)```", "<code>$1</code>");
+        escaped = escaped.replace("* ", "&bull; ");
 
         return escaped;
     }
