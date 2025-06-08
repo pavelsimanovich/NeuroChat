@@ -28,6 +28,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     implementation 'org.webjars:bootstrap:5.3.6'
     implementation 'org.webjars:jquery:3.7.1'

@@ -1,21 +1,61 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.llm.ChatWithHistory;
-import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.ps.ollamaai.domain.ChatMessage;
+import com.ps.ollamaai.dto.ChatMessageDto;
+import com.ps.ollamaai.dto.ChatMessageRequest;
+import com.ps.ollamaai.service.ChatService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
 
-@RestController
-@AllArgsConstructor
-@RequestMapping("/chat")
+import java.security.Principal;
+
+@Controller
+@RequiredArgsConstructor
 public class ChatController {
 
-    private final ChatWithHistory chatClient;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatService chatService;
 
-    @GetMapping("/ask")
-    public String ask(@RequestParam String message, @RequestParam String chatId) {
-        return chatClient.call(message, chatId);
+    @MessageMapping("/chat/{roomId}/send")
+    public void sendMessage(
+            @DestinationVariable String roomId,
+            @Payload ChatMessageRequest request,
+            Principal principal
+    ) {
+        // Сохраняем сообщение в БД
+        ChatMessage savedMessage = chatService.saveUserMessage(
+                roomId,
+                principal.getName(),
+                request.getContent()
+        );
+
+        // Отправляем подтверждение с ID сообщения
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + roomId,
+                convertToDto(savedMessage)
+        );
+
+        // Если есть ответ AI
+        if (savedMessage.getType() == ChatMessage.MessageType.AI_RESPONSE) {
+            messagingTemplate.convertAndSend(
+                    "/topic/room/" + roomId,
+                    convertToDto(savedMessage)
+            );
+        }
+    }
+
+    private ChatMessageDto convertToDto(ChatMessage message) {
+        ChatMessageDto dto = new ChatMessageDto();
+        dto.setId(message.getId());
+        dto.setRoomId(message.getRoom().getId());
+        dto.setUserId(message.getUserId());
+        dto.setType(message.getType());
+        dto.setContent(message.getContent());
+        dto.setTimestamp(message.getTimestamp());
+        return dto;
     }
 }

@@ -19,7 +19,7 @@ import static com.ps.ollamaai.llm.Prompts.PROMPT_CONVERSATION_HISTORY_INSTRUCTIO
 
 @Component
 @RequiredArgsConstructor(onConstructor_ = {@Autowired})
-public class ChatWithHistory {
+public class ChatWithHistoryService {
 
     private final OllamaChatModel ollamaChatModel;
 
