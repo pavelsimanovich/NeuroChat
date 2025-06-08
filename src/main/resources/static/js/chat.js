@@ -204,6 +204,7 @@ function connectToRoom(roomId) {
         console.log('Connected to room:', roomId);
 
         state.stompClient.subscribe(`/topic/room/${roomId}`, function (message) {
+            typingIndicator.hide();
             const messageData = JSON.parse(message.body);
             console.log('Received message:', messageData);
 
@@ -260,6 +261,8 @@ async function sendMessage() {
     renderMessages();
     elements.messageInput.value = '';
 
+    typingIndicator.show();
+
     try {
         // Отправляем на сервер через WebSocket
         state.stompClient.send(
@@ -272,6 +275,7 @@ async function sendMessage() {
         );
     } catch (error) {
         console.error('Error sending message:', error);
+        typingIndicator.hide();
         // Помечаем сообщение как неотправленное
         const messageIndex = state.messages.findIndex(m => m.id === tempMessage.id);
         if (messageIndex !== -1) {
@@ -305,6 +309,69 @@ function setupEventListeners() {
         }
     });
 }
+
+// Глобальный объект для управления индикатором
+const typingIndicator = {
+    timer: null,
+    container: null,
+
+    init() {
+        // Создаем контейнер если его нет
+        if (!this.container) {
+            this.container = document.getElementById('typingIndicatorContainer');
+
+            if (!this.container) {
+                this.container = document.createElement('div');
+                this.container.id = 'typingIndicatorContainer';
+                this.container.style.display = 'none';
+                this.container.style.minHeight = '40px';
+                this.container.innerHTML = `
+                    <div class="typing-indicator">
+                        <div class="typing-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <span>AI печатает ответ...</span>
+                    </div>`;
+
+                const chatContainer = document.querySelector('.chat-messages')?.parentElement;
+                if (chatContainer) {
+                    chatContainer.appendChild(this.container);
+                } else {
+                    console.error('Chat container not found');
+                    return false;
+                }
+            }
+        }
+        return true;
+    },
+
+    show() {
+        if (!this.init()) return;
+
+        clearTimeout(this.timer);
+        this.container.style.display = 'block';
+
+        // Автоскрытие через 30 секунд на случай проблем
+        this.timer = setTimeout(() => this.hide(), 30000);
+        this.scrollToBottom();
+    },
+
+    hide() {
+        if (this.container) {
+            this.container.style.display = 'none';
+            clearTimeout(this.timer);
+        }
+    },
+
+    scrollToBottom() {
+        const container = this.container?.parentElement;
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+};
 
 function updateDebugInfo() {
     const debugInfo = document.getElementById('debugInfo');

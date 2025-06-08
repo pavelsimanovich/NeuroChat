@@ -49,15 +49,15 @@ body {
 }
 
 .chat-header {
-    padding: 15px 20px;
-    background-color: white;
-    border-bottom: 1px solid #dee2e6;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 15px 20px;
+    background-color: white;
+    border-bottom: 1px solid #dee2e6;
 }
 
-.ai-toggle {
+.header-content {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -137,10 +137,6 @@ body {
     font-style: italic;
 }
 
-
-
-
-
 .message-content {
     white-space: pre-wrap; /* Сохраняет переносы строк */
     word-break: break-word; /* Перенос длинных слов */
@@ -183,4 +179,46 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
+}
+
+/* Стили для индикатора печати */
+#typingIndicatorContainer {
+    padding: 0 15px 10px;
+}
+
+.typing-indicator {
+    background: #f0f2f5;
+    border-radius: 18px;
+    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.3s ease;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: #656e79;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(1) { animation-delay: 0s; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-3px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
