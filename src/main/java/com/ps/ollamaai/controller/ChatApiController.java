@@ -1,5 +1,6 @@
 package com.ps.ollamaai.controller;
 
+import com.ps.ollamaai.converter.ChatMessageToDto;
 import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.ChatRoom;
 import com.ps.ollamaai.dto.ChatMessageDto;
@@ -22,6 +23,7 @@ import java.util.List;
 public class ChatApiController {
 
     private final ChatService chatService;
+    private final ChatMessageToDto chatMessageToDto;
 
     @GetMapping("/rooms/create")
     public ResponseEntity<ChatRoom> createRoom(@RequestParam String userId, @RequestParam String title) {
@@ -39,25 +41,15 @@ public class ChatApiController {
     public ResponseEntity<List<ChatMessageDto>> getRoomMessages(@PathVariable String roomId) {
         List<ChatMessageDto> messages = chatService.getRoomMessages(roomId).stream()
                 .sorted(Comparator.comparing(ChatMessage::getOrder))
-                .map(this::convertToDto)
+                .map(chatMessageToDto::convertToDto)
                 .toList();
         return ResponseEntity.ok(messages);
     }
 
-    @DeleteMapping("/rooms/{roomId}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable String roomId) {
+
+    @DeleteMapping("rooms/{roomId}")
+    public ResponseEntity<Void> deleteRoom(@PathVariable String roomId, @RequestParam String userId) {
         chatService.deleteRoom(roomId);
         return ResponseEntity.noContent().build();
-    }
-
-    private ChatMessageDto convertToDto(ChatMessage message) {
-        ChatMessageDto dto = new ChatMessageDto();
-        dto.setId(message.getId());
-        dto.setRoomId(message.getRoom().getId());
-        dto.setUserId(message.getUserId());
-        dto.setType(message.getType());
-        dto.setContent(message.getContent());
-        dto.setTimestamp(message.getTimestamp());
-        return dto;
     }
 }
