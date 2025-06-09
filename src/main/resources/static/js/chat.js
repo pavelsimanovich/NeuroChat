@@ -33,6 +33,10 @@ function init() {
     loadRooms();
     setupEventListeners();
 
+    switchToLastRoom();
+}
+
+function switchToLastRoom() {
     // Восстанавливаем последнюю комнату из localStorage
     const lastRoomId = localStorage.getItem('lastRoomId');
     if (lastRoomId) {
@@ -121,6 +125,7 @@ async function switchRoom(room) {
 
     // Прокручиваем вниз к последним сообщениям
     scrollToBottom();
+    updateDeleteButtonVisibility();
 }
 
 // Загрузка сообщений комнаты
@@ -157,6 +162,15 @@ async function loadRoomMessages(roomId) {
 // Рендер сообщений
 function renderMessages() {
     elements.chatMessages.innerHTML = '';
+
+    if (state.messages.length === 0) {
+        elements.chatMessages.innerHTML = `
+      <div class="no-messages">
+        Нет сообщений
+      </div>
+    `;
+        return;
+    }
 
     // Сортируем сообщения по времени
     const sortedMessages = [...state.messages].sort((a, b) =>
@@ -354,7 +368,7 @@ const typingIndicator = {
         this.container.style.display = 'block';
 
         // Автоскрытие через 30 секунд на случай проблем
-        this.timer = setTimeout(() => this.hide(), 30000);
+        this.timer = setTimeout(() => this.hide(), 60000);
         this.scrollToBottom();
     },
 
@@ -373,15 +387,97 @@ const typingIndicator = {
     }
 };
 
-function updateDebugInfo() {
-    const debugInfo = document.getElementById('debugInfo');
-    debugInfo.innerHTML = `
-        <p><strong>Текущая комната:</strong> ${state.currentRoom?.id || 'нет'}</p>
-        <p><strong>Сообщений:</strong> ${state.messages?.length || 0}</p>
-        <p><strong>WebSocket:</strong> ${state.stompClient ? 'подключен' : 'отключен'}</p>
-        <p><strong>Последняя ошибка:</strong> ${window.lastError || 'нет'}</p>
-    `;
+// Инициализация при полной загрузке DOM
+document.addEventListener('DOMContentLoaded', ()=> {
+    init()
+    updateDeleteButtonVisibility()
+} );
+
+// Обработчик удаления комнаты
+async function handleDeleteRoom() {
+    if (!state || !state.currentRoom) {
+        console.error('Нет текущей комнаты для удаления');
+        return;
+    }
+
+    if (!confirm(`Удалить чат "${state.currentRoom.title}"?`)) {
+        return;
+    }
+
+    const deleteBtn = document.getElementById('deleteRoomBtn');
+
+    try {
+        // Показываем индикатор загрузки
+        deleteBtn.disabled = true;
+
+        deleteBtn.innerHTML = '<div class="spinner"></div>';
+
+        const response = await fetch(`/api/chat/rooms/${state.currentRoom.id}`, {
+                method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                 'X-User-Id': state.userId
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Обновляем состояние
+        state.rooms = state.rooms.filter(
+            room => room.id !== state.currentRoom.id
+        );
+        state.currentRoom = null;
+        state.messages = [];
+
+        // Обновляем интерфейс
+        renderRoomsList();
+        renderMessages();
+        switchToLastRoom()
+        updateDeleteButtonVisibility();
+
+        showNotification('Чат успешно удален', 'success');
+    } catch (error) {
+        console.error('Ошибка при удалении комнаты:', error);
+        showNotification('Не удалось удалить чат', 'error');
+    } finally {
+        // Восстанавливаем кнопку
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = `
+                <svg class="icon-delete" viewBox="0 0 24 24">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>`;
+        }
+    }
 }
 
-// Запуск приложения
-document.addEventListener('DOMContentLoaded', init);
+
+
+// Обновление видимости кнопки
+function updateDeleteButtonVisibility() {
+    const deleteBtn = document.getElementById('deleteRoomBtn');
+    if (!deleteBtn) return;
+
+    // Вешаем обработчик
+    deleteBtn.addEventListener('click', handleDeleteRoom);
+
+    if (state?.currentRoom) {
+        deleteBtn.style.display = 'flex';
+    } else {
+        deleteBtn.style.display = 'none';
+    }
+}
+
+// Вспомогательная функция для уведомлений
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}

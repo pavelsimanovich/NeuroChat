@@ -1,24 +1,5 @@
 version: '3'
 services:
-#  localstack:
-#    container_name: localstack
-#    image: localstack/localstack
-#    networks:
-#      - mynetwork
-#    ports:
-#      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
-#      - "127.0.0.1:4566:4566" # Edge Port
-#      - "127.0.0.1:4569:4569" # Dynamo DB Port
-#      - "127.0.0.1:4571:4571" # Elasticsearch Port
-#      - "127.0.0.1:4572:4572" # S3 Port
-#      - "127.0.0.1:4574:4574" # Lambda Port
-#      - "127.0.0.1:8080:8080" # Web-UI Port
-#    environment:
-#      - DOCKER_HOST=unix:///var/run/docker.sock
-#    volumes:
-#      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-#      - "/var/run/docker.sock:/var/run/docker.sock"
-#
   db:
     container_name: mysql
     image: mysql
@@ -32,6 +13,25 @@ services:
     volumes:
       - "db:/var/lib/mysql"
       - "./db/init.sql:/docker-entrypoint-initdb.d/1.sql"
+#  ollama:
+#    container_name: ollama
+#    image: ollama/ollama:latest
+#    ports:
+#      - 11434:11434
+#
+#  open-webui:
+#    image: ghcr.io/open-webui/open-webui:main
+#    container_name: open-webui
+#    ports:
+#      - 3005:8080
+#    environment:
+#      - 'OLLAMA_BASE_URL=http://host.docker.internal:11434'
+#    # Allow the container to access the host network
+#    extra_hosts:
+#      - host.docker.internal:host-gateway
+
+#  docker exec -it ollama ollama pull deepseek-r1:8b
+#  docker exec -it ollama ollama pull nomic-embed-text:latest
 
 networks:
   mynetwork: {}

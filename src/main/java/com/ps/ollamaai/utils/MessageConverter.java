@@ -2,7 +2,9 @@ package com.ps.ollamaai.utils;
 
 import org.springframework.web.util.HtmlUtils;
 
-public class MessageConverter {
+public final class MessageConverter {
+
+    private MessageConverter() {}
 
     public static String formatMessageContent(String text) {
         if (text == null) return "";

@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,7 +36,12 @@ public class ChatService {
     }
 
     @Transactional
-    public void deleteRoom(String roomId) {
+    public void deleteRoom(String roomId, String userId) {
+        final ChatRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+        if (!room.getUserId().equals(userId)) {
+            throw new AccessDeniedException("You can only delete your own rooms");
+        }
         messageRepository.deleteByRoomId(roomId);
         roomRepository.deleteById(roomId);
     }
@@ -80,6 +86,7 @@ public class ChatService {
         ChatMessage aiResponse = generateAiResponse(roomId, content);
         aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
         messageRepository.save(aiResponse);
+        aiResponse.setContent(formatMessageContent(aiResponse.getContent()));
         return aiResponse;
     }
 

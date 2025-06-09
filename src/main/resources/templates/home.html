@@ -29,6 +29,19 @@
         <div class="col-md-9 chat-area">
             <div class="chat-header">
                 <h4 id="currentRoomTitle">Выберите комнату</h4>
+                <button id="deleteRoomBtn" class="btn-delete" title="Удалить чат" style="display: none;" >
+                    <svg class="icon-delete" viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Контейнер для уведомлений -->
+            <div id="toastContainer" class="toast-container"></div>
+
+            <!-- Индикатор загрузки -->
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="loading-spinner"></div>
             </div>
 
             <div id="chatMessages" class="chat-messages">

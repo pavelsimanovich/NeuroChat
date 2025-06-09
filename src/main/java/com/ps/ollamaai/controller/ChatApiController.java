@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,9 +48,9 @@ public class ChatApiController {
     }
 
 
-    @DeleteMapping("rooms/{roomId}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable String roomId, @RequestParam String userId) {
-        chatService.deleteRoom(roomId);
+    @DeleteMapping("/rooms/{roomId}")
+    public ResponseEntity<Void> deleteRoom(@PathVariable String roomId, @RequestHeader("X-User-ID") String userId) {
+        chatService.deleteRoom(roomId, userId);
         return ResponseEntity.noContent().build();
     }
 }
