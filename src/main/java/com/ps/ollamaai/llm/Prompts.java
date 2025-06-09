@@ -1,6 +1,6 @@
 package com.ps.ollamaai.llm;
 
-public class Prompts {
+public final class Prompts {
 
     private Prompts() {
         throw new IllegalStateException("Utility class");

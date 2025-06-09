@@ -19,6 +19,7 @@ import java.util.Objects;
 import static com.ps.ollamaai.llm.Prompts.CURRENT_PROMPT_INSTRUCTIONS;
 import static com.ps.ollamaai.llm.Prompts.PROMPT_CONVERSATION_HISTORY_INSTRUCTIONS;
 import static com.ps.ollamaai.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
+import static com.ps.ollamaai.utils.MessageConverter.formatMessageContent;
 
 @Component
 @RequiredArgsConstructor(onConstructor_ = {@Autowired})
@@ -50,7 +51,7 @@ public class ChatWithHistoryService {
         var contextHistoryEntry = new HistoryEntry(userMessage, response);
         currentHistory.add(contextHistoryEntry);
 
-        return response;
+        return formatMessageContent(response);
     }
 
 }
