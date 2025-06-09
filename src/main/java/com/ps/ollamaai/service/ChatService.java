@@ -6,12 +6,14 @@ import com.ps.ollamaai.llm.ChatWithHistoryService;
 import com.ps.ollamaai.repository.ChatMessageRepository;
 import com.ps.ollamaai.repository.ChatRoomRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
+
+import static com.ps.ollamaai.utils.MessageConverter.formatMessageContent;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -32,6 +34,7 @@ public class ChatService {
         return roomRepository.findByUserId(userId);
     }
 
+    @Transactional
     public void deleteRoom(String roomId) {
         messageRepository.deleteByRoomId(roomId);
         roomRepository.deleteById(roomId);
@@ -80,22 +83,5 @@ public class ChatService {
         return aiResponse;
     }
 
-    private String formatMessageContent(String text) {
-        if (text == null) return "";
 
-        // Экранирование HTML-тегов (для безопасности)
-        String escaped = HtmlUtils.htmlEscape(text);
-
-        // Замена переносов строк на <br>
-        escaped = escaped.replace("\n", "<br>");
-        escaped = escaped.replaceAll("&lt;think&gt;(.+?)&lt;/think&gt;",
-                "<a style=\"color: darkgrey;\">Мышление...<br>$1</a>");
-
-        // Форматирование списков (пример для маркированных списков)
-        escaped = escaped.replaceAll("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>");
-        escaped = escaped.replaceAll("```(.+?)```", "<code>$1</code>");
-        escaped = escaped.replace("* ", "&bull; ");
-
-        return escaped;
-    }
 }
