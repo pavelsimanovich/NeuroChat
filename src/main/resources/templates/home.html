@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Чат с комнатами</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/chat.css}" rel="stylesheet" />
+</head>
+<body>
+
+<input type="hidden" id="userId" th:value="${userId}" >
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Сайдбар с комнатами -->
+        <div class="col-md-3 sidebar">
+            <div class="sidebar-header">
+                <h4>Мои комнаты</h4>
+                <button id="createRoomBtn" class="btn btn-primary btn-sm">+ Новая комната</button>
+            </div>
+            <div id="roomsList" class="rooms-list">
+                <!-- Список комнат будет загружен здесь -->
+            </div>
+        </div>
+
+        <!-- Основная область чата -->
+        <div class="col-md-9 chat-area">
+            <div class="chat-header">
+                <h4 id="currentRoomTitle">Выберите комнату</h4>
+                <button id="deleteRoomBtn" class="btn-delete" title="Удалить чат" style="display: none;" >
+                    <svg class="icon-delete" viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Контейнер для уведомлений -->
+            <div id="toastContainer" class="toast-container"></div>
+
+            <!-- Индикатор загрузки -->
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="loading-spinner"></div>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                <!-- Сообщения будут отображаться здесь -->
+            </div>
+            <div id="typingIndicatorContainer" style="display: none; min-height: 40px;">
+                <div class="typing-indicator">
+                    <div class="typing-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <span>AI печатает ответ...</span>
+                </div>
+            </div>
+
+            <div class="message-input">
+                <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+                <button id="sendMessageBtn" class="btn btn-primary" disabled>Отправить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания комнаты -->
+<div class="modal fade" id="createRoomModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создать новую комнату</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="roomTitleInput" class="form-label">Название комнаты</label>
+                    <input type="text" class="form-control" id="roomTitleInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmCreateRoom">Создать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.2/dist/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script type="text/javascript" th:src="@{/js/chat.js}"></script>
+</body>
+</html>

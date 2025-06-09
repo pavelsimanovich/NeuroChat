@@ -1,0 +1,321 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    height: 100vh;
+    margin: 0;
+}
+
+.sidebar {
+    background-color: #343a40;
+    color: white;
+    height: 100vh;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.rooms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.room-item {
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.room-item:hover {
+    background-color: #495057;
+}
+
+.room-item.active {
+    background-color: #0d6efd;
+}
+
+.chat-area {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 0;
+}
+
+/*.chat-header {*/
+/*    display: flex;*/
+/*    justify-content: space-between;*/
+/*    align-items: center;*/
+/*    padding: 15px 20px;*/
+/*    background-color: white;*/
+/*    border-bottom: 1px solid #dee2e6;*/
+/*}*/
+
+/*.header-content {*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    gap: 10px;*/
+/*}*/
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+}
+
+.message {
+    margin-bottom: 15px;
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    word-wrap: break-word;
+}
+
+.user-message {
+    background-color: #0d6efd;
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 5px;
+}
+
+.ai-message {
+    background-color: #e9ecef;
+    margin-right: auto;
+    border-bottom-left-radius: 5px;
+}
+
+.message-input {
+    padding: 15px 20px;
+    background-color: white;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 10px;
+}
+
+.message-input input {
+    flex: 1;
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.message-input button {
+    border-radius: 20px;
+    padding: 10px 20px;
+}
+
+.modal-content {
+    border-radius: 10px;
+}
+
+.form-control {
+    border-radius: 5px;
+}
+
+.message-error {
+    opacity: 0.8;
+    border-left: 3px solid #ff4444;
+}
+
+.message-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 0.8em;
+    color: #666;
+}
+
+.message-status {
+    color: #ff4444;
+    font-style: italic;
+}
+
+.message-content {
+    white-space: pre-wrap; /* Сохраняет переносы строк */
+    word-break: break-word; /* Перенос длинных слов */
+    line-height: 1.5;
+}
+
+/* Стили для списков */
+.message-content ul {
+    padding-left: 20px;
+    list-style-type: disc;
+    margin: 5px 0;
+}
+
+.message-content ol {
+    padding-left: 20px;
+    margin: 5px 0;
+}
+
+.message-content li {
+    margin-bottom: 3px;
+}
+
+/* Стили для выделенного текста */
+.message-content strong {
+    font-weight: bold;
+}
+
+.message-content em {
+    font-style: italic;
+}
+
+.message-content code {
+    font-family: monospace;
+    background-color: #f0f0f0;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #343a40;
+;
+}
+
+.chat-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Стили для индикатора печати */
+#typingIndicatorContainer {
+    padding: 0 15px 10px;
+}
+
+.typing-indicator {
+    background: #f0f2f5;
+    border-radius: 18px;
+    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.3s ease;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: #656e79;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(1) { animation-delay: 0s; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-3px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Стили для заголовка */
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Стили для кнопки удаления */
+.btn-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: rgba(255, 0, 0, 0.1);
+}
+
+.icon-delete {
+    width: 20px;
+    height: 20px;
+    fill: #ff4444;
+}
+
+/* Стили для индикатора загрузки */
+.btn-delete .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Стили для уведомлений */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    color: white;
+    z-index: 1000;
+    animation: slideIn 0.3s forwards;
+}
+
+.notification.success {
+    background-color: #4CAF50;
+}
+
+.notification.error {
+    background-color: #F44336;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+/* Стили для индикатора загрузки */
+.btn-delete .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
