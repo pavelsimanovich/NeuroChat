@@ -14,8 +14,8 @@ const elements = {
     createRoomBtn: document.getElementById('createRoomBtn'),
     confirmCreateRoom: document.getElementById('confirmCreateRoom'),
     roomTitleInput: document.getElementById('roomTitleInput'),
-    aiToggle: document.getElementById('aiToggle'),
-    createRoomModal: new bootstrap.Modal('#createRoomModal')
+    createRoomModal: new bootstrap.Modal('#createRoomModal'),
+    deleteRoomBtn: document.getElementById('deleteRoomBtn'),
 };
 
 // Инициализация приложения
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
 // Обработчик удаления комнаты
 async function handleDeleteRoom() {
-    if (!state || !state.currentRoom) {
+    if (!state.currentRoom) {
         console.error('Нет текущей комнаты для удаления');
         return;
     }
@@ -404,51 +404,61 @@ async function handleDeleteRoom() {
         return;
     }
 
-    const deleteBtn = document.getElementById('deleteRoomBtn');
+    const deleteBtn = elements.deleteRoomBtn;
+    const originalHtml = deleteBtn.innerHTML;
 
     try {
-        // Показываем индикатор загрузки
         deleteBtn.disabled = true;
-
         deleteBtn.innerHTML = '<div class="spinner"></div>';
 
         const response = await fetch(`/api/chat/rooms/${state.currentRoom.id}`, {
                 method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                 'X-User-Id': state.userId
+                'X-User-Id': state.userId
             }
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         // Обновляем состояние
-        state.rooms = state.rooms.filter(
-            room => room.id !== state.currentRoom.id
-        );
-        state.currentRoom = null;
+        const deletedRoomId = state.currentRoom.id;
+        state.rooms = state.rooms.filter(room => room.id !== deletedRoomId);
         state.messages = [];
+        state.currentRoom = null;
 
         // Обновляем интерфейс
         renderRoomsList();
         renderMessages();
-        switchToLastRoom()
-        updateDeleteButtonVisibility();
+        elements.currentRoomTitle.textContent = 'Выберите чат';
+        elements.messageInput.disabled = true;
+        elements.sendMessageBtn.disabled = true;
+
+        // Отключаем WebSocket соединение
+        if (state.stompClient) {
+            state.stompClient.disconnect();
+            state.stompClient = null;
+        }
+
+        // Удаляем ID последней комнаты из localStorage
+        localStorage.removeItem('lastRoomId');
+
+        // Пытаемся переключиться на другую комнату, если есть
+        if (state.rooms.length > 0) {
+            await switchRoom(state.rooms[0]);
+        } else {
+            // Если комнат не осталось, обновляем интерфейс
+            updateDeleteButtonVisibility();
+        }
 
         showNotification('Чат успешно удален', 'success');
     } catch (error) {
         console.error('Ошибка при удалении комнаты:', error);
         showNotification('Не удалось удалить чат', 'error');
     } finally {
-        // Восстанавливаем кнопку
         if (deleteBtn) {
             deleteBtn.disabled = false;
-            deleteBtn.innerHTML = `
-                <svg class="icon-delete" viewBox="0 0 24 24">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                </svg>`;
+            deleteBtn.innerHTML = originalHtml;
         }
     }
 }
