@@ -15,7 +15,7 @@ const elements = {
     confirmCreateRoom: document.getElementById('confirmCreateRoom'),
     roomTitleInput: document.getElementById('roomTitleInput'),
     createRoomModal: new bootstrap.Modal('#createRoomModal'),
-    deleteRoomBtn: document.getElementById('deleteRoomBtn'),
+    deleteRoomBtn: document.getElementById('deleteRoomBtn')
 };
 
 // Инициализация приложения
@@ -222,6 +222,11 @@ function connectToRoom(roomId) {
             const messageData = JSON.parse(message.body);
             console.log('Received message:', messageData);
 
+            if (messageData.error) {
+                showNotification(messageData.error, 'error');
+                return;
+            }
+
             // Удаляем временное сообщение если есть
             if (messageData.id && messageData.id.startsWith('temp-')) {
                 state.messages = state.messages.filter(m => m.id !== messageData.id);
@@ -367,8 +372,8 @@ const typingIndicator = {
         clearTimeout(this.timer);
         this.container.style.display = 'block';
 
-        // Автоскрытие через 30 секунд на случай проблем
-        this.timer = setTimeout(() => this.hide(), 60000);
+        // Автоскрытие через 180 секунд на случай проблем
+        this.timer = setTimeout(() => this.hide(), 180000);
         this.scrollToBottom();
     },
 
@@ -470,7 +475,6 @@ function updateDeleteButtonVisibility() {
     const deleteBtn = document.getElementById('deleteRoomBtn');
     if (!deleteBtn) return;
 
-    // Вешаем обработчик
     deleteBtn.addEventListener('click', handleDeleteRoom);
 
     if (state?.currentRoom) {

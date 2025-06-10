@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static com.ps.ollamaai.utils.MessageConverter.formatMessageContent;
-
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ChatService {
@@ -62,18 +60,16 @@ public class ChatService {
     }
 
     public List<ChatMessage> getRoomMessages(String roomId) {
-        List<ChatMessage> byRoomIdOrderByTimestampAsc = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
-        byRoomIdOrderByTimestampAsc.forEach(mes -> mes.setContent(formatMessageContent(mes.getContent())));
-        return byRoomIdOrderByTimestampAsc;
+        return messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
     }
 
-    public ChatMessage saveUserMessage(String roomId, String userId, String content) {
+    @Transactional
+    public ChatMessage saveUserMessageWithAiResponse(String roomId, String userId, String content) {
         ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
 
         // Получаем последний порядковый номер для этой комнаты
-        Long lastOrder = messageRepository.findLastOrderByRoomId(roomId)
-                .orElse(0L);
+        Long lastOrder = messageRepository.findLastOrderByRoomId(roomId).orElse(0L);
 
         ChatMessage message = new ChatMessage();
         message.setRoom(room);
@@ -86,9 +82,6 @@ public class ChatService {
         ChatMessage aiResponse = generateAiResponse(roomId, content);
         aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
         messageRepository.save(aiResponse);
-        aiResponse.setContent(formatMessageContent(aiResponse.getContent()));
         return aiResponse;
     }
-
-
 }

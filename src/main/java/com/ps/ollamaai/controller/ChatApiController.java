@@ -28,25 +28,25 @@ public class ChatApiController {
 
     @GetMapping("/rooms/create")
     public ResponseEntity<ChatRoom> createRoom(@RequestParam String userId, @RequestParam String title) {
-        ChatRoom room = chatService.createRoom(userId, title);
+        final ChatRoom room = chatService.createRoom(userId, title);
         return ResponseEntity.ok(room);
     }
 
     @GetMapping("/rooms")
     public ResponseEntity<List<ChatRoom>> getUserRooms(@RequestParam String userId) {
-        List<ChatRoom> rooms = chatService.getUserRooms(userId);
+        final List<ChatRoom> rooms = chatService.getUserRooms(userId);
         return ResponseEntity.ok(rooms);
     }
 
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<List<ChatMessageDto>> getRoomMessages(@PathVariable String roomId) {
-        List<ChatMessageDto> messages = chatService.getRoomMessages(roomId).stream()
+        final List<ChatMessageDto> messages = chatService.getRoomMessages(roomId)
+                .stream()
                 .sorted(Comparator.comparing(ChatMessage::getOrder))
                 .map(chatMessageToDto::convertToDto)
                 .toList();
         return ResponseEntity.ok(messages);
     }
-
 
     @DeleteMapping("/rooms/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable String roomId, @RequestHeader("X-User-ID") String userId) {

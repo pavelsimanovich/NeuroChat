@@ -24,3 +24,6 @@ logging:
   level:
     org.springframework.web: debug
     org.hibernate: error
+
+app:
+  chat-limit: 100

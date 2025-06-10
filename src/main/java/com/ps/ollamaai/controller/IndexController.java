@@ -1,6 +1,5 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.domain.User;
 import com.ps.ollamaai.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,14 +21,8 @@ public class IndexController {
 
     @GetMapping("/home")
     public String home(Model model, @AuthenticationPrincipal UserDetails currentUser) {
-        User user = userService.findByEmail(currentUser.getUsername());
+        final var user = userService.findByEmail(currentUser.getUsername());
         model.addAttribute("userId", user.getId());
         return "home";
     }
-
-    @GetMapping("/registration")
-    public String registration() {
-        return "registration";
-    }
-
 }

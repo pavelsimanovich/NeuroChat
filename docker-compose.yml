@@ -13,6 +13,7 @@ services:
     volumes:
       - "db:/var/lib/mysql"
       - "./db/init.sql:/docker-entrypoint-initdb.d/1.sql"
+
 #  ollama:
 #    container_name: ollama
 #    image: ollama/ollama:latest
@@ -29,9 +30,6 @@ services:
 #    # Allow the container to access the host network
 #    extra_hosts:
 #      - host.docker.internal:host-gateway
-
-#  docker exec -it ollama ollama pull deepseek-r1:8b
-#  docker exec -it ollama ollama pull nomic-embed-text:latest
 
 networks:
   mynetwork: {}
