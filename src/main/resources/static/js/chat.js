@@ -292,6 +292,7 @@ async function sendMessage() {
                 content: messageContent
             })
         );
+        scrollToBottom();
     } catch (error) {
         console.error('Error sending message:', error);
         typingIndicator.hide();
@@ -372,8 +373,8 @@ const typingIndicator = {
         clearTimeout(this.timer);
         this.container.style.display = 'block';
 
-        // Автоскрытие через 180 секунд на случай проблем
-        this.timer = setTimeout(() => this.hide(), 180000);
+        // Автоскрытие через 320 секунд на случай проблем
+        this.timer = setTimeout(() => this.hide(), 320000);
         this.scrollToBottom();
     },
 
@@ -391,12 +392,6 @@ const typingIndicator = {
         }
     }
 };
-
-// Инициализация при полной загрузке DOM
-document.addEventListener('DOMContentLoaded', ()=> {
-    init()
-    updateDeleteButtonVisibility()
-} );
 
 // Обработчик удаления комнаты
 async function handleDeleteRoom() {
@@ -493,5 +488,12 @@ function showNotification(message, type = 'info') {
 
     setTimeout(() => {
         notification.remove();
-    }, 3000);
+    }, 5000);
 }
+
+// Инициализация при полной загрузке DOM
+document.addEventListener('DOMContentLoaded', ()=> {
+    init()
+    updateDeleteButtonVisibility()
+} );
+

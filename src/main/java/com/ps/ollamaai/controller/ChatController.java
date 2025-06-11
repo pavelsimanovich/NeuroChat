@@ -1,6 +1,6 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.converter.ChatMessageToDto;
+import com.ps.ollamaai.dto.converter.ChatMessageToDto;
 import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.User;
 import com.ps.ollamaai.dto.ChatMessageErrorDto;
@@ -38,7 +38,7 @@ public class ChatController {
 
         try {
             final User user = userService.findByEmail(principal.getName());
-            final ChatMessage savedMessage = chatService.saveUserMessageWithAiResponse(
+            final ChatMessage response = chatService.saveUserMessageWithAiResponse(
                     roomId,
                     user.getId(),
                     request.getContent()
@@ -46,15 +46,15 @@ public class ChatController {
 
             messagingTemplate.convertAndSend(
                     "/topic/room/" + roomId,
-                    chatMessageToDto.convertToDto(savedMessage)
+                    chatMessageToDto.convertToDto(response)
             );
 
-            if (savedMessage.getType() == ChatMessage.MessageType.AI_RESPONSE) {
-                messagingTemplate.convertAndSend(
-                        "/topic/room/" + roomId,
-                        chatMessageToDto.convertToDto(savedMessage)
-                );
-            }
+//            if (savedMessage.getType() == ChatMessage.MessageType.AI_RESPONSE) {
+//                messagingTemplate.convertAndSend(
+//                        "/topic/room/" + roomId,
+//                        chatMessageToDto.convertToDto(response)
+//                );
+//            }
         } catch (LimitExceededException ex) {
             log.error(LIMIT_EXCEEDED_MESSAGE, ex);
             var errorDto = new ChatMessageErrorDto(ex.getMessage());

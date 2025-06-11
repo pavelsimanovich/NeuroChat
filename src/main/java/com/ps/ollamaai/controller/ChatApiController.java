@@ -1,6 +1,6 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.converter.ChatMessageToDto;
+import com.ps.ollamaai.dto.converter.ChatMessageToDto;
 import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.ChatRoom;
 import com.ps.ollamaai.dto.ChatMessageDto;

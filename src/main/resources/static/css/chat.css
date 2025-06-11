@@ -48,21 +48,6 @@ body {
     padding: 0;
 }
 
-/*.chat-header {*/
-/*    display: flex;*/
-/*    justify-content: space-between;*/
-/*    align-items: center;*/
-/*    padding: 15px 20px;*/
-/*    background-color: white;*/
-/*    border-bottom: 1px solid #dee2e6;*/
-/*}*/
-
-/*.header-content {*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*    gap: 10px;*/
-/*}*/
-
 .chat-messages {
     flex: 1;
     padding: 20px;

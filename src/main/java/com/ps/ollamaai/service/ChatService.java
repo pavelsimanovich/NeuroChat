@@ -8,12 +8,15 @@ import com.ps.ollamaai.repository.ChatRoomRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ChatService {
@@ -44,11 +47,8 @@ public class ChatService {
         roomRepository.deleteById(roomId);
     }
 
-    private ChatMessage generateAiResponse(String roomId, String userMessage) {
-        String aiResponseText = ollamaService.call(userMessage, roomId);
-
-        ChatRoom room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+    private ChatMessage generateAiResponse(String userMessage, ChatRoom room) {
+        String aiResponseText = ollamaService.call(userMessage, room.getId());
 
         ChatMessage aiResponse = new ChatMessage();
         aiResponse.setRoom(room);
@@ -79,7 +79,9 @@ public class ChatService {
         message.setOrder(lastOrder + 1); // Увеличиваем порядок
 
         ChatMessage userMessage = messageRepository.save(message);
-        ChatMessage aiResponse = generateAiResponse(roomId, content);
+        log.info("Start processing AI request {}", LocalDateTime.now());
+        ChatMessage aiResponse = generateAiResponse(content, room);
+        log.info("End processing AI request {}", LocalDateTime.now());
         aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
         messageRepository.save(aiResponse);
         return aiResponse;

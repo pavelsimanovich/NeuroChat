@@ -1,4 +1,4 @@
-package com.ps.ollamaai.converter;
+package com.ps.ollamaai.dto.converter;
 
 import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.dto.ChatMessageDto;
