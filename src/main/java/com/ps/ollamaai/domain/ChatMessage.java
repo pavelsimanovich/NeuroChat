@@ -11,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -54,16 +53,6 @@ public class ChatMessage implements Serializable {
     private LocalDateTime timestamp = LocalDateTime.now();
 
     @Column(name = "message_order", nullable = false)
-    private Long order; // Для сохранения порядка сообщений
+    private Long order =  System.currentTimeMillis(); // Для сохранения порядка сообщений
 
-    @PrePersist
-    protected void onCreate() {
-        if (this.timestamp == null) {
-            this.timestamp = LocalDateTime.now();
-        }
-        if (this.order == null) {
-            // Устанавливаем порядок как текущее время в миллисекундах
-            this.order = System.currentTimeMillis();
-        }
-    }
 }

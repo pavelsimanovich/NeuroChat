@@ -34,4 +34,6 @@ public class ChatRoom implements Serializable {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<ChatMessage> messages = new ArrayList<>();
+
+    private boolean active;
 }

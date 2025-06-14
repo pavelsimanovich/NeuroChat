@@ -15,7 +15,7 @@ const elements = {
     confirmCreateRoom: document.getElementById('confirmCreateRoom'),
     roomTitleInput: document.getElementById('roomTitleInput'),
     createRoomModal: new bootstrap.Modal('#createRoomModal'),
-    deleteRoomBtn: document.getElementById('deleteRoomBtn'),
+    deleteRoomBtn: document.getElementById('deleteRoomBtn')
 };
 
 // Инициализация приложения
@@ -119,9 +119,15 @@ async function switchRoom(room) {
     // Подключаемся к WebSocket
     connectToRoom(room.id);
 
-    // Активируем поле ввода сообщений
-    elements.messageInput.disabled = false;
-    elements.sendMessageBtn.disabled = false;
+    // Доступность поля ввода сообщений
+    if (!room.active) {
+        elements.messageInput.disabled = true;
+        elements.sendMessageBtn.disabled = true;
+        //todo add message
+    } else {
+        elements.messageInput.disabled = false;
+        elements.sendMessageBtn.disabled = false;
+    }
 
     // Прокручиваем вниз к последним сообщениям
     scrollToBottom();
@@ -222,6 +228,16 @@ function connectToRoom(roomId) {
             const messageData = JSON.parse(message.body);
             console.log('Received message:', messageData);
 
+            if (messageData.error) {
+                showNotification(messageData.error, 'error');
+                if (messageData.errorType === 'LIMIT_EXCEEDED') {
+                    elements.messageInput.disabled = true;
+                    elements.sendMessageBtn.disabled = true;
+                    //todo: добавить сообщение внизу чата об ошибке. удалить последнее сообщение
+                }
+                return;
+            }
+
             // Удаляем временное сообщение если есть
             if (messageData.id && messageData.id.startsWith('temp-')) {
                 state.messages = state.messages.filter(m => m.id !== messageData.id);
@@ -287,6 +303,7 @@ async function sendMessage() {
                 content: messageContent
             })
         );
+        scrollToBottom();
     } catch (error) {
         console.error('Error sending message:', error);
         typingIndicator.hide();
@@ -367,8 +384,8 @@ const typingIndicator = {
         clearTimeout(this.timer);
         this.container.style.display = 'block';
 
-        // Автоскрытие через 30 секунд на случай проблем
-        this.timer = setTimeout(() => this.hide(), 60000);
+        // Автоскрытие через 320 секунд на случай проблем
+        this.timer = setTimeout(() => this.hide(), 320000);
         this.scrollToBottom();
     },
 
@@ -386,12 +403,6 @@ const typingIndicator = {
         }
     }
 };
-
-// Инициализация при полной загрузке DOM
-document.addEventListener('DOMContentLoaded', ()=> {
-    init()
-    updateDeleteButtonVisibility()
-} );
 
 // Обработчик удаления комнаты
 async function handleDeleteRoom() {
@@ -470,7 +481,6 @@ function updateDeleteButtonVisibility() {
     const deleteBtn = document.getElementById('deleteRoomBtn');
     if (!deleteBtn) return;
 
-    // Вешаем обработчик
     deleteBtn.addEventListener('click', handleDeleteRoom);
 
     if (state?.currentRoom) {
@@ -489,5 +499,12 @@ function showNotification(message, type = 'info') {
 
     setTimeout(() => {
         notification.remove();
-    }, 3000);
+    }, 5000);
 }
+
+// Инициализация при полной загрузке DOM
+document.addEventListener('DOMContentLoaded', ()=> {
+    init()
+    updateDeleteButtonVisibility()
+} );
+
