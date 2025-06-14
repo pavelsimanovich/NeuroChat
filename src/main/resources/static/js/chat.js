@@ -119,9 +119,15 @@ async function switchRoom(room) {
     // Подключаемся к WebSocket
     connectToRoom(room.id);
 
-    // Активируем поле ввода сообщений
-    elements.messageInput.disabled = false;
-    elements.sendMessageBtn.disabled = false;
+    // Доступность поля ввода сообщений
+    if (!room.active) {
+        elements.messageInput.disabled = true;
+        elements.sendMessageBtn.disabled = true;
+        //todo add message
+    } else {
+        elements.messageInput.disabled = false;
+        elements.sendMessageBtn.disabled = false;
+    }
 
     // Прокручиваем вниз к последним сообщениям
     scrollToBottom();
@@ -224,6 +230,11 @@ function connectToRoom(roomId) {
 
             if (messageData.error) {
                 showNotification(messageData.error, 'error');
+                if (messageData.errorType === 'LIMIT_EXCEEDED') {
+                    elements.messageInput.disabled = true;
+                    elements.sendMessageBtn.disabled = true;
+                    //todo: добавить сообщение внизу чата об ошибке. удалить последнее сообщение
+                }
                 return;
             }
 

@@ -1,3 +1,5 @@
 package com.ps.ollamaai.dto;
 
-public record ChatMessageErrorDto(String error) {}
+import com.ps.ollamaai.dto.enums.ErrorType;
+
+public record ChatMessageErrorDto(String error, ErrorType errorType) {}

@@ -10,7 +10,7 @@ https://ollama.com/search
 1. ollama pull deepseek-r1:8b
 2. ollama run deepseek-r1:8b
 
-#### Also model can be available in Docker
+#### Also model can be available in the Docker (It is better not to use in Mac Os, because Docker did not supported  using GPU)
 * uncomment the configuration in the [docker-compose.yml](docker-compose.yml) file
 * run command
   1. docker exec -it ollama ollama pull deepseek-r1:8b

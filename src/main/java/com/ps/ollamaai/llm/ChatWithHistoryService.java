@@ -44,6 +44,7 @@ public class ChatWithHistoryService {
 
         var currentHistory = conversationalHistoryStorage.computeIfAbsent(roomId, k -> new ArrayList<>());
         if (currentHistory.size() >= MAX_HISTORY_CHAT_LENGTH + 1) {
+            conversationalHistoryStorage.remove(roomId);
             throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
         }
 

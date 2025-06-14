@@ -35,5 +35,5 @@ public class ChatRoom implements Serializable {
     @JsonManagedReference
     private List<ChatMessage> messages = new ArrayList<>();
 
-    private boolean active = true;
+    private boolean active;
 }

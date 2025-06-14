@@ -10,7 +10,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,33 +18,11 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ChatService {
+public class ChatMessageService {
 
     private final ChatRoomRepository roomRepository;
     private final ChatMessageRepository messageRepository;
     private final ChatWithHistoryService ollamaService;
-
-    public ChatRoom createRoom(String userId, String title) {
-        ChatRoom room = new ChatRoom();
-        room.setUserId(userId);
-        room.setTitle(title);
-        return roomRepository.save(room);
-    }
-
-    public List<ChatRoom> getUserRooms(String userId) {
-        return roomRepository.findByUserId(userId);
-    }
-
-    @Transactional
-    public void deleteRoom(String roomId, String userId) {
-        final ChatRoom room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
-        if (!room.getUserId().equals(userId)) {
-            throw new AccessDeniedException("You can only delete your own rooms");
-        }
-        messageRepository.deleteByRoomId(roomId);
-        roomRepository.deleteById(roomId);
-    }
 
     private ChatMessage generateAiResponse(String userMessage, ChatRoom room) {
         String aiResponseText = ollamaService.call(userMessage, room.getId());
