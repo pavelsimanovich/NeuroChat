@@ -1,6 +1,9 @@
 package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.ChatRoom;
+import com.ps.ollamaai.dto.ChatRoomDto;
+import com.ps.ollamaai.dto.converter.ChatRoomToDtoConverter;
+import com.ps.ollamaai.llm.ChatWithHistoryService;
 import com.ps.ollamaai.repository.ChatMessageRepository;
 import com.ps.ollamaai.repository.ChatRoomRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,17 +20,23 @@ public class ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final ChatRoomToDtoConverter chatRoomToDtoConverter;
+    private final ChatWithHistoryService chatWithHistoryService;
 
-    public ChatRoom createRoom(String userId, String title) {
+    public ChatRoomDto createRoom(String userId, String title) {
         ChatRoom room = new ChatRoom();
         room.setUserId(userId);
         room.setTitle(title);
         room.setActive(true);
-        return chatRoomRepository.save(room);
+        ChatRoom chatRoom = chatRoomRepository.save(room);
+        return chatRoomToDtoConverter.convert(chatRoom);
     }
 
-    public List<ChatRoom> getUserRooms(String userId) {
-        return chatRoomRepository.findByUserId(userId);
+    public List<ChatRoomDto> getUserRooms(String userId) {
+        List<ChatRoom> chatRooms = chatRoomRepository.findByUserId(userId);
+        return chatRooms.stream()
+                .map(chatRoomToDtoConverter::convert)
+                .toList();
     }
 
     @Transactional
@@ -39,6 +48,7 @@ public class ChatRoomService {
         }
         chatMessageRepository.deleteByRoomId(roomId);
         chatRoomRepository.deleteById(roomId);
+        chatWithHistoryService.deleteHistory(roomId);
     }
 
     @Transactional

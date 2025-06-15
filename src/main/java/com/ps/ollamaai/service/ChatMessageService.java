@@ -2,6 +2,8 @@ package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.ChatRoom;
+import com.ps.ollamaai.dto.ChatMessageDto;
+import com.ps.ollamaai.dto.converter.ChatMessageToDtoConverter;
 import com.ps.ollamaai.llm.ChatWithHistoryService;
 import com.ps.ollamaai.repository.ChatMessageRepository;
 import com.ps.ollamaai.repository.ChatRoomRepository;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -23,6 +26,7 @@ public class ChatMessageService {
     private final ChatRoomRepository roomRepository;
     private final ChatMessageRepository messageRepository;
     private final ChatWithHistoryService ollamaService;
+    private final ChatMessageToDtoConverter chatMessageToDtoConverter;
 
     private ChatMessage generateAiResponse(String userMessage, ChatRoom room) {
         final String aiResponseText = ollamaService.call(userMessage, room.getId());
@@ -36,12 +40,16 @@ public class ChatMessageService {
         return aiResponse;
     }
 
-    public List<ChatMessage> getRoomMessages(String roomId) {
-        return messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+    public List<ChatMessageDto> getRoomMessages(String roomId) {
+        List<ChatMessage> chatMessages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        return chatMessages.stream()
+                .sorted(Comparator.comparing(ChatMessage::getOrder))
+                .map(chatMessageToDtoConverter::convertToDto)
+                .toList();
     }
 
     @Transactional
-    public ChatMessage saveUserMessageWithAiResponse(String roomId, String userId, String content) {
+    public ChatMessageDto saveUserMessageWithAiResponse(String roomId, String userId, String content) {
         ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
 
@@ -57,10 +65,12 @@ public class ChatMessageService {
 
         ChatMessage userMessage = messageRepository.save(message);
         log.info("Start processing AI request {}", LocalDateTime.now());
+
         ChatMessage aiResponse = generateAiResponse(content, room);
         log.info("End processing AI request {}", LocalDateTime.now());
         aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
         messageRepository.save(aiResponse);
-        return aiResponse;
+
+        return chatMessageToDtoConverter.convertToDto(aiResponse);
     }
 }

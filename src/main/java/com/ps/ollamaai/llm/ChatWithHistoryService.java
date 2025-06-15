@@ -28,7 +28,7 @@ import static com.ps.ollamaai.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 public class ChatWithHistoryService {
 
     @Value("${app.chat-limit}")
-    private final int MAX_HISTORY_CHAT_LENGTH = 100;
+    private int maxHistoryChatLength;
 
     private final OllamaChatModel ollamaChatModel;
     private final HistoryEntryService historyEntryService;
@@ -39,11 +39,13 @@ public class ChatWithHistoryService {
 
         if (Objects.isNull(conversationalHistoryStorage.get(roomId))) {
             List<HistoryEntry> roomMessages = historyEntryService.getRoomHistory(roomId);
-            conversationalHistoryStorage.put(roomId, roomMessages);
+            if (!roomMessages.isEmpty()) {
+                conversationalHistoryStorage.put(roomId, roomMessages);
+            }
         }
 
         var currentHistory = conversationalHistoryStorage.computeIfAbsent(roomId, k -> new ArrayList<>());
-        if (currentHistory.size() >= MAX_HISTORY_CHAT_LENGTH + 1) {
+        if (currentHistory.size() >= maxHistoryChatLength + 1) {
             conversationalHistoryStorage.remove(roomId);
             throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
         }
@@ -60,6 +62,10 @@ public class ChatWithHistoryService {
         currentHistory.add(new HistoryEntry(userMessage, response));
 
         return response;
+    }
+
+    public void deleteHistory(String roomId) {
+        conversationalHistoryStorage.remove(roomId);
     }
 
 }

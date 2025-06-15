@@ -34,6 +34,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, String
             a.order = q.order + 1
         WHERE 
             q.type = 'USER_MESSAGE' AND
+            a.content is not null AND        
             q.room.id = :roomId          
         ORDER BY q.timestamp DESC
         """)

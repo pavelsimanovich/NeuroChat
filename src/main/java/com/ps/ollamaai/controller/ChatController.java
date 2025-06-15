@@ -1,8 +1,7 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.dto.converter.ChatMessageToDto;
-import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.User;
+import com.ps.ollamaai.dto.ChatMessageDto;
 import com.ps.ollamaai.dto.ChatMessageErrorDto;
 import com.ps.ollamaai.dto.ChatMessageRequest;
 import com.ps.ollamaai.dto.enums.ErrorType;
@@ -30,7 +29,6 @@ public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageService chatMessageService;
     private final UserService userService;
-    private final ChatMessageToDto chatMessageToDto;
     private final ChatRoomService chatRoomService;
 
     @MessageMapping("/chat/{roomId}/send")
@@ -41,7 +39,7 @@ public class ChatController {
 
         try {
             final User user = userService.findByEmail(principal.getName());
-            final ChatMessage response = chatMessageService.saveUserMessageWithAiResponse(
+            final ChatMessageDto response = chatMessageService.saveUserMessageWithAiResponse(
                     roomId,
                     user.getId(),
                     request.getContent()
@@ -49,7 +47,7 @@ public class ChatController {
 
             messagingTemplate.convertAndSend(
                     "/topic/room/" + roomId,
-                    chatMessageToDto.convertToDto(response)
+                    response
             );
         } catch (LimitExceededException ex) {
             log.error(LIMIT_EXCEEDED_MESSAGE, ex);

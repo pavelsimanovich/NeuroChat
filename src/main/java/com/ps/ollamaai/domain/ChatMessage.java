@@ -1,6 +1,5 @@
 package com.ps.ollamaai.domain;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,7 +33,6 @@ public class ChatMessage implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
-    @JsonBackReference
     private ChatRoom room;
 
     @Column(name = "user_id", nullable = false)

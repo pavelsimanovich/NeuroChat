@@ -32,8 +32,6 @@ function init() {
     localStorage.setItem('userId', state.userId);
     loadRooms();
     setupEventListeners();
-
-    switchToLastRoom();
 }
 
 function switchToLastRoom() {
@@ -73,11 +71,7 @@ async function loadRooms() {
         renderRoomsList();
 
         // Восстанавливаем последнюю комнату если есть
-        const lastRoomId = localStorage.getItem('lastRoomId');
-        if (lastRoomId) {
-            const lastRoom = state.rooms.find(r => r.id === lastRoomId);
-            if (lastRoom) await switchRoom(lastRoom);
-        }
+        switchToLastRoom()
     } catch (error) {
         console.error('Error loading rooms:', error);
         alert('Не удалось загрузить комнаты. Пожалуйста, обновите страницу.');
