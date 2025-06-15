@@ -82,13 +82,21 @@ body {
     border-top: 1px solid #dee2e6;
     display: flex;
     gap: 10px;
+    align-items: start; /* Чтобы кнопка выравнивалась сверху */
 }
 
-.message-input input {
+#messageInput {
     flex: 1;
+    resize: none; /* Запрет изменения размеров вручную */
     padding: 10px 15px;
-    border-radius: 20px;
+    font-size: 14px;
     border: 1px solid #dee2e6;
+    border-radius: 20px;
+    min-height: 30px;
+    max-height: 100px;
+    overflow-y: auto;
+    outline: none;
+    box-sizing: border-box;
 }
 
 .message-input button {
@@ -123,7 +131,7 @@ body {
 }
 
 .message-content {
-    white-space: pre-wrap; /* Сохраняет переносы строк */
+    /*white-space: pre-wrap; !* Сохраняет переносы строк *!*/
     word-break: break-word; /* Перенос длинных слов */
     line-height: 1.5;
 }

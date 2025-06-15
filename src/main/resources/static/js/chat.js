@@ -198,7 +198,7 @@ function renderMessages() {
 
         messageElement.innerHTML = `
             <div class="message-sender">${message.userId === config.userId ? 'Вы' : 'AI'}</div>
-            <div class="message-content">${message.content}</div>
+            <div class="message-content">${DOMPurify.sanitize(marked.parse(message.content))}</div>
             <div class="message-meta">
                 <span class="message-time">${formatTime(message.timestamp)}</span>
                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
@@ -207,6 +207,7 @@ function renderMessages() {
 
         elements.chatMessages.appendChild(messageElement);
     });
+    Prism.highlightAll();
 
     scrollToBottom();
 }
@@ -324,11 +325,6 @@ function setupEventListeners() {
     // Отправка сообщения по кнопке
     elements.sendMessageBtn.addEventListener('click', sendMessage);
 
-    // Отправка сообщения по Enter
-    elements.messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
-
     // Создание комнаты
     elements.createRoomBtn.addEventListener('click', () => {
         elements.roomTitleInput.value = '';
@@ -340,6 +336,32 @@ function setupEventListeners() {
         if (title) {
             createRoom(title);
             elements.createRoomModal.hide();
+        }
+    });
+
+   // Автоподстройка высоты
+    function autoResize() {
+        elements.messageInput.style.height = 'auto';
+        elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 100) + 'px';
+    }
+    elements.messageInput.addEventListener('input', autoResize);
+
+    elements.messageInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            if (e.shiftKey) {
+                // Shift + Enter — вставляем перенос строки
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.setRangeText('\n', start, end, 'end');
+                e.preventDefault(); // предотвращаем стандартное поведение
+                autoResize();
+            } else {
+                // Просто Enter — отправляем сообщение
+                e.preventDefault(); // отключаем стандартный Enter (перенос строки)
+                if (!elements.sendMessageBtn.disabled) {
+                    sendMessage(); // вызов функции отправки
+                }
+            }
         }
     });
 }
@@ -510,4 +532,18 @@ document.addEventListener('DOMContentLoaded', ()=> {
     init()
     updateDeleteButtonVisibility()
 } );
+
+marked.setOptions({
+    // Обработка кодовых блоков с Prism.js
+    highlight: function(code, lang) {
+        if (lang && Prism.languages[lang]) {
+            return Prism.highlight(code, Prism.languages[lang], lang);
+        } else {
+            // Если язык не найден — используем автодетект
+            return Prism.highlight(code, Prism.languages.markup, 'markup');
+        }
+    },
+    breaks: true,
+    gfm: true
+});
 

@@ -13,6 +13,7 @@ public final class Prompts {
             """;
 
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
+            Use Russian language for your responses.
             """;
 
     public static final String PROMPT_CONVERSATION_HISTORY_INSTRUCTIONS = """        
