@@ -89,7 +89,11 @@ async function loadRooms() {
 function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
-    state.rooms.forEach(room => {
+    const sortedRooms = [...state.rooms].sort((a, b) =>
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    sortedRooms.forEach(room => {
         const roomElement = document.createElement('div');
         roomElement.className = `room-item ${state.currentRoom?.id === room.id ? 'active' : ''}`;
         roomElement.textContent = room.title;
@@ -158,10 +162,7 @@ async function loadRoomMessages(roomId) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const messages = await response.json();
-        console.log('Received messages:', messages); // Лог полученных сообщений
-
-        state.messages = messages;
+        state.messages = await response.json();
         renderMessages();
 
     } catch (error) {

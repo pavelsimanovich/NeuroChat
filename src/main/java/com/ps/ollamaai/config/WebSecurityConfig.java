@@ -29,7 +29,10 @@ public class WebSecurityConfig {
                         .defaultSuccessUrl("/home", true)
                         .permitAll()
                 )
-                .logout(LogoutConfigurer::permitAll);
+                .logout(LogoutConfigurer::permitAll)
+                .sessionManagement(session -> session
+                .invalidSessionUrl("/invalidSession")
+        );
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
