@@ -1,10 +1,12 @@
 # Chat with Ollama and Spring Boot AI
 
+#### First steps:
+
 Download
-https://ollama.com/download
+1. https://ollama.com/download
 
 Choose model
-https://ollama.com/search
+2. https://ollama.com/search
 
 #### Pull model and run in console (e.g. deepseek-r1)
 1. ollama pull deepseek-r1:8b

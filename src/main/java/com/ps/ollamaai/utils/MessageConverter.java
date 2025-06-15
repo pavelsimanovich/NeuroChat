@@ -18,6 +18,7 @@ public final class MessageConverter {
         // Форматирование списков для маркированных списков
         escaped = escaped.replaceAll("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>");
         escaped = escaped.replaceAll("```(.+?)```", "<code>$1</code>");
+//        escaped = escaped.replace("### ", " ");
         escaped = escaped.replace("* ", "&bull; ");
 
         return escaped;

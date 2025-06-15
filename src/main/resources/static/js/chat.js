@@ -123,10 +123,19 @@ async function switchRoom(room) {
     if (!room.active) {
         elements.messageInput.disabled = true;
         elements.sendMessageBtn.disabled = true;
-        //todo add message
+
+        elements.messageInput.classList.add("grey-color");
+        this.limitMessages = document.getElementById('limitMessages');
+        this.limitMessages.innerHTML = `
+              <div class="limit-messages">
+                Превышен лимит сообщений в комнате
+              </div>
+            `;
     } else {
         elements.messageInput.disabled = false;
         elements.sendMessageBtn.disabled = false;
+        elements.messageInput.classList.remove("grey-color");
+        this.limitMessages.innerHTML = '';
     }
 
     // Прокручиваем вниз к последним сообщениям
@@ -233,9 +242,8 @@ function connectToRoom(roomId) {
                 if (messageData.errorType === 'LIMIT_EXCEEDED') {
                     elements.messageInput.disabled = true;
                     elements.sendMessageBtn.disabled = true;
-                    //todo: добавить сообщение внизу чата об ошибке. удалить последнее сообщение
+                    elements.messageInput.classList.add("grey-color");
                 }
-                return;
             }
 
             // Удаляем временное сообщение если есть

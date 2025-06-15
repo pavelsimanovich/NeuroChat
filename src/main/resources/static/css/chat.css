@@ -304,3 +304,19 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+.limit-messages {
+    margin-bottom: 15px;
+    max-width: 68%;
+    padding: 10px 15px;
+    margin-left: 15px;
+    word-wrap: break-word;
+    background: coral;
+    margin-right: auto;
+    border-radius: 15px;
+    line-height: 1.5;
+}
+
+.grey-color {
+    background-color: lightgray;
+}
