@@ -30,8 +30,8 @@ public class WebSecurityConfig {
                         .permitAll()
                 )
                 .logout(LogoutConfigurer::permitAll)
-                .sessionManagement(session -> session
-                .invalidSessionUrl("/invalidSession")
+                .sessionManagement(
+                        session -> session.invalidSessionUrl("/invalidSession")
         );
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();

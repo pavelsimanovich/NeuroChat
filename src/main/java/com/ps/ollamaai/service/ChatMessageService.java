@@ -25,7 +25,7 @@ public class ChatMessageService {
     private final ChatWithHistoryService ollamaService;
 
     private ChatMessage generateAiResponse(String userMessage, ChatRoom room) {
-        String aiResponseText = ollamaService.call(userMessage, room.getId());
+        final String aiResponseText = ollamaService.call(userMessage, room.getId());
 
         ChatMessage aiResponse = new ChatMessage();
         aiResponse.setRoom(room);

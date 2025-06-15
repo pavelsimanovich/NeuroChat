@@ -51,13 +51,6 @@ public class ChatController {
                     "/topic/room/" + roomId,
                     chatMessageToDto.convertToDto(response)
             );
-
-//            if (savedMessage.getType() == ChatMessage.MessageType.AI_RESPONSE) {
-//                messagingTemplate.convertAndSend(
-//                        "/topic/room/" + roomId,
-//                        chatMessageToDto.convertToDto(response)
-//                );
-//            }
         } catch (LimitExceededException ex) {
             log.error(LIMIT_EXCEEDED_MESSAGE, ex);
             var errorDto = new ChatMessageErrorDto(ex.getMessage(), ErrorType.LIMIT_EXCEEDED);
