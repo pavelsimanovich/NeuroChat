@@ -48,7 +48,7 @@ public class ChatRoomService {
         }
         chatMessageRepository.deleteByRoomId(roomId);
         chatRoomRepository.deleteById(roomId);
-        chatWithHistoryService.deleteHistory(roomId);
+        chatWithHistoryService.deleteRoomHistory(roomId);
     }
 
     @Transactional

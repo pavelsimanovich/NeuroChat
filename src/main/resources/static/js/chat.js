@@ -32,6 +32,7 @@ function init() {
     localStorage.setItem('userId', state.userId);
     loadRooms();
     setupEventListeners();
+    updateDeleteButtonVisibility()
 }
 
 function switchToLastRoom() {
@@ -207,7 +208,29 @@ function renderMessages() {
 
         elements.chatMessages.appendChild(messageElement);
     });
+
     Prism.highlightAll();
+
+    document.querySelectorAll('.message-content pre')?.forEach(block => {
+        const button = document.createElement('button');
+        button.className = 'copy-code-btn';
+        button.textContent = 'Копировать';
+
+        button.addEventListener('click', () => {
+            const code = block.querySelector('code');
+            navigator.clipboard.writeText(code?.textContent || '').then(() => {
+                button.textContent = 'Скопировано!';
+                setTimeout(() => {
+                    button.textContent = 'Копировать';
+                }, 2000);
+            }).catch(err => {
+                console.error('Ошибка копирования:', err);
+            });
+        });
+
+        block.style.position = 'relative'; // для позиционирования кнопки
+        block.appendChild(button);
+    });
 
     scrollToBottom();
 }
@@ -345,7 +368,6 @@ function setupEventListeners() {
         elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 100) + 'px';
     }
     elements.messageInput.addEventListener('input', autoResize);
-
     elements.messageInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
             if (e.shiftKey) {
@@ -359,7 +381,7 @@ function setupEventListeners() {
                 // Просто Enter — отправляем сообщение
                 e.preventDefault(); // отключаем стандартный Enter (перенос строки)
                 if (!elements.sendMessageBtn.disabled) {
-                    sendMessage(); // вызов функции отправки
+                    sendMessage();
                 }
             }
         }
@@ -499,8 +521,6 @@ async function handleDeleteRoom() {
     }
 }
 
-
-
 // Обновление видимости кнопки
 function updateDeleteButtonVisibility() {
     const deleteBtn = document.getElementById('deleteRoomBtn');
@@ -530,7 +550,6 @@ function showNotification(message, type = 'info') {
 // Инициализация при полной загрузке DOM
 document.addEventListener('DOMContentLoaded', ()=> {
     init()
-    updateDeleteButtonVisibility()
 } );
 
 marked.setOptions({

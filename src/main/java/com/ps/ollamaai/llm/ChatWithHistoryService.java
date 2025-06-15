@@ -64,7 +64,7 @@ public class ChatWithHistoryService {
         return response;
     }
 
-    public void deleteHistory(String roomId) {
+    public void deleteRoomHistory(String roomId) {
         conversationalHistoryStorage.remove(roomId);
     }
 
