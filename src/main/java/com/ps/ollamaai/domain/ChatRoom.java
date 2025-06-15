@@ -10,7 +10,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -19,7 +18,6 @@ import java.util.List;
 
 @Getter
 @Setter
-@ToString
 @Entity
 @Table(name = "chat_rooms")
 public class ChatRoom implements Serializable {
