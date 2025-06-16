@@ -211,25 +211,33 @@ function renderMessages() {
 
     Prism.highlightAll();
 
-    document.querySelectorAll('.message-content pre')?.forEach(block => {
-        const button = document.createElement('button');
-        button.className = 'copy-code-btn';
-        button.textContent = 'Копировать';
+    document.querySelectorAll('.message-content pre').forEach(block => {
+        // Проверяем, нет ли уже кнопки
+        if (!block.querySelector('.copy-code-btn')) {
+            const button = document.createElement('button');
+            button.className = 'copy-code-btn';
+            button.textContent = 'Копировать';
 
-        button.addEventListener('click', () => {
-            const code = block.querySelector('code');
-            navigator.clipboard.writeText(code?.textContent || '').then(() => {
-                button.textContent = 'Скопировано!';
-                setTimeout(() => {
-                    button.textContent = 'Копировать';
-                }, 2000);
-            }).catch(err => {
-                console.error('Ошибка копирования:', err);
+            button.addEventListener('click', () => {
+                const code = block.querySelector('code');
+                const text = code ? code.textContent : '';
+
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Скопировано!';
+                    button.classList.add('copied');
+
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('copied');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Ошибка копирования:', err);
+                });
             });
-        });
 
-        block.style.position = 'relative'; // для позиционирования кнопки
-        block.appendChild(button);
+            block.appendChild(button);
+        }
     });
 
     scrollToBottom();
@@ -542,6 +550,7 @@ function showNotification(message, type = 'info') {
     notification.textContent = message;
     document.body.appendChild(notification);
 
+    //todo отправить нотификацию после таймаута
     setTimeout(() => {
         notification.remove();
     }, 5000);

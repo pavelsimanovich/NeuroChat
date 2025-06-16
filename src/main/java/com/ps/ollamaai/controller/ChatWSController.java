@@ -24,7 +24,7 @@ import static com.ps.ollamaai.constants.Messages.LIMIT_EXCEEDED_MESSAGE;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
-public class ChatController {
+public class ChatWSController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageService chatMessageService;

@@ -1,7 +1,7 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.llm.ChatWithHistoryService;
 import lombok.AllArgsConstructor;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/chat")
+@RequestMapping("/direct")
 public class ChatAIDirectController {
 
-    private final ChatWithHistoryService chatClient;
+    private final OllamaChatModel ollamaChatModel;
 
-    @GetMapping("/ask")
-    public String ask(@RequestParam String message, @RequestParam String chatId) {
-        return chatClient.call(message, chatId);
+    @GetMapping("/chat/ask")
+    public String ask(@RequestParam String message) {
+        return ollamaChatModel.call(message);
     }
 }

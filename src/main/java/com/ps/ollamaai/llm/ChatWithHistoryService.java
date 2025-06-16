@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +33,7 @@ public class ChatWithHistoryService {
     private final OllamaChatModel ollamaChatModel;
     private final HistoryEntryService historyEntryService;
 
-    private final Map<String, List<HistoryEntry>> conversationalHistoryStorage = new HashMap<>();
+    private final Map<String, List<HistoryEntry>> conversationalHistoryStorage = new LinkedHashMap<>();
 
     public String call(String userMessage, String roomId) {
 

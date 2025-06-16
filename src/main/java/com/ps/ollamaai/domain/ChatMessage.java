@@ -48,7 +48,7 @@ public class ChatMessage implements Serializable {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    @Column(name = "message_order", nullable = false)
+    @Column(name = "message_order", nullable = false, updatable = false)
     private Long order =  System.currentTimeMillis(); // Для сохранения порядка сообщений
 
 }
