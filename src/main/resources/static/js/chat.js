@@ -196,10 +196,11 @@ function renderMessages() {
         if (message.error) {
             messageElement.classList.add('message-error');
         }
+        // <div className="message-content">${DOMPurify.sanitize(marked.parse(message.content))}</div>
 
         messageElement.innerHTML = `
             <div class="message-sender">${message.userId === config.userId ? 'Вы' : 'AI'}</div>
-            <div class="message-content">${DOMPurify.sanitize(marked.parse(message.content))}</div>
+            <div class="message-content">${(marked.parse(message.content))}</div>
             <div class="message-meta">
                 <span class="message-time">${formatTime(message.timestamp)}</span>
                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
@@ -302,7 +303,7 @@ async function createRoom(title) {
         switchRoom(newRoom);
     } catch (error) {
         console.error('Error creating room:', error);
-        alert('Не удалось создать комнату');
+        showNotification('Не удалось создать комнату', 'error');
     }
 }
 
@@ -567,7 +568,6 @@ marked.setOptions({
         if (lang && Prism.languages[lang]) {
             return Prism.highlight(code, Prism.languages[lang], lang);
         } else {
-            // Если язык не найден — используем автодетект
             return Prism.highlight(code, Prism.languages.markup, 'markup');
         }
     },
