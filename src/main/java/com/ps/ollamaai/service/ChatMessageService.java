@@ -28,18 +28,6 @@ public class ChatMessageService {
     private final ChatWithHistoryService ollamaService;
     private final ChatMessageToDtoConverter chatMessageToDtoConverter;
 
-    private ChatMessage generateAiResponse(String userMessage, ChatRoom room) {
-        final String aiResponseText = ollamaService.call(userMessage, room.getId());
-
-        ChatMessage aiResponse = new ChatMessage();
-        aiResponse.setRoom(room);
-        aiResponse.setUserId("ai-assistant");
-        aiResponse.setType(ChatMessage.MessageType.AI_RESPONSE);
-        aiResponse.setContent(aiResponseText);
-
-        return aiResponse;
-    }
-
     public List<ChatMessageDto> getRoomMessages(String roomId) {
         List<ChatMessage> chatMessages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
         return chatMessages.stream()
@@ -72,5 +60,17 @@ public class ChatMessageService {
         messageRepository.save(aiResponse);
 
         return chatMessageToDtoConverter.convertToDto(aiResponse);
+    }
+
+    private ChatMessage generateAiResponse(String userMessage, ChatRoom room) {
+        final String aiResponseText = ollamaService.call(userMessage, room.getId());
+
+        ChatMessage aiResponse = new ChatMessage();
+        aiResponse.setRoom(room);
+        aiResponse.setUserId("ai-assistant");
+        aiResponse.setType(ChatMessage.MessageType.AI_RESPONSE);
+        aiResponse.setContent(aiResponseText);
+
+        return aiResponse;
     }
 }

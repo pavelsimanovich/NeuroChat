@@ -24,7 +24,7 @@ public class ChatRoomService {
     private final ChatWithHistoryService chatWithHistoryService;
 
     public ChatRoomDto createRoom(String userId, String title) {
-        ChatRoom room = new ChatRoom();
+        final ChatRoom room = new ChatRoom();
         room.setUserId(userId);
         room.setTitle(title);
         room.setActive(true);
@@ -33,7 +33,7 @@ public class ChatRoomService {
     }
 
     public List<ChatRoomDto> getUserRooms(String userId) {
-        List<ChatRoom> chatRooms = chatRoomRepository.findByUserId(userId);
+        final List<ChatRoom> chatRooms = chatRoomRepository.findByUserId(userId);
         return chatRooms.stream()
                 .map(chatRoomToDtoConverter::convert)
                 .toList();
@@ -51,7 +51,6 @@ public class ChatRoomService {
         chatWithHistoryService.deleteRoomHistory(roomId);
     }
 
-    @Transactional
     public void setInActiveRoom(String roomId) {
         chatRoomRepository.setInactiveRoom(roomId);
     }

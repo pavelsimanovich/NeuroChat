@@ -13,10 +13,10 @@ public final class Prompts {
             """;
 
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
-            "Answer strictly in Russian. Format your answer clearly with bullet points or sections if needed.
+            "Answer strictly in Russian.
              Do not include any characters outside of Cyrillic script or standard punctuation.
-             Avoid any Chinese, Japanese, or unknown characters.
-             Keep your response clean, professional, and well-structured.
+             Avoid any Chinese, Japanese, or unknown characters and check it in the end.
+             Keep your response clean and complete as possible, professional, and well-structured.
             """;
 
     public static final String PROMPT_CONVERSATION_HISTORY_INSTRUCTIONS = """        

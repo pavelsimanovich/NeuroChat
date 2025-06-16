@@ -76,7 +76,6 @@ async function loadRooms() {
     } catch (error) {
         console.error('Error loading rooms:', error);
         alert('Не удалось загрузить комнаты. Пожалуйста, обновите страницу.');
-        // Можно добавить повторную попытку через несколько секунд
     }
 }
 
@@ -162,7 +161,10 @@ async function loadRoomMessages(roomId) {
 
     } catch (error) {
         console.error('Error loading messages:', error);
-        elements.chatMessages.innerHTML = `
+        showNotification("Ошибка загрузки сообщений", error)
+        //todo
+        const errorDiv = document.getElementById("error");
+        errorDiv.innerHTML = `
             <div class="error-message">
                 Ошибка загрузки сообщений: ${error.message}
             </div>
@@ -551,7 +553,6 @@ function showNotification(message, type = 'info') {
     notification.textContent = message;
     document.body.appendChild(notification);
 
-    //todo отправить нотификацию после таймаута
     setTimeout(() => {
         notification.remove();
     }, 5000);
