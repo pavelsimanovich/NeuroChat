@@ -32,8 +32,7 @@ function init() {
     localStorage.setItem('userId', state.userId);
     loadRooms();
     setupEventListeners();
-
-    switchToLastRoom();
+    updateDeleteButtonVisibility()
 }
 
 function switchToLastRoom() {
@@ -73,15 +72,10 @@ async function loadRooms() {
         renderRoomsList();
 
         // Восстанавливаем последнюю комнату если есть
-        const lastRoomId = localStorage.getItem('lastRoomId');
-        if (lastRoomId) {
-            const lastRoom = state.rooms.find(r => r.id === lastRoomId);
-            if (lastRoom) await switchRoom(lastRoom);
-        }
+        switchToLastRoom()
     } catch (error) {
         console.error('Error loading rooms:', error);
         alert('Не удалось загрузить комнаты. Пожалуйста, обновите страницу.');
-        // Можно добавить повторную попытку через несколько секунд
     }
 }
 
@@ -89,7 +83,11 @@ async function loadRooms() {
 function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
-    state.rooms.forEach(room => {
+    const sortedRooms = [...state.rooms].sort((a, b) =>
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    sortedRooms.forEach(room => {
         const roomElement = document.createElement('div');
         roomElement.className = `room-item ${state.currentRoom?.id === room.id ? 'active' : ''}`;
         roomElement.textContent = room.title;
@@ -123,10 +121,19 @@ async function switchRoom(room) {
     if (!room.active) {
         elements.messageInput.disabled = true;
         elements.sendMessageBtn.disabled = true;
-        //todo add message
+
+        elements.messageInput.classList.add("grey-color");
+        this.limitMessages = document.getElementById('limitMessages');
+        this.limitMessages.innerHTML = `
+              <div class="limit-messages">
+                Превышен лимит сообщений в комнате
+              </div>
+            `;
     } else {
         elements.messageInput.disabled = false;
         elements.sendMessageBtn.disabled = false;
+        elements.messageInput.classList.remove("grey-color");
+        this.limitMessages.innerHTML = '';
     }
 
     // Прокручиваем вниз к последним сообщениям
@@ -149,15 +156,15 @@ async function loadRoomMessages(roomId) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const messages = await response.json();
-        console.log('Received messages:', messages); // Лог полученных сообщений
-
-        state.messages = messages;
+        state.messages = await response.json();
         renderMessages();
 
     } catch (error) {
         console.error('Error loading messages:', error);
-        elements.chatMessages.innerHTML = `
+        showNotification("Ошибка загрузки сообщений", error)
+        //todo
+        const errorDiv = document.getElementById("error");
+        errorDiv.innerHTML = `
             <div class="error-message">
                 Ошибка загрузки сообщений: ${error.message}
             </div>
@@ -191,10 +198,11 @@ function renderMessages() {
         if (message.error) {
             messageElement.classList.add('message-error');
         }
+        // <div className="message-content">${DOMPurify.sanitize(marked.parse(message.content))}</div>
 
         messageElement.innerHTML = `
             <div class="message-sender">${message.userId === config.userId ? 'Вы' : 'AI'}</div>
-            <div class="message-content">${message.content}</div>
+            <div class="message-content">${(marked.parse(message.content))}</div>
             <div class="message-meta">
                 <span class="message-time">${formatTime(message.timestamp)}</span>
                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
@@ -204,11 +212,42 @@ function renderMessages() {
         elements.chatMessages.appendChild(messageElement);
     });
 
+    Prism.highlightAll();
+
+    document.querySelectorAll('.message-content pre').forEach(block => {
+        // Проверяем, нет ли уже кнопки
+        if (!block.querySelector('.copy-code-btn')) {
+            const button = document.createElement('button');
+            button.className = 'copy-code-btn';
+            button.textContent = 'Копировать';
+
+            button.addEventListener('click', () => {
+                const code = block.querySelector('code');
+                const text = code ? code.textContent : '';
+
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Скопировано!';
+                    button.classList.add('copied');
+
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('copied');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Ошибка копирования:', err);
+                });
+            });
+
+            block.appendChild(button);
+        }
+    });
+
     scrollToBottom();
 }
 
 function formatTime(timestamp) {
-    return new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    return new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
 }
 
 function scrollToBottom() {
@@ -233,9 +272,8 @@ function connectToRoom(roomId) {
                 if (messageData.errorType === 'LIMIT_EXCEEDED') {
                     elements.messageInput.disabled = true;
                     elements.sendMessageBtn.disabled = true;
-                    //todo: добавить сообщение внизу чата об ошибке. удалить последнее сообщение
+                    elements.messageInput.classList.add("grey-color");
                 }
-                return;
             }
 
             // Удаляем временное сообщение если есть
@@ -267,7 +305,7 @@ async function createRoom(title) {
         switchRoom(newRoom);
     } catch (error) {
         console.error('Error creating room:', error);
-        alert('Не удалось создать комнату');
+        showNotification('Не удалось создать комнату', 'error');
     }
 }
 
@@ -321,11 +359,6 @@ function setupEventListeners() {
     // Отправка сообщения по кнопке
     elements.sendMessageBtn.addEventListener('click', sendMessage);
 
-    // Отправка сообщения по Enter
-    elements.messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
-
     // Создание комнаты
     elements.createRoomBtn.addEventListener('click', () => {
         elements.roomTitleInput.value = '';
@@ -337,6 +370,31 @@ function setupEventListeners() {
         if (title) {
             createRoom(title);
             elements.createRoomModal.hide();
+        }
+    });
+
+   // Автоподстройка высоты
+    function autoResize() {
+        elements.messageInput.style.height = 'auto';
+        elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 100) + 'px';
+    }
+    elements.messageInput.addEventListener('input', autoResize);
+    elements.messageInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            if (e.shiftKey) {
+                // Shift + Enter — вставляем перенос строки
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.setRangeText('\n', start, end, 'end');
+                e.preventDefault(); // предотвращаем стандартное поведение
+                autoResize();
+            } else {
+                // Просто Enter — отправляем сообщение
+                e.preventDefault(); // отключаем стандартный Enter (перенос строки)
+                if (!elements.sendMessageBtn.disabled) {
+                    sendMessage();
+                }
+            }
         }
     });
 }
@@ -474,8 +532,6 @@ async function handleDeleteRoom() {
     }
 }
 
-
-
 // Обновление видимости кнопки
 function updateDeleteButtonVisibility() {
     const deleteBtn = document.getElementById('deleteRoomBtn');
@@ -505,6 +561,18 @@ function showNotification(message, type = 'info') {
 // Инициализация при полной загрузке DOM
 document.addEventListener('DOMContentLoaded', ()=> {
     init()
-    updateDeleteButtonVisibility()
 } );
+
+marked.setOptions({
+    // Обработка кодовых блоков с Prism.js
+    highlight: function(code, lang) {
+        if (lang && Prism.languages[lang]) {
+            return Prism.highlight(code, Prism.languages[lang], lang);
+        } else {
+            return Prism.highlight(code, Prism.languages.markup, 'markup');
+        }
+    },
+    breaks: true,
+    gfm: true
+});
 

@@ -82,13 +82,21 @@ body {
     border-top: 1px solid #dee2e6;
     display: flex;
     gap: 10px;
+    align-items: start; /* Чтобы кнопка выравнивалась сверху */
 }
 
-.message-input input {
+#messageInput {
     flex: 1;
+    resize: none; /* Запрет изменения размеров вручную */
     padding: 10px 15px;
-    border-radius: 20px;
+    font-size: 14px;
     border: 1px solid #dee2e6;
+    border-radius: 20px;
+    min-height: 30px;
+    max-height: 100px;
+    overflow-y: auto;
+    outline: none;
+    box-sizing: border-box;
 }
 
 .message-input button {
@@ -123,7 +131,7 @@ body {
 }
 
 .message-content {
-    white-space: pre-wrap; /* Сохраняет переносы строк */
+    /*white-space: pre-wrap; !* Сохраняет переносы строк *!*/
     word-break: break-word; /* Перенос длинных слов */
     line-height: 1.5;
 }
@@ -142,11 +150,6 @@ body {
 
 .message-content li {
     margin-bottom: 3px;
-}
-
-/* Стили для выделенного текста */
-.message-content strong {
-    font-weight: bold;
 }
 
 .message-content em {
@@ -303,4 +306,49 @@ body {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+.limit-messages {
+    margin-bottom: 15px;
+    max-width: 68%;
+    padding: 10px 15px;
+    margin-left: 15px;
+    word-wrap: break-word;
+    background: coral;
+    margin-right: auto;
+    border-radius: 15px;
+    line-height: 1.5;
+}
+
+.grey-color {
+    background-color: lightgray;
+}
+
+.message-content pre {
+    position: relative;
+    overflow: auto;
+    padding-right: 100px;
+}
+
+.copy-code-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #555;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.copy-code-btn:hover {
+    background-color: #777;
+}
+
+.copy-code-btn.copied {
+    background-color: #28a745;
 }

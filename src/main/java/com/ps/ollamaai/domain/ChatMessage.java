@@ -1,6 +1,5 @@
 package com.ps.ollamaai.domain;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,14 +13,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@ToString
 @Entity
 @Table(name = "chat_messages")
 public class ChatMessage implements Serializable {
@@ -36,7 +33,6 @@ public class ChatMessage implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
-    @JsonBackReference
     private ChatRoom room;
 
     @Column(name = "user_id", nullable = false)
@@ -52,7 +48,7 @@ public class ChatMessage implements Serializable {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    @Column(name = "message_order", nullable = false)
+    @Column(name = "message_order", nullable = false, updatable = false)
     private Long order =  System.currentTimeMillis(); // Для сохранения порядка сообщений
 
 }

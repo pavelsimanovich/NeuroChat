@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,23 +28,25 @@ import static com.ps.ollamaai.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 public class ChatWithHistoryService {
 
     @Value("${app.chat-limit}")
-    private final int MAX_HISTORY_CHAT_LENGTH = 100;
+    private int maxHistoryChatLength;
 
     private final OllamaChatModel ollamaChatModel;
     private final HistoryEntryService historyEntryService;
 
-    private final Map<String, List<HistoryEntry>> conversationalHistoryStorage = new HashMap<>();
+    private final Map<String, List<HistoryEntry>> conversationalHistory = new LinkedHashMap<>();
 
     public String call(String userMessage, String roomId) {
 
-        if (Objects.isNull(conversationalHistoryStorage.get(roomId))) {
+        if (Objects.isNull(conversationalHistory.get(roomId))) {
             List<HistoryEntry> roomMessages = historyEntryService.getRoomHistory(roomId);
-            conversationalHistoryStorage.put(roomId, roomMessages);
+            if (!roomMessages.isEmpty()) {
+                conversationalHistory.put(roomId, roomMessages);
+            }
         }
 
-        var currentHistory = conversationalHistoryStorage.computeIfAbsent(roomId, k -> new ArrayList<>());
-        if (currentHistory.size() >= MAX_HISTORY_CHAT_LENGTH + 1) {
-            conversationalHistoryStorage.remove(roomId);
+        var currentHistory = conversationalHistory.computeIfAbsent(roomId, k -> new ArrayList<>());
+        if (currentHistory.size() >= maxHistoryChatLength + 1) {
+            conversationalHistory.remove(roomId);
             throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
         }
 
@@ -60,6 +62,10 @@ public class ChatWithHistoryService {
         currentHistory.add(new HistoryEntry(userMessage, response));
 
         return response;
+    }
+
+    public void deleteRoomHistory(String roomId) {
+        conversationalHistory.remove(roomId);
     }
 
 }

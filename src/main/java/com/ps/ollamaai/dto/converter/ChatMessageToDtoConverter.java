@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 import static com.ps.ollamaai.utils.MessageConverter.formatMessageContent;
 
 @Component
-public class ChatMessageToDto {
+public class ChatMessageToDtoConverter {
 
-    public ChatMessageDto convertToDto(ChatMessage message) {
+    public ChatMessageDto convertToDto(final ChatMessage message) {
         final ChatMessageDto dto = new ChatMessageDto();
         dto.setId(message.getId());
         dto.setRoomId(message.getRoom().getId());

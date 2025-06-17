@@ -19,7 +19,7 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/", "/index", "/registration", "/saveUser").permitAll()
+                        .requestMatchers("/", "/index", "/registration", "/saveUser", "/api/direct/chat").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -29,7 +29,10 @@ public class WebSecurityConfig {
                         .defaultSuccessUrl("/home", true)
                         .permitAll()
                 )
-                .logout(LogoutConfigurer::permitAll);
+                .logout(LogoutConfigurer::permitAll)
+                .sessionManagement(
+                        session -> session.invalidSessionUrl("/invalidSession")
+        );
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }

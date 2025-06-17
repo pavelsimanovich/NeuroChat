@@ -1,8 +1,7 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.dto.converter.ChatMessageToDto;
-import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.User;
+import com.ps.ollamaai.dto.ChatMessageDto;
 import com.ps.ollamaai.dto.ChatMessageErrorDto;
 import com.ps.ollamaai.dto.ChatMessageRequest;
 import com.ps.ollamaai.dto.enums.ErrorType;
@@ -25,12 +24,11 @@ import static com.ps.ollamaai.constants.Messages.LIMIT_EXCEEDED_MESSAGE;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
-public class ChatController {
+public class ChatWSController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageService chatMessageService;
     private final UserService userService;
-    private final ChatMessageToDto chatMessageToDto;
     private final ChatRoomService chatRoomService;
 
     @MessageMapping("/chat/{roomId}/send")
@@ -39,34 +37,24 @@ public class ChatController {
             @Payload ChatMessageRequest request,
             Principal principal) {
 
+        final String topicRoom = "/topic/room/";
         try {
             final User user = userService.findByEmail(principal.getName());
-            final ChatMessage response = chatMessageService.saveUserMessageWithAiResponse(
+            final ChatMessageDto response = chatMessageService.saveUserMessageWithAiResponse(
                     roomId,
                     user.getId(),
                     request.getContent()
             );
-
-            messagingTemplate.convertAndSend(
-                    "/topic/room/" + roomId,
-                    chatMessageToDto.convertToDto(response)
-            );
-
-//            if (savedMessage.getType() == ChatMessage.MessageType.AI_RESPONSE) {
-//                messagingTemplate.convertAndSend(
-//                        "/topic/room/" + roomId,
-//                        chatMessageToDto.convertToDto(response)
-//                );
-//            }
+            messagingTemplate.convertAndSend(topicRoom + roomId, response);
         } catch (LimitExceededException ex) {
             log.error(LIMIT_EXCEEDED_MESSAGE, ex);
             var errorDto = new ChatMessageErrorDto(ex.getMessage(), ErrorType.LIMIT_EXCEEDED);
             chatRoomService.setInActiveRoom(roomId);
-            messagingTemplate.convertAndSend("/topic/room/" + roomId, errorDto);
+            messagingTemplate.convertAndSend(topicRoom + roomId, errorDto);
         } catch (Exception ex) {
             log.error("Ошибка при обработке сообщения", ex);
             var errorDto = new ChatMessageErrorDto("Произошла внутренняя ошибка", ErrorType.SERVER_ERROR);
-            messagingTemplate.convertAndSend("/topic/room/" + roomId, errorDto);
+            messagingTemplate.convertAndSend(topicRoom + roomId, errorDto);
         }
 
     }
