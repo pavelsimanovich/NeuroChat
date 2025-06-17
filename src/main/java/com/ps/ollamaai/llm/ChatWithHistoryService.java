@@ -55,7 +55,7 @@ public class ChatWithHistoryService {
 
         var contextSystemMessage = new SystemMessage(historyPrompt.toString());
         var generalInstructionsSystemMessage = new SystemMessage(PROMPT_GENERAL_INSTRUCTIONS);
-        
+
         var currentPromptMessage = new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(userMessage));
         var prompt = new Prompt(List.of(generalInstructionsSystemMessage, contextSystemMessage, currentPromptMessage));
 
