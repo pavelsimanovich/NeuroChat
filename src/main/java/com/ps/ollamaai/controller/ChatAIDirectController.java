@@ -15,7 +15,7 @@ public class ChatAIDirectController {
     private final OllamaService aiService;
 
     @GetMapping("/chat")
-    public String ask(@RequestParam String message) {
+    public String ask(final @RequestParam String message) {
         return aiService.callOllamaChat(message);
     }
 }

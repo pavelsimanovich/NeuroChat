@@ -11,7 +11,7 @@ public class OllamaService {
 
     private final OllamaChatModel ollamaChatModel;
 
-    public String callOllamaChat(String message) {
+    public String callOllamaChat(final String message) {
         return ollamaChatModel.call(message);
     }
 }
