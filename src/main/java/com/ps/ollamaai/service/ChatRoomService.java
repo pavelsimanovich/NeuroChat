@@ -23,7 +23,7 @@ public class ChatRoomService {
     private final ChatRoomToDtoConverter chatRoomToDtoConverter;
     private final ChatWithHistoryService chatWithHistoryService;
 
-    public ChatRoomDto createRoom(String userId, String title) {
+    public ChatRoomDto createRoom(final String userId, final String title) {
         final ChatRoom room = new ChatRoom();
         room.setUserId(userId);
         room.setTitle(title);
@@ -32,7 +32,7 @@ public class ChatRoomService {
         return chatRoomToDtoConverter.convert(chatRoom);
     }
 
-    public List<ChatRoomDto> getUserRooms(String userId) {
+    public List<ChatRoomDto> getUserRooms(final String userId) {
         final List<ChatRoom> chatRooms = chatRoomRepository.findByUserId(userId);
         return chatRooms.stream()
                 .map(chatRoomToDtoConverter::convert)
@@ -40,7 +40,7 @@ public class ChatRoomService {
     }
 
     @Transactional
-    public void deleteRoom(String roomId, String userId) {
+    public void deleteRoom(final String roomId, final String userId) {
         final ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         if (!room.getUserId().equals(userId)) {

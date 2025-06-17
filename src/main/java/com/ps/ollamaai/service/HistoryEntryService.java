@@ -14,7 +14,7 @@ public class HistoryEntryService {
 
     private final ChatMessageRepository messageRepository;
 
-    public List<HistoryEntry> getRoomHistory(String roomId) {
+    public List<HistoryEntry> getRoomHistory(final String roomId) {
         return messageRepository.findHistoryByRoomId(roomId);
     }
 }

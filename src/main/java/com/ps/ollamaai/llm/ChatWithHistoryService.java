@@ -46,7 +46,7 @@ public class ChatWithHistoryService {
 
         var currentHistory = conversationalHistory.computeIfAbsent(roomId, k -> new ArrayList<>());
         if (currentHistory.size() >= maxHistoryChatLength + 1) {
-            conversationalHistory.remove(roomId);
+            deleteRoomHistory(roomId);
             throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
         }
 
@@ -55,6 +55,7 @@ public class ChatWithHistoryService {
 
         var contextSystemMessage = new SystemMessage(historyPrompt.toString());
         var generalInstructionsSystemMessage = new SystemMessage(PROMPT_GENERAL_INSTRUCTIONS);
+
         var currentPromptMessage = new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(userMessage));
         var prompt = new Prompt(List.of(generalInstructionsSystemMessage, contextSystemMessage, currentPromptMessage));
 

@@ -25,25 +25,26 @@ public class ChatApiController {
     private final ChatRoomService chatRoomService;
 
     @GetMapping("/rooms/create")
-    public ResponseEntity<ChatRoomDto> createRoom(@RequestParam String userId, @RequestParam String title) {
+    public ResponseEntity<ChatRoomDto> createRoom(final @RequestParam String userId, final @RequestParam String title) {
         final ChatRoomDto room = chatRoomService.createRoom(userId, title);
         return ResponseEntity.ok(room);
     }
 
     @GetMapping("/rooms")
-    public ResponseEntity<List<ChatRoomDto>> getUserRooms(@RequestParam String userId) {
+    public ResponseEntity<List<ChatRoomDto>> getUserRooms(final @RequestParam String userId) {
         final List<ChatRoomDto> rooms = chatRoomService.getUserRooms(userId);
         return ResponseEntity.ok(rooms);
     }
 
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<List<ChatMessageDto>> getRoomMessages(@PathVariable String roomId) {
+    public ResponseEntity<List<ChatMessageDto>> getRoomMessages(final @PathVariable String roomId) {
         final List<ChatMessageDto> messages = chatMessageService.getRoomMessages(roomId);
         return ResponseEntity.ok(messages);
     }
 
     @DeleteMapping("/rooms/{roomId}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable String roomId, @RequestHeader("X-User-ID") String userId) {
+    public ResponseEntity<Void> deleteRoom(final @PathVariable String roomId,
+                                           final @RequestHeader("X-User-ID") String userId) {
         chatRoomService.deleteRoom(roomId, userId);
         return ResponseEntity.noContent().build();
     }

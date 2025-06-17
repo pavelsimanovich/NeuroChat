@@ -28,8 +28,8 @@ public class ChatMessageService {
     private final ChatWithHistoryService ollamaService;
     private final ChatMessageToDtoConverter chatMessageToDtoConverter;
 
-    public List<ChatMessageDto> getRoomMessages(String roomId) {
-        List<ChatMessage> chatMessages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+    public List<ChatMessageDto> getRoomMessages(final String roomId) {
+        final List<ChatMessage> chatMessages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
         return chatMessages.stream()
                 .sorted(Comparator.comparing(ChatMessage::getOrder))
                 .map(chatMessageToDtoConverter::convertToDto)
@@ -37,24 +37,24 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public ChatMessageDto saveUserMessageWithAiResponse(String roomId, String userId, String content) {
-        ChatRoom room = roomRepository.findById(roomId)
+    public ChatMessageDto saveUserMessageWithAiResponse(final String roomId, final String userId, final String content) {
+        final ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
 
         // Получаем последний порядковый номер для этой комнаты
-        Long lastOrder = messageRepository.findLastOrderByRoomId(roomId).orElse(0L);
+        final Long lastOrder = messageRepository.findLastOrderByRoomId(roomId).orElse(0L);
 
-        ChatMessage message = new ChatMessage();
+        final ChatMessage message = new ChatMessage();
         message.setRoom(room);
         message.setUserId(userId);
         message.setType(ChatMessage.MessageType.USER_MESSAGE);
         message.setContent(content);
         message.setOrder(lastOrder + 1); // Увеличиваем порядок
 
-        ChatMessage userMessage = messageRepository.save(message);
+        final ChatMessage userMessage = messageRepository.save(message);
         log.info("Start processing AI request {}", LocalDateTime.now());
 
-        ChatMessage aiResponse = generateAiResponse(content, room);
+        final ChatMessage aiResponse = generateAiResponse(content, room);
         log.info("End processing AI request {}", LocalDateTime.now());
         aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
         messageRepository.save(aiResponse);
@@ -62,10 +62,10 @@ public class ChatMessageService {
         return chatMessageToDtoConverter.convertToDto(aiResponse);
     }
 
-    private ChatMessage generateAiResponse(String userMessage, ChatRoom room) {
+    private ChatMessage generateAiResponse(final String userMessage, final ChatRoom room) {
         final String aiResponseText = ollamaService.call(userMessage, room.getId());
 
-        ChatMessage aiResponse = new ChatMessage();
+        final ChatMessage aiResponse = new ChatMessage();
         aiResponse.setRoom(room);
         aiResponse.setUserId("ai-assistant");
         aiResponse.setType(ChatMessage.MessageType.AI_RESPONSE);
