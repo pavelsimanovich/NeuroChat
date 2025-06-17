@@ -152,11 +152,6 @@ body {
     margin-bottom: 3px;
 }
 
-/* Стили для выделенного текста */
-.message-content strong {
-    font-weight: bold;
-}
-
 .message-content em {
     font-style: italic;
 }

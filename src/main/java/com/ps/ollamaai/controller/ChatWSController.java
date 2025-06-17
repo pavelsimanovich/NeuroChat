@@ -37,6 +37,7 @@ public class ChatWSController {
             @Payload ChatMessageRequest request,
             Principal principal) {
 
+        final String topicRoom = "/topic/room/";
         try {
             final User user = userService.findByEmail(principal.getName());
             final ChatMessageDto response = chatMessageService.saveUserMessageWithAiResponse(
@@ -44,20 +45,16 @@ public class ChatWSController {
                     user.getId(),
                     request.getContent()
             );
-
-            messagingTemplate.convertAndSend(
-                    "/topic/room/" + roomId,
-                    response
-            );
+            messagingTemplate.convertAndSend(topicRoom + roomId, response);
         } catch (LimitExceededException ex) {
             log.error(LIMIT_EXCEEDED_MESSAGE, ex);
             var errorDto = new ChatMessageErrorDto(ex.getMessage(), ErrorType.LIMIT_EXCEEDED);
             chatRoomService.setInActiveRoom(roomId);
-            messagingTemplate.convertAndSend("/topic/room/" + roomId, errorDto);
+            messagingTemplate.convertAndSend(topicRoom + roomId, errorDto);
         } catch (Exception ex) {
             log.error("Ошибка при обработке сообщения", ex);
             var errorDto = new ChatMessageErrorDto("Произошла внутренняя ошибка", ErrorType.SERVER_ERROR);
-            messagingTemplate.convertAndSend("/topic/room/" + roomId, errorDto);
+            messagingTemplate.convertAndSend(topicRoom + roomId, errorDto);
         }
 
     }

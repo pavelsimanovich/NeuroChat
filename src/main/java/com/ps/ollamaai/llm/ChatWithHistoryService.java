@@ -33,20 +33,20 @@ public class ChatWithHistoryService {
     private final OllamaChatModel ollamaChatModel;
     private final HistoryEntryService historyEntryService;
 
-    private final Map<String, List<HistoryEntry>> conversationalHistoryStorage = new LinkedHashMap<>();
+    private final Map<String, List<HistoryEntry>> conversationalHistory = new LinkedHashMap<>();
 
     public String call(String userMessage, String roomId) {
 
-        if (Objects.isNull(conversationalHistoryStorage.get(roomId))) {
+        if (Objects.isNull(conversationalHistory.get(roomId))) {
             List<HistoryEntry> roomMessages = historyEntryService.getRoomHistory(roomId);
             if (!roomMessages.isEmpty()) {
-                conversationalHistoryStorage.put(roomId, roomMessages);
+                conversationalHistory.put(roomId, roomMessages);
             }
         }
 
-        var currentHistory = conversationalHistoryStorage.computeIfAbsent(roomId, k -> new ArrayList<>());
+        var currentHistory = conversationalHistory.computeIfAbsent(roomId, k -> new ArrayList<>());
         if (currentHistory.size() >= maxHistoryChatLength + 1) {
-            conversationalHistoryStorage.remove(roomId);
+            conversationalHistory.remove(roomId);
             throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
         }
 
@@ -65,7 +65,7 @@ public class ChatWithHistoryService {
     }
 
     public void deleteRoomHistory(String roomId) {
-        conversationalHistoryStorage.remove(roomId);
+        conversationalHistory.remove(roomId);
     }
 
 }

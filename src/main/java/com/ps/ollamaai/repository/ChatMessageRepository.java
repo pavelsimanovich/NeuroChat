@@ -36,7 +36,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, String
             q.type = 'USER_MESSAGE' AND
             a.content is not null AND        
             q.room.id = :roomId          
-        ORDER BY q.timestamp DESC
+        ORDER BY q.timestamp ASC 
         """)
     List<HistoryEntry> findHistoryByRoomId(@Param("roomId") String roomId);
 

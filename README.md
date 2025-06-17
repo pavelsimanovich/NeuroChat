@@ -43,4 +43,4 @@ All rights reserved by :
 Pavel Simanovich 
 paul.simanovich@gmail.com
 
-If you wish to use this project for commercial purposes, make significant modifications, or become a regular contributor — please contact us directly to discuss terms and establish an agreement.
+If you wish to use this project for commercial purposes or use any parts from him, make significant modifications, or become a regular contributor — please contact us directly to discuss terms and establish an agreement.
