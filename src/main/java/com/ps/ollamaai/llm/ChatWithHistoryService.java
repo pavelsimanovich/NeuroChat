@@ -44,22 +44,22 @@ public class ChatWithHistoryService {
             }
         }
 
-        var currentHistory = conversationalHistory.computeIfAbsent(roomId, k -> new ArrayList<>());
+        List<HistoryEntry> currentHistory = conversationalHistory.computeIfAbsent(roomId, k -> new ArrayList<>());
         if (currentHistory.size() >= maxHistoryChatLength + 1) {
             deleteRoomHistory(roomId);
             throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
         }
 
-        var historyPrompt = new StringBuilder(PROMPT_CONVERSATION_HISTORY_INSTRUCTIONS);
+        StringBuilder historyPrompt = new StringBuilder(PROMPT_CONVERSATION_HISTORY_INSTRUCTIONS);
         currentHistory.forEach(entry -> historyPrompt.append(entry.toString()));
 
-        var contextSystemMessage = new SystemMessage(historyPrompt.toString());
-        var generalInstructionsSystemMessage = new SystemMessage(PROMPT_GENERAL_INSTRUCTIONS);
+        SystemMessage contextSystemMessage = new SystemMessage(historyPrompt.toString());
+        SystemMessage generalInstructionsSystemMessage = new SystemMessage(PROMPT_GENERAL_INSTRUCTIONS);
 
-        var currentPromptMessage = new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(userMessage));
-        var prompt = new Prompt(List.of(generalInstructionsSystemMessage, contextSystemMessage, currentPromptMessage));
+        UserMessage currentPromptMessage = new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(userMessage));
+        Prompt prompt = new Prompt(List.of(generalInstructionsSystemMessage, contextSystemMessage, currentPromptMessage));
 
-        var response = ollamaChatModel.call(prompt).getResult().getOutput().getText();
+        String response = ollamaChatModel.call(prompt).getResult().getOutput().getText();
         currentHistory.add(new HistoryEntry(userMessage, response));
 
         return response;
