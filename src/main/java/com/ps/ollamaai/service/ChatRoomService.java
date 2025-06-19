@@ -28,7 +28,7 @@ public class ChatRoomService {
         room.setUserId(userId);
         room.setTitle(title);
         room.setActive(true);
-        ChatRoom chatRoom = chatRoomRepository.save(room);
+        final ChatRoom chatRoom = chatRoomRepository.save(room);
         return chatRoomToDtoConverter.convert(chatRoom);
     }
 

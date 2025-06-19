@@ -20,6 +20,7 @@ import org.springframework.stereotype.Controller;
 import java.security.Principal;
 
 import static com.ps.ollamaai.constants.Messages.LIMIT_EXCEEDED_MESSAGE;
+import static com.ps.ollamaai.constants.Messages.SYSTEM_ERROR;
 
 @Slf4j
 @Controller
@@ -31,13 +32,14 @@ public class ChatWSController {
     private final UserService userService;
     private final ChatRoomService chatRoomService;
 
+    private static final String TOPIC_ROOM = "/topic/room/";
+
     @MessageMapping("/chat/{roomId}/send")
     public void sendMessage(
             @DestinationVariable String roomId,
             @Payload ChatMessageRequest request,
             Principal principal) {
 
-        final String topicRoom = "/topic/room/";
         try {
             final User user = userService.findByEmail(principal.getName());
             final ChatMessageDto response = chatMessageService.saveUserMessageWithAiResponse(
@@ -45,17 +47,19 @@ public class ChatWSController {
                     user.getId(),
                     request.getContent()
             );
-            messagingTemplate.convertAndSend(topicRoom + roomId, response);
+            messagingTemplate.convertAndSend(TOPIC_ROOM + roomId, response);
         } catch (LimitExceededException ex) {
             log.error(LIMIT_EXCEEDED_MESSAGE, ex);
-            var errorDto = new ChatMessageErrorDto(ex.getMessage(), ErrorType.LIMIT_EXCEEDED);
             chatRoomService.setInActiveRoom(roomId);
-            messagingTemplate.convertAndSend(topicRoom + roomId, errorDto);
+            sendErrorMessage(roomId, ex.getMessage(), ErrorType.LIMIT_EXCEEDED);
         } catch (Exception ex) {
-            log.error("Ошибка при обработке сообщения", ex);
-            var errorDto = new ChatMessageErrorDto("Произошла внутренняя ошибка", ErrorType.SERVER_ERROR);
-            messagingTemplate.convertAndSend(topicRoom + roomId, errorDto);
+            log.error(SYSTEM_ERROR, ex);
+            sendErrorMessage(roomId, SYSTEM_ERROR, ErrorType.SERVER_ERROR);
         }
+    }
 
+    private void sendErrorMessage(String roomId, String message, ErrorType errorType) {
+        var errorDto = new ChatMessageErrorDto(message, errorType);
+        messagingTemplate.convertAndSend(TOPIC_ROOM + roomId, errorDto);
     }
 }
