@@ -25,12 +25,9 @@ let state = {
     stompClient: null,
     rooms: [],
     messages: [], // Добавляем хранилище сообщений
-    userId: localStorage.getItem('userId') || document.getElementById('userId').value
 };
 
-// При инициализации сохраняем userId
 function init() {
-    localStorage.setItem('userId', state.userId);
     loadRooms();
     setupEventListeners();
     updateDeleteButtonVisibility()
@@ -485,7 +482,7 @@ async function handleDeleteRoom() {
                 method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-User-Id': state.userId
+                'X-User-Id': config.userId
             }
         });
 
