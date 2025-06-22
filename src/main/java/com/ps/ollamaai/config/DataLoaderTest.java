@@ -17,6 +17,8 @@ public class DataLoaderTest {
                 User user = new User();
                 user.setEmail("user@user.com");
                 user.setPassword(encoder.encode("password"));
+                user.setFirstName("User");
+                user.setLastName("User");
                 user.setEnabled(true);
                 repo.save(user);
             }

@@ -15,7 +15,8 @@ public class HistoryEntry {
                             `history_entry`:
                                 `prompt`: %s
                                 `response`: %s
-                            -----------------\n
+                                -----------------
+                                \n
                 """, prompt, response);
     }
 }

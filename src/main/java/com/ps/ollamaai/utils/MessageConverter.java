@@ -7,6 +7,7 @@ public final class MessageConverter {
     public static String formatMessageContent(String text) {
         if (text == null) return "";
 
+        //for deepseek or qwen
         text = text.replace("<think>", "<a style=\"color: darkgrey;\">Мышление...<br>");
         text = text.replace("</think>", "</a>");
 

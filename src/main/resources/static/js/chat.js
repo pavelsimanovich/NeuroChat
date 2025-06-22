@@ -1,6 +1,7 @@
 // Конфигурация
 const config = {
     userId: document.getElementById('userId').value,
+    userName: document.getElementById('userName').value,
     apiBaseUrl: 'http://localhost:8080/api/chat'
 };
 
@@ -24,12 +25,9 @@ let state = {
     stompClient: null,
     rooms: [],
     messages: [], // Добавляем хранилище сообщений
-    userId: localStorage.getItem('userId') || document.getElementById('userId').value
 };
 
-// При инициализации сохраняем userId
 function init() {
-    localStorage.setItem('userId', state.userId);
     loadRooms();
     setupEventListeners();
     updateDeleteButtonVisibility()
@@ -62,9 +60,9 @@ async function loadRooms() {
 
         const rooms = await response.json();
 
-        // Проверяем что получили массив
-        if (!Array.isArray(rooms)) {
-            throw new Error("Expected array of rooms");
+        if (rooms.length === 0) {
+            // todo прятать инпут
+            return;
         }
 
         // Сохраняем только если данные валидны
@@ -484,7 +482,7 @@ async function handleDeleteRoom() {
                 method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-User-Id': state.userId
+                'X-User-Id': config.userId
             }
         });
 
@@ -517,6 +515,7 @@ async function handleDeleteRoom() {
             await switchRoom(state.rooms[0]);
         } else {
             // Если комнат не осталось, обновляем интерфейс
+            //todo
             updateDeleteButtonVisibility();
         }
 
