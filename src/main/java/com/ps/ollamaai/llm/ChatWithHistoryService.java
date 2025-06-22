@@ -55,11 +55,12 @@ public class ChatWithHistoryService {
 
         final SystemMessage contextSystemMessage = new SystemMessage(historyPrompt.toString());
         final SystemMessage generalInstructionsSystemMessage = new SystemMessage(PROMPT_GENERAL_INSTRUCTIONS);
-
         final UserMessage currentPromptMessage = new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(userMessage));
+
         final Prompt prompt = new Prompt(List.of(generalInstructionsSystemMessage, contextSystemMessage, currentPromptMessage));
 
         final String response = ollamaChatModel.call(prompt).getResult().getOutput().getText();
+
         currentHistory.add(new HistoryEntry(userMessage, response));
 
         return response;

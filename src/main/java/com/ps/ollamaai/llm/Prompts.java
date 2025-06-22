@@ -14,9 +14,10 @@ public final class Prompts {
 
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
             "Answer strictly in Russian.
-             Avoid any Chinese, Japanese or unknown characters, void responses, and check it in the end of response.
-             Identify the area in which the question is asked in `user_main_prompt` as an expert in it, 
-             with a fully expanded answer with explanation.
+             Make a greeting only at the beginning, not in every answer.
+             Identify the subject area addressed in `user_main_prompt` and respond as an expert in that field,
+              providing a comprehensive answer with detailed explanations.
+             Use emoticons when you think they are appropriate for friendly communication.
              Keep your response friendly, professional and well-structured.
             """;
 

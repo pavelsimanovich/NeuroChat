@@ -8,6 +8,7 @@ spring:
         options:
           model: deepseek-r1:14b
           temperature: 1
+          num-ctx: 32768
   datasource:
     url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
     username: ${MYSQL_ROOT_USER:root}

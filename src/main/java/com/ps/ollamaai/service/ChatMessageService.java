@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -52,11 +51,9 @@ public class ChatMessageService {
         message.setOrder(lastOrder + 1); // Увеличиваем порядок
 
         final ChatMessage userMessage = messageRepository.save(message);
-        log.info("Start processing AI request {}", LocalDateTime.now());
-
         final ChatMessage aiResponse = generateAiResponse(content, room);
-        log.info("End processing AI request {}", LocalDateTime.now());
         aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
+
         messageRepository.save(aiResponse);
 
         return chatMessageToDtoConverter.convertToDto(aiResponse);

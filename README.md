@@ -8,10 +8,11 @@ Download
 Choose model
 2. https://ollama.com/search
 
-#### Pull model and run in console (currently using deepseek-r1:14b in all of the settings)
+#### Pull model and run in console (e.g. deepseek-r1:14b)
 1. ollama pull deepseek-r1:14b
 2. ollama run deepseek-r1:14b
 3. Change model if needed in [application.yaml](src/main/resources/application.yaml)
+4. Delete model ollama rm deepseek-r1:14b
 
 #### Also model can be available in the Docker (It is better not to use in Mac Os, because Docker did not supported  using GPU)
 * uncomment the configuration in the [docker-compose.yml](docker-compose.yml) file
@@ -23,7 +24,7 @@ Choose model
 
 BY DOWNLOADING, INSTALLING, OR OTHERWISE USING THIS PROJECT, YOU AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE AGREEMENT. IF YOU DO NOT AGREE WITH THESE TERMS, YOU ARE NOT PERMITTED TO USE, COPY, OR DISTRIBUTE THIS SOFTWARE IN ANY FORM.
 
-ALL RIGHTS TO THIS PROJECT ARE EXCLUSIVELY OWNED BY PAVEL SIMANOVICH (hereinafter referred to as the "Owner").
+ALL RIGHTS TO THIS PROJECT OWNED BY PAVEL SIMANOVICH (hereinafter referred to as the "Owner").
 
 ## License
 
