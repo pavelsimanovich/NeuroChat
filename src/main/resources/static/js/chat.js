@@ -1,6 +1,7 @@
 // Конфигурация
 const config = {
     userId: document.getElementById('userId').value,
+    userName: document.getElementById('userName').value,
     apiBaseUrl: 'http://localhost:8080/api/chat'
 };
 
@@ -62,9 +63,9 @@ async function loadRooms() {
 
         const rooms = await response.json();
 
-        // Проверяем что получили массив
-        if (!Array.isArray(rooms)) {
-            throw new Error("Expected array of rooms");
+        if (rooms.length === 0) {
+            // todo прятать инпут
+            return;
         }
 
         // Сохраняем только если данные валидны
@@ -517,6 +518,7 @@ async function handleDeleteRoom() {
             await switchRoom(state.rooms[0]);
         } else {
             // Если комнат не осталось, обновляем интерфейс
+            //todo
             updateDeleteButtonVisibility();
         }
 

@@ -14,7 +14,6 @@ public class HistoryEntry {
         return String.format("""
                             `history_entry`:
                                 `prompt`: %s
-                                
                                 `response`: %s
                                 -----------------
                                 \n

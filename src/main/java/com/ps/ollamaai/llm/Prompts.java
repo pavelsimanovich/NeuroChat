@@ -14,7 +14,7 @@ public final class Prompts {
 
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
             "Answer strictly in Russian.
-             Make a greeting only at the beginning, not in every answer.
+             Make a greeting if not yet.
              Identify the subject area addressed in `user_main_prompt` and respond as an expert in that field,
               providing a comprehensive answer with detailed explanations.
              Use emoticons when you think they are appropriate for friendly communication.

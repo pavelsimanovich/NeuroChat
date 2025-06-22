@@ -82,7 +82,7 @@ body {
     border-top: 1px solid #dee2e6;
     display: flex;
     gap: 10px;
-    align-items: start; /* Чтобы кнопка выравнивалась сверху */
+    align-items: center; /* Чтобы кнопка выравнивалась по центру */
 }
 
 #messageInput {
@@ -351,4 +351,12 @@ body {
 
 .copy-code-btn.copied {
     background-color: #28a745;
+}
+
+.logout {
+    padding: 15px 20px;
+    width: 23%;
+    border-top: 1px solid #dee2e6;
+    bottom: 0;
+    position: absolute;
 }
