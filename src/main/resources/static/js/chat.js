@@ -1,7 +1,5 @@
 // Конфигурация
 const config = {
-    userId: document.getElementById('userId').value,
-    userName: document.getElementById('userName').value,
     apiBaseUrl: 'http://localhost:8080/api/chat'
 };
 
@@ -16,7 +14,9 @@ const elements = {
     confirmCreateRoom: document.getElementById('confirmCreateRoom'),
     roomTitleInput: document.getElementById('roomTitleInput'),
     createRoomModal: new bootstrap.Modal('#createRoomModal'),
-    deleteRoomBtn: document.getElementById('deleteRoomBtn')
+    deleteRoomBtn: document.getElementById('deleteRoomBtn'),
+    userId: document.getElementById('userId').value,
+    userName: document.getElementById('userName').value,
 };
 
 // Инициализация приложения
@@ -45,7 +45,7 @@ function switchToLastRoom() {
 // Загрузка списка комнат
 async function loadRooms() {
     try {
-        const url = `${config.apiBaseUrl}/rooms?userId=${encodeURIComponent(config.userId)}`;
+        const url = `${config.apiBaseUrl}/rooms?userId=${encodeURIComponent(elements.userId)}`;
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -190,7 +190,7 @@ function renderMessages() {
 
     sortedMessages.forEach(message => {
         const messageElement = document.createElement('div');
-        messageElement.className = `message ${message.userId === config.userId ? 'user-message' : 'ai-message'}`;
+        messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
 
         // Добавляем класс для неотправленных сообщений
         if (message.error) {
@@ -199,7 +199,7 @@ function renderMessages() {
         // <div className="message-content">${DOMPurify.sanitize(marked.parse(message.content))}</div>
 
         messageElement.innerHTML = `
-            <div class="message-sender">${message.userId === config.userId ? 'Вы' : 'AI'}</div>
+            <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
             <div class="message-content">${(marked.parse(message.content))}</div>
             <div class="message-meta">
                 <span class="message-time">${formatTime(message.timestamp)}</span>
@@ -212,34 +212,34 @@ function renderMessages() {
 
     Prism.highlightAll();
 
-    document.querySelectorAll('.message-content pre').forEach(block => {
-        // Проверяем, нет ли уже кнопки
-        if (!block.querySelector('.copy-code-btn')) {
-            const button = document.createElement('button');
-            button.className = 'copy-code-btn';
-            button.textContent = 'Копировать';
-
-            button.addEventListener('click', () => {
-                const code = block.querySelector('code');
-                const text = code ? code.textContent : '';
-
-                navigator.clipboard.writeText(text).then(() => {
-                    const originalText = button.textContent;
-                    button.textContent = 'Скопировано!';
-                    button.classList.add('copied');
-
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                        button.classList.remove('copied');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Ошибка копирования:', err);
-                });
-            });
-
-            block.appendChild(button);
-        }
-    });
+    // document.querySelectorAll('.message-content pre').forEach(block => {
+    //     // Проверяем, нет ли уже кнопки
+    //     if (!block.querySelector('.copy-code-btn')) {
+    //         const button = document.createElement('button');
+    //         button.className = 'copy-code-btn';
+    //         button.textContent = 'Копировать';
+    //
+    //         button.addEventListener('click', () => {
+    //             const code = block.querySelector('code');
+    //             const text = code ? code.textContent : '';
+    //
+    //             navigator.clipboard.writeText(text).then(() => {
+    //                 const originalText = button.textContent;
+    //                 button.textContent = 'Скопировано!';
+    //                 button.classList.add('copied');
+    //
+    //                 setTimeout(() => {
+    //                     button.textContent = originalText;
+    //                     button.classList.remove('copied');
+    //                 }, 2000);
+    //             }).catch(err => {
+    //                 console.error('Ошибка копирования:', err);
+    //             });
+    //         });
+    //
+    //         block.appendChild(button);
+    //     }
+    // });
 
     scrollToBottom();
 }
@@ -291,7 +291,7 @@ function connectToRoom(roomId) {
 // Создание новой комнаты
 async function createRoom(title) {
     try {
-        const response = await fetch(`${config.apiBaseUrl}/rooms/create?userId=${config.userId}&title=${encodeURIComponent(title)}`, {
+        const response = await fetch(`${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent(title)}`, {
             method: 'GET'
         });
 
@@ -316,7 +316,7 @@ async function sendMessage() {
     const tempMessage = {
         id: 'temp-' + Date.now(),
         roomId: state.currentRoom.id,
-        userId: config.userId,
+        userId: elements.userId,
         type: 'USER_MESSAGE',
         content: messageContent,
         timestamp: new Date().toISOString()
@@ -335,7 +335,7 @@ async function sendMessage() {
             `/app/chat/${state.currentRoom.id}/send`,
             {},
             JSON.stringify({
-                userId: config.userId,
+                userId: elements.userId,
                 content: messageContent
             })
         );
@@ -482,7 +482,7 @@ async function handleDeleteRoom() {
                 method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-User-Id': config.userId
+                'X-User-Id': elements.userId
             }
         });
 

@@ -324,35 +324,6 @@ body {
     background-color: lightgray;
 }
 
-.message-content pre {
-    position: relative;
-    overflow: auto;
-    padding-right: 100px;
-}
-
-.copy-code-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    padding: 4px 10px;
-    font-size: 12px;
-    background-color: #555;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    z-index: 10;
-    transition: background-color 0.3s ease;
-}
-
-.copy-code-btn:hover {
-    background-color: #777;
-}
-
-.copy-code-btn.copied {
-    background-color: #28a745;
-}
-
 .logout {
     padding: 15px 20px;
     width: 23%;
@@ -360,3 +331,33 @@ body {
     bottom: 0;
     position: absolute;
 }
+
+
+/*.message-content pre {*/
+/*    position: relative;*/
+/*    overflow: auto;*/
+/*    padding-right: 100px;*/
+/*}*/
+
+/*.copy-code-btn {*/
+/*    position: absolute;*/
+/*    top: 8px;*/
+/*    right: 8px;*/
+/*    padding: 4px 10px;*/
+/*    font-size: 12px;*/
+/*    background-color: #555;*/
+/*    color: #fff;*/
+/*    border: none;*/
+/*    border-radius: 4px;*/
+/*    cursor: pointer;*/
+/*    z-index: 10;*/
+/*    transition: background-color 0.3s ease;*/
+/*}*/
+
+/*.copy-code-btn:hover {*/
+/*    background-color: #777;*/
+/*}*/
+
+/*.copy-code-btn.copied {*/
+/*    background-color: #28a745;*/
+/*}*/
