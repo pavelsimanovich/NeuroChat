@@ -114,9 +114,6 @@ async function switchRoom(room) {
         // Загружаем сообщения комнаты
         await loadRoomMessages(room.id);
 
-        // Подключаемся к WebSocket
-        connectToRoom(room.id);
-
         // Доступность поля ввода сообщений
         if (!room.active) {
             elements.messageInput.disabled = true;
@@ -203,7 +200,6 @@ function renderMessages() {
         if (message.error) {
             messageElement.classList.add('message-error');
         }
-        // <div className="message-content">${DOMPurify.sanitize(marked.parse(message.content))}</div>
 
         messageElement.innerHTML = `
             <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
@@ -218,36 +214,6 @@ function renderMessages() {
     });
 
     Prism.highlightAll();
-
-    // document.querySelectorAll('.message-content pre').forEach(block => {
-    //     // Проверяем, нет ли уже кнопки
-    //     if (!block.querySelector('.copy-code-btn')) {
-    //         const button = document.createElement('button');
-    //         button.className = 'copy-code-btn';
-    //         button.textContent = 'Копировать';
-    //
-    //         button.addEventListener('click', () => {
-    //             const code = block.querySelector('code');
-    //             const text = code ? code.textContent : '';
-    //
-    //             navigator.clipboard.writeText(text).then(() => {
-    //                 const originalText = button.textContent;
-    //                 button.textContent = 'Скопировано!';
-    //                 button.classList.add('copied');
-    //
-    //                 setTimeout(() => {
-    //                     button.textContent = originalText;
-    //                     button.classList.remove('copied');
-    //                 }, 2000);
-    //             }).catch(err => {
-    //                 console.error('Ошибка копирования:', err);
-    //             });
-    //         });
-    //
-    //         block.appendChild(button);
-    //     }
-    // });
-
     scrollToBottom();
 }
 
@@ -260,40 +226,40 @@ function scrollToBottom() {
 }
 
 // Подключение к комнате через WebSocket
-function connectToRoom(roomId) {
-    const socket = new SockJS('/ws-chat');
-    state.stompClient = Stomp.over(socket);
-
-    state.stompClient.connect({}, function (frame) {
-        console.log('Connected to room:', roomId);
-
-        state.stompClient.subscribe(`/topic/room/${roomId}`, function (message) {
-            typingIndicator.hide();
-            const messageData = JSON.parse(message.body);
-            console.log('Received message:', messageData);
-
-            if (messageData.error) {
-                showNotification(messageData.error, 'error');
-                if (messageData.errorType === 'LIMIT_EXCEEDED') {
-                    elements.messageInput.disabled = true;
-                    elements.sendMessageBtn.disabled = true;
-                    elements.messageInput.classList.add("grey-color");
-                }
-            }
-
-            // Удаляем временное сообщение если есть
-            if (messageData.id && messageData.id.startsWith('temp-')) {
-                state.messages = state.messages.filter(m => m.id !== messageData.id);
-            }
-
-            // Проверяем нет ли уже такого сообщения
-            if (!state.messages.some(m => m.id === messageData.id)) {
-                state.messages.push(messageData);
-                renderMessages();
-            }
-        });
-    });
-}
+// function connectToRoom(roomId) {
+//     const socket = new SockJS('/ws-chat');
+//     state.stompClient = Stomp.over(socket);
+//
+//     state.stompClient.connect({}, function (frame) {
+//         console.log('Connected to room:', roomId);
+//
+//         state.stompClient.subscribe(`/topic/room/${roomId}`, function (message) {
+//             typingIndicator.hide();
+//             const messageData = JSON.parse(message.body);
+//             console.log('Received message:', messageData);
+//
+//             if (messageData.error) {
+//                 showNotification(messageData.error, 'error');
+//                 if (messageData.errorType === 'LIMIT_EXCEEDED') {
+//                     elements.messageInput.disabled = true;
+//                     elements.sendMessageBtn.disabled = true;
+//                     elements.messageInput.classList.add("grey-color");
+//                 }
+//             }
+//
+//             // Удаляем временное сообщение если есть
+//             if (messageData.id && messageData.id.startsWith('temp-')) {
+//                 state.messages = state.messages.filter(m => m.id !== messageData.id);
+//             }
+//
+//             // Проверяем нет ли уже такого сообщения
+//             if (!state.messages.some(m => m.id === messageData.id)) {
+//                 state.messages.push(messageData);
+//                 renderMessages();
+//             }
+//         });
+//     });
+// }
 
 // Создание новой комнаты
 async function createRoom(title) {
@@ -334,18 +300,31 @@ async function sendMessage() {
     renderMessages();
     elements.messageInput.value = '';
 
-    typingIndicator.show();
+    //typingIndicator.show();
 
     try {
-        // Отправляем на сервер через WebSocket
-        state.stompClient.send(
-            `/app/chat/${state.currentRoom.id}/send`,
-            {},
-            JSON.stringify({
-                userId: elements.userId,
-                content: messageContent
-            })
-        );
+        const eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${state.currentRoom.id}&question=${encodeURIComponent(messageContent)}`);
+
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message ai-message';
+        messageElement.innerHTML = `<div id="cm" class="message-content"></div>`
+        elements.chatMessages.appendChild(messageElement);
+
+        let response = '';
+        eventSource.onmessage = (e) => {
+            response += JSON.parse(e.data).value;
+            // response = DOMPurify.sanitize(response);
+            document.getElementById('cm').innerHTML = marked.parse(response);
+
+            Prism.highlightAll();
+
+            scrollToBottom();
+        };
+
+        eventSource.onerror = (e) => {
+            eventSource.close();
+        };
+
         scrollToBottom();
     } catch (error) {
         console.error('Error sending message:', error);
@@ -566,6 +545,7 @@ function showNotification(message, type = 'info') {
 
 // Инициализация при полной загрузке DOM
 document.addEventListener('DOMContentLoaded', ()=> {
+    Prism.highlightAll();
     init()
 } );
 

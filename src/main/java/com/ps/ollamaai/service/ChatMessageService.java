@@ -36,7 +36,7 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public ChatMessageDto saveUserMessageWithAiResponse(final String roomId, final String userId, final String content) {
+    public ChatMessageDto saveUserMessageWithAiResponse(final String roomId, final String userId, final String userPrompt) {
         final ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
 
@@ -47,11 +47,11 @@ public class ChatMessageService {
         message.setRoom(room);
         message.setUserId(userId);
         message.setType(ChatMessage.MessageType.USER_MESSAGE);
-        message.setContent(content);
+        message.setContent(userPrompt);
         message.setOrder(lastOrder + 1); // Увеличиваем порядок
 
         final ChatMessage userMessage = messageRepository.save(message);
-        final ChatMessage aiResponse = generateAiResponse(content, room);
+        final ChatMessage aiResponse = generateAiResponse(userPrompt, room);
         aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
 
         messageRepository.save(aiResponse);

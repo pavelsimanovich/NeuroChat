@@ -27,3 +27,7 @@ logging:
 
 app:
   chat-limit: 100
+
+server:
+  http2:
+    enabled: true
