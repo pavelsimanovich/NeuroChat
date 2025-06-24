@@ -21,8 +21,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatRoomApiController {
 
-    private final ChatMessageService chatMessageService;
     private final ChatRoomService chatRoomService;
+    private final ChatMessageService chatMessageService;
 
     @GetMapping("/rooms/create")
     public ResponseEntity<ChatRoomDto> createRoom(final @RequestParam String userId, final @RequestParam String title) {

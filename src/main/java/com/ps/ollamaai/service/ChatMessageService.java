@@ -4,44 +4,57 @@ import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.ChatRoom;
 import com.ps.ollamaai.dto.ChatMessageDto;
 import com.ps.ollamaai.dto.converter.ChatMessageToDtoConverter;
-import com.ps.ollamaai.llm.ChatWithHistoryService;
 import com.ps.ollamaai.repository.ChatMessageRepository;
 import com.ps.ollamaai.repository.ChatRoomRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class ChatMessageService {
 
     private final ChatRoomRepository roomRepository;
-    private final ChatMessageRepository messageRepository;
-    private final ChatWithHistoryService ollamaService;
+    private final ChatMessageRepository chatMessageRepository;
     private final ChatMessageToDtoConverter chatMessageToDtoConverter;
+    private final ChatMessageRepository messageRepository;
 
-    public List<ChatMessageDto> getRoomMessages(final String roomId) {
-        final List<ChatMessage> chatMessages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
-        return chatMessages.stream()
-                .sorted(Comparator.comparing(ChatMessage::getOrder))
-                .map(chatMessageToDtoConverter::convertToDto)
-                .toList();
+    private final Map<String, StringBuilder> buffers = new ConcurrentHashMap<>();
+
+    public void saveChunk(String chatId, String userId, String chunk) {
+        buffers.computeIfAbsent(chatId, k -> new StringBuilder()).append(chunk);
     }
 
-    @Transactional
-    public ChatMessageDto saveUserMessageWithAiResponse(final String roomId, final String userId, final String userPrompt) {
+    //todo refacroring
+    public ChatMessageDto saveAiResponse(String roomId, String userId) {
+        String fullResponse = buffers.remove(roomId).toString();
         final ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
 
+        final Long lastOrder = chatMessageRepository.findLastOrderByRoomId(roomId).orElse(0L);
+
+        final ChatMessage aiResponse = new ChatMessage();
+        aiResponse.setRoom(room);
+        aiResponse.setUserId("ai-assistant");
+        aiResponse.setType(ChatMessage.MessageType.AI_RESPONSE);
+        aiResponse.setContent(fullResponse);
+        aiResponse.setOrder(lastOrder + 1); // Следующий порядковый номер
+
+        ChatMessage saiResponse = chatMessageRepository.save(aiResponse);
+        removeBuffer(roomId);
+        return chatMessageToDtoConverter.convertToDto(saiResponse);
+    }
+
+    public ChatMessage saveUserMessage(final String roomId, final String userId, final String userPrompt) {
+        final ChatRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         // Получаем последний порядковый номер для этой комнаты
-        final Long lastOrder = messageRepository.findLastOrderByRoomId(roomId).orElse(0L);
+        final Long lastOrder = chatMessageRepository.findLastOrderByRoomId(roomId).orElse(0L);
 
         final ChatMessage message = new ChatMessage();
         message.setRoom(room);
@@ -50,24 +63,18 @@ public class ChatMessageService {
         message.setContent(userPrompt);
         message.setOrder(lastOrder + 1); // Увеличиваем порядок
 
-        final ChatMessage userMessage = messageRepository.save(message);
-        final ChatMessage aiResponse = generateAiResponse(userPrompt, room);
-        aiResponse.setOrder(userMessage.getOrder() + 1); // Следующий порядковый номер
-
-        messageRepository.save(aiResponse);
-
-        return chatMessageToDtoConverter.convertToDto(aiResponse);
+        return chatMessageRepository.save(message);
     }
 
-    private ChatMessage generateAiResponse(final String userMessage, final ChatRoom room) {
-        final String aiResponseText = ollamaService.call(userMessage, room.getId());
+    public void removeBuffer(String chatId) {
+        buffers.remove(chatId);
+    }
 
-        final ChatMessage aiResponse = new ChatMessage();
-        aiResponse.setRoom(room);
-        aiResponse.setUserId("ai-assistant");
-        aiResponse.setType(ChatMessage.MessageType.AI_RESPONSE);
-        aiResponse.setContent(aiResponseText);
-
-        return aiResponse;
+    public List<ChatMessageDto> getRoomMessages(final String roomId) {
+        final List<ChatMessage> chatMessages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        return chatMessages.stream()
+                .sorted(Comparator.comparing(ChatMessage::getOrder))
+                .map(chatMessageToDtoConverter::convertToDto)
+                .toList();
     }
 }
