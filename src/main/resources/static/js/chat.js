@@ -104,40 +104,47 @@ async function switchRoom(room) {
 
     // Устанавливаем новую текущую комнату
     state.currentRoom = room;
-    renderRoomsList();
 
-    // Обновляем заголовок
-    elements.currentRoomTitle.textContent = room.title;
+    try {
+        renderRoomsList();
 
-    // Загружаем сообщения комнаты
-    await loadRoomMessages(room.id);
+        // Обновляем заголовок
+        elements.currentRoomTitle.textContent = room.title;
 
-    // Подключаемся к WebSocket
-    connectToRoom(room.id);
+        // Загружаем сообщения комнаты
+        await loadRoomMessages(room.id);
 
-    // Доступность поля ввода сообщений
-    if (!room.active) {
-        elements.messageInput.disabled = true;
-        elements.sendMessageBtn.disabled = true;
+        // Подключаемся к WebSocket
+        connectToRoom(room.id);
 
-        elements.messageInput.classList.add("grey-color");
-        this.limitMessages = document.getElementById('limitMessages');
-        this.limitMessages.innerHTML = `
+        // Доступность поля ввода сообщений
+        if (!room.active) {
+            elements.messageInput.disabled = true;
+            elements.sendMessageBtn.disabled = true;
+
+            elements.messageInput.classList.add("grey-color");
+            this.limitMessages = document.getElementById('limitMessages');
+            this.limitMessages.innerHTML = `
               <div class="limit-messages">
                 Превышен лимит сообщений в комнате
               </div>
             `;
-    } else {
-        elements.messageInput.disabled = false;
-        elements.sendMessageBtn.disabled = false;
-        elements.messageInput.classList.remove("grey-color");
-        this.limitMessages.innerHTML = '';
-    }
+        } else {
+            elements.messageInput.disabled = false;
+            elements.sendMessageBtn.disabled = false;
+            elements.messageInput.classList.remove("grey-color");
+            this.limitMessages.innerHTML = '';
+        }
 
-    // Прокручиваем вниз к последним сообщениям
-    scrollToBottom();
-    updateDeleteButtonVisibility();
+        // Прокручиваем вниз к последним сообщениям
+        scrollToBottom();
+        updateDeleteButtonVisibility();
+
+    } catch (error) {
+        showNotification("Ошибка загрузки", error)
+    }
 }
+
 
 // Загрузка сообщений комнаты
 async function loadRoomMessages(roomId) {

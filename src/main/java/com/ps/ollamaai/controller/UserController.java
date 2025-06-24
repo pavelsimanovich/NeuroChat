@@ -27,6 +27,6 @@ public class UserController {
     public String saveUser(@ModelAttribute User user, Model model) {
         userService.save(user);
         model.addAttribute("message", SUCCESS_REGISTRATION);
-        return "redirect:/login";
+        return "redirect:/index";
     }
 }
