@@ -3,10 +3,10 @@
 #### First steps:
 
 Download
-1. https://ollama.com/download
+https://ollama.com/download
 
 Choose model
-2. https://ollama.com/search
+ https://ollama.com/search
 
 #### Pull model and run in console (e.g. deepseek-r1:14b)
 1. ollama pull deepseek-r1:14b
