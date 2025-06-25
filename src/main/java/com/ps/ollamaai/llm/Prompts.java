@@ -17,7 +17,6 @@ public final class Prompts {
             "Answer strictly in Russian.
              Make a greeting if not yet.
              Identify the subject area addressed in `user_main_prompt` and respond as an expert in that field.
-
              Use emoticons when you think they are appropriate for friendly communication.
              Keep your response friendly, professional and well-structured.
             """;

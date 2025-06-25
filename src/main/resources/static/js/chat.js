@@ -225,42 +225,6 @@ function scrollToBottom() {
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 }
 
-// Подключение к комнате через WebSocket
-// function connectToRoom(roomId) {
-//     const socket = new SockJS('/ws-chat');
-//     state.stompClient = Stomp.over(socket);
-//
-//     state.stompClient.connect({}, function (frame) {
-//         console.log('Connected to room:', roomId);
-//
-//         state.stompClient.subscribe(`/topic/room/${roomId}`, function (message) {
-//             typingIndicator.hide();
-//             const messageData = JSON.parse(message.body);
-//             console.log('Received message:', messageData);
-//
-//             if (messageData.error) {
-//                 showNotification(messageData.error, 'error');
-//                 if (messageData.errorType === 'LIMIT_EXCEEDED') {
-//                     elements.messageInput.disabled = true;
-//                     elements.sendMessageBtn.disabled = true;
-//                     elements.messageInput.classList.add("grey-color");
-//                 }
-//             }
-//
-//             // Удаляем временное сообщение если есть
-//             if (messageData.id && messageData.id.startsWith('temp-')) {
-//                 state.messages = state.messages.filter(m => m.id !== messageData.id);
-//             }
-//
-//             // Проверяем нет ли уже такого сообщения
-//             if (!state.messages.some(m => m.id === messageData.id)) {
-//                 state.messages.push(messageData);
-//                 renderMessages();
-//             }
-//         });
-//     });
-// }
-
 // Создание новой комнаты
 async function createRoom(title) {
     try {
@@ -287,7 +251,7 @@ async function sendMessage() {
 
     // Создаем временное сообщение для мгновенного отображения
     const tempMessage = {
-        id: 'temp-' + Date.now(),
+        id: 'user-' + Date.now(),
         roomId: state.currentRoom.id,
         userId: elements.userId,
         type: 'USER_MESSAGE',
@@ -304,10 +268,10 @@ async function sendMessage() {
 
     try {
         const eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${state.currentRoom.id}&question=${encodeURIComponent(messageContent)}`);
-
+        const uuid = generateUUID;
         const messageElement = document.createElement('div');
         messageElement.className = 'message ai-message';
-        messageElement.innerHTML = `<div id="cm" class="message-content"></div>`
+        messageElement.innerHTML = `<div id="cm${uuid}" class="message-content"></div>`
         elements.chatMessages.appendChild(messageElement);
 
         let response = '';
@@ -315,7 +279,7 @@ async function sendMessage() {
            typingIndicator.hide();
             response += JSON.parse(e.data).value;
             // response = DOMPurify.sanitize(response);
-            document.getElementById('cm').innerHTML = marked.parse(response);
+            document.getElementById(`cm${uuid}`).innerHTML = marked.parse(response);
 
             Prism.highlightAll();
 
@@ -324,9 +288,18 @@ async function sendMessage() {
 
         eventSource.onerror = (e) => {
             eventSource.close();
-        };
 
-        state.messages.push(response);
+            const aiMessage = {
+                id: 'ai-' + Date.now(),
+                roomId: state.currentRoom.id,
+                userId: 'ai-assistant',
+                type: 'AI_MESSAGE',
+                content: response,
+                timestamp: new Date().toISOString()
+            };
+
+            state.messages.push(aiMessage);
+        };
 
         scrollToBottom();
     } catch (error) {
@@ -564,4 +537,20 @@ marked.setOptions({
     breaks: true,
     gfm: true
 });
+
+function generateUUID() {
+    var d = new Date().getTime();//Timestamp
+    var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16;//random number between 0 and 16
+        if(d > 0){//Use timestamp until depleted
+            r = (d + r)%16 | 0;
+            d = Math.floor(d/16);
+        } else {//Use microseconds since page-load if supported
+            r = (d2 + r)%16 | 0;
+            d2 = Math.floor(d2/16);
+        }
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
 
