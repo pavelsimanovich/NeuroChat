@@ -22,7 +22,6 @@ const elements = {
 // Инициализация приложения
 let state = {
     currentRoom: null,
-    stompClient: null,
     rooms: [],
     messages: [], // Добавляем хранилище сообщений
 };
@@ -30,7 +29,7 @@ let state = {
 function init() {
     loadRooms();
     setupEventListeners();
-    updateDeleteButtonVisibility()
+    updateDeleteButtonVisibility();
 }
 
 function switchToLastRoom() {
@@ -97,11 +96,6 @@ function renderRoomsList() {
 // Переключение комнаты
 async function switchRoom(room) {
     localStorage.setItem('lastRoomId', room.id);
-    // Отключаемся от текущей комнаты, если есть
-    if (state.stompClient) {
-        state.stompClient.disconnect();
-    }
-
     // Устанавливаем новую текущую комнату
     state.currentRoom = room;
 
@@ -270,19 +264,23 @@ async function sendMessage() {
         const eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${state.currentRoom.id}&question=${encodeURIComponent(messageContent)}`);
         const uuid = generateUUID;
         const messageElement = document.createElement('div');
+        messageElement.id = uuid;
         messageElement.className = 'message ai-message';
-        messageElement.innerHTML = `<div id="cm${uuid}" class="message-content"></div>`
-        elements.chatMessages.appendChild(messageElement);
+        messageElement.innerHTML = `
+            <div class="message-sender">AI</div>
+            <div id="cm${uuid}" class="message-content"></div>`;
 
         let response = '';
         eventSource.onmessage = (e) => {
            typingIndicator.hide();
+           if (!document.getElementById(uuid)) {
+               elements.chatMessages.appendChild(messageElement);
+           }
             response += JSON.parse(e.data).value;
             // response = DOMPurify.sanitize(response);
             document.getElementById(`cm${uuid}`).innerHTML = marked.parse(response);
 
             Prism.highlightAll();
-
             scrollToBottom();
         };
 
@@ -462,12 +460,6 @@ async function handleDeleteRoom() {
         elements.currentRoomTitle.textContent = 'Выберите чат';
         elements.messageInput.disabled = true;
         elements.sendMessageBtn.disabled = true;
-
-        // Отключаем WebSocket соединение
-        if (state.stompClient) {
-            state.stompClient.disconnect();
-            state.stompClient = null;
-        }
 
         // Удаляем ID последней комнаты из localStorage
         localStorage.removeItem('lastRoomId');

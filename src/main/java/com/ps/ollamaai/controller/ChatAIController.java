@@ -28,13 +28,13 @@ import static com.ps.ollamaai.llm.Prompts.CURRENT_PROMPT_INSTRUCTIONS;
 public class ChatAIController {
 
     private final ChatClient chatClient;
-    private final ChatMessageService chankMessageService;
+    private final ChatMessageService chatMessageService;
 
     @Transactional
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChunkResponseDTO> streamChat(@RequestParam String question, @RequestParam String chatId, //dto
                                              Principal principal) {
-        final List<Message> currentHistory = chankMessageService.processChatMessage(question, chatId, principal.getName());
+        final List<Message> currentHistory = chatMessageService.processChatMessage(question, chatId, principal.getName());
 
         return chatClient
                 .prompt(new Prompt(currentHistory))
@@ -44,9 +44,9 @@ public class ChatAIController {
                 .stream()
                 .content()
                 .map(ChunkResponseDTO::new)
-                .doOnNext(chunk -> chankMessageService.saveChunk(chatId, chunk.value()))
+                .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.value()))
                 .doOnComplete(() -> {
-                    String response = chankMessageService.saveAiResponse(chatId);
+                    String response = chatMessageService.saveAiResponse(chatId);
                     currentHistory.add(new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(question)));
                     currentHistory.add(new AssistantMessage(response));
                 });
