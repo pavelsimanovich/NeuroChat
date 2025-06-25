@@ -297,10 +297,10 @@ async function sendMessage() {
 
     // Добавляем в состояние и рендерим
     state.messages.push(tempMessage);
-    renderMessages();
+    //renderMessages();
     elements.messageInput.value = '';
 
-    //typingIndicator.show();
+    typingIndicator.show();
 
     try {
         const eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${state.currentRoom.id}&question=${encodeURIComponent(messageContent)}`);
@@ -312,6 +312,7 @@ async function sendMessage() {
 
         let response = '';
         eventSource.onmessage = (e) => {
+           typingIndicator.hide();
             response += JSON.parse(e.data).value;
             // response = DOMPurify.sanitize(response);
             document.getElementById('cm').innerHTML = marked.parse(response);
@@ -324,6 +325,8 @@ async function sendMessage() {
         eventSource.onerror = (e) => {
             eventSource.close();
         };
+
+        state.messages.push(response);
 
         scrollToBottom();
     } catch (error) {
