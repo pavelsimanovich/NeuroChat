@@ -51,24 +51,15 @@ async function loadRooms() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Проверяем content-type
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error("Invalid content type");
-        }
-
         const rooms = await response.json();
 
         if (rooms.length === 0) {
-            // todo прятать инпут
+            // todo прятать инпут и потом вернуть
             return;
         }
 
-        // Сохраняем только если данные валидны
         state.rooms = rooms;
         renderRoomsList();
-
-        // Восстанавливаем последнюю комнату если есть
         switchToLastRoom()
     } catch (error) {
         console.error('Error loading rooms:', error);
@@ -132,7 +123,7 @@ async function switchRoom(room) {
         updateDeleteButtonVisibility();
 
     } catch (error) {
-        showNotification("Ошибка загрузки", error)
+        showNotification("Ошибка загрузки", 'error')
     }
 }
 
@@ -157,14 +148,14 @@ async function loadRoomMessages(roomId) {
 
     } catch (error) {
         console.error('Error loading messages:', error);
-        showNotification("Ошибка загрузки сообщений", error)
-        //todo
-        const errorDiv = document.getElementById("error");
-        errorDiv.innerHTML = `
-            <div class="error-message">
-                Ошибка загрузки сообщений: ${error.message}
-            </div>
-        `;
+        showNotification("Ошибка загрузки сообщений.", 'error')
+        //todo remove?
+        // const errorDiv = document.getElementById("error");
+        // errorDiv.innerHTML = `
+        //     <div class="error-message">
+        //         Ошибка загрузки сообщений: ${error.message}
+        //     </div>
+        // `;
     }
 }
 

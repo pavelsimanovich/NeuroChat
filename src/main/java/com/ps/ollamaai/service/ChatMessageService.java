@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.ps.ollamaai.constants.Messages.LIMIT_EXCEEDED_MESSAGE;
+import static com.ps.ollamaai.domain.ChatMessage.MessageType.AI_RESPONSE;
+import static com.ps.ollamaai.domain.ChatMessage.MessageType.USER_MESSAGE;
 
 @Service
 @RequiredArgsConstructor
@@ -59,26 +61,19 @@ public class ChatMessageService {
         buffers.computeIfAbsent(chatId, k -> new StringBuilder()).append(chunk);
     }
 
-    //todo refacroring
     public String saveAiResponse(String roomId) {
-        String fullResponse = buffers.remove(roomId).toString();
-        final ChatRoom room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
-
-        final Long lastOrder = chatMessageRepository.findLastOrderByRoomId(roomId).orElse(0L);
-
-        final ChatMessage aiResponse = new ChatMessage();
-        aiResponse.setRoom(room);
-        aiResponse.setUserId("ai-assistant");
-        aiResponse.setType(ChatMessage.MessageType.AI_RESPONSE);
-        aiResponse.setContent(fullResponse);
-        aiResponse.setOrder(lastOrder + 1); // Следующий порядковый номер
-
+        final String fullResponse = buffers.remove(roomId).toString();
+        final ChatMessage aiResponse = getChatMessage(roomId, "ai-assistant", AI_RESPONSE, fullResponse);
         chatMessageRepository.save(aiResponse);
         return fullResponse;
     }
 
     public void saveUserMessage(final String roomId, final String userId, final String userPrompt) {
+        final ChatMessage message = getChatMessage(roomId, userId, USER_MESSAGE, userPrompt);
+        chatMessageRepository.save(message);
+    }
+
+    private ChatMessage getChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage, String userPrompt) {
         final ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         // Получаем последний порядковый номер для этой комнаты
@@ -87,10 +82,10 @@ public class ChatMessageService {
         final ChatMessage message = new ChatMessage();
         message.setRoom(room);
         message.setUserId(userId);
-        message.setType(ChatMessage.MessageType.USER_MESSAGE);
+        message.setType(userMessage);
         message.setContent(userPrompt);
         message.setOrder(lastOrder + 1); // Увеличиваем порядок
-        chatMessageRepository.save(message);
+        return message;
     }
 
     public List<ChatMessageDto> getRoomMessages(final String roomId) {
