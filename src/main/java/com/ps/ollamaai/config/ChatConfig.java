@@ -14,9 +14,7 @@ public class ChatConfig {
     public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
         return builder
                 .defaultSystem(PROMPT_GENERAL_INSTRUCTIONS)
-                .defaultAdvisors(
-                        // new PromptChatMemoryAdvisor(chatMemory)  //let Spring AI manage long term memory in the DB
-                )
+                .defaultAdvisors()
                 .build();
     }
 }

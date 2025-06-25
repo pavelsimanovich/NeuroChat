@@ -148,14 +148,7 @@ async function loadRoomMessages(roomId) {
 
     } catch (error) {
         console.error('Error loading messages:', error);
-        showNotification("Ошибка загрузки сообщений.", 'error')
-        //todo remove?
-        // const errorDiv = document.getElementById("error");
-        // errorDiv.innerHTML = `
-        //     <div class="error-message">
-        //         Ошибка загрузки сообщений: ${error.message}
-        //     </div>
-        // `;
+        showNotification("Ошибка загрузки сообщений. Обновите страницу.", 'error')
     }
 }
 
