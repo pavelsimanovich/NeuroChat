@@ -297,7 +297,7 @@ async function sendMessage() {
 
     // Добавляем в состояние и рендерим
     state.messages.push(tempMessage);
-    //renderMessages();
+    renderMessages();
     elements.messageInput.value = '';
 
     typingIndicator.show();
