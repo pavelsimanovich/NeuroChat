@@ -116,4 +116,8 @@ public class ChatMessageService {
         }
     }
 
+    public void deleteConversationHistory(String chatId) {
+        conversationalHistory.remove(chatId);
+    }
+
 }
