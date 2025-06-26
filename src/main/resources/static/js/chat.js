@@ -54,7 +54,6 @@ async function loadRooms() {
         const rooms = await response.json();
 
         if (rooms.length === 0) {
-            // todo прятать инпут и потом вернуть
             return;
         }
 
@@ -451,7 +450,6 @@ async function handleDeleteRoom() {
             await switchRoom(state.rooms[0]);
         } else {
             // Если комнат не осталось, обновляем интерфейс
-            //todo
             updateDeleteButtonVisibility();
         }
 
@@ -512,8 +510,8 @@ marked.setOptions({
     gfm: true
 });
 
-hideInputs = (isDisabled) => {
-    if (isDisabled) {
+hideInputs = (disabled) => {
+    if (disabled) {
         elements.messageInput.disabled = true;
         elements.sendMessageBtn.disabled = true;
         elements.messageInput.classList.add("d-none");

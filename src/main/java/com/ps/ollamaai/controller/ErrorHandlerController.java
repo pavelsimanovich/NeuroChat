@@ -13,8 +13,8 @@ import static com.ps.ollamaai.constants.Messages.SYSTEM_ERROR;
 @RestControllerAdvice
 public class ErrorHandlerController {
 
-    @ExceptionHandler(value = Exception.class)
-    public ResponseEntity<ChatMessageErrorDto> handleException(Exception e) {
+    @ExceptionHandler(value = RuntimeException.class)
+    public ResponseEntity<ChatMessageErrorDto> handleException(RuntimeException e) {
         return  ResponseEntity.ok(new ChatMessageErrorDto(SYSTEM_ERROR, ErrorType.SERVER_ERROR));
     }
 

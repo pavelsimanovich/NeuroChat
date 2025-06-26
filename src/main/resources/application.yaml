@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: ${ACTIVE_PROFILE:dev}
   application:
     name: ollama-ai
   ai:
