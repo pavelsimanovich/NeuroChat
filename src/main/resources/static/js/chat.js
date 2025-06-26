@@ -101,9 +101,7 @@ async function switchRoom(room) {
 
         // Доступность поля ввода сообщений
         if (!room.active) {
-            elements.messageInput.disabled = true;
-            elements.sendMessageBtn.disabled = true;
-
+            hideInputs(true)
             elements.messageInput.classList.add("grey-color");
             this.limitMessages = document.getElementById('limitMessages');
             this.limitMessages.innerHTML = `
@@ -112,8 +110,8 @@ async function switchRoom(room) {
               </div>
             `;
         } else {
-            elements.messageInput.disabled = false;
-            elements.sendMessageBtn.disabled = false;
+            hideInputs(false)
+
             elements.messageInput.classList.remove("grey-color");
             this.limitMessages.innerHTML = '';
         }
@@ -123,6 +121,7 @@ async function switchRoom(room) {
         updateDeleteButtonVisibility();
 
     } catch (error) {
+        console.error(error)
         showNotification("Ошибка загрузки", 'error')
     }
 }
@@ -156,7 +155,7 @@ async function loadRoomMessages(roomId) {
 function renderMessages() {
     elements.chatMessages.innerHTML = '';
 
-    if (state.messages.length === 0) {
+    if (state.messages.length === 0 && state.currentRoom !== null ) {
         elements.chatMessages.innerHTML = `
       <div class="no-messages">
         Нет сообщений
@@ -441,9 +440,8 @@ async function handleDeleteRoom() {
         // Обновляем интерфейс
         renderRoomsList();
         renderMessages();
-        elements.currentRoomTitle.textContent = 'Выберите чат';
-        elements.messageInput.disabled = true;
-        elements.sendMessageBtn.disabled = true;
+        elements.currentRoomTitle.textContent = `${elements.userName} Выберите или создайте чат`;
+        hideInputs(true)
 
         // Удаляем ID последней комнаты из localStorage
         localStorage.removeItem('lastRoomId');
@@ -513,6 +511,20 @@ marked.setOptions({
     breaks: true,
     gfm: true
 });
+
+hideInputs = (isDisabled) => {
+    if (isDisabled) {
+        elements.messageInput.disabled = true;
+        elements.sendMessageBtn.disabled = true;
+        elements.messageInput.classList.add("d-none");
+        elements.sendMessageBtn.classList.add("d-none");
+    } else {
+        elements.messageInput.disabled = false;
+        elements.sendMessageBtn.disabled = false;
+        elements.messageInput.classList.remove("d-none");
+        elements.sendMessageBtn.classList.remove("d-none");
+    }
+}
 
 function generateUUID() {
     var d = new Date().getTime();//Timestamp

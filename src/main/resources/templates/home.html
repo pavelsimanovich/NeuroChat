@@ -37,7 +37,7 @@
         <!-- Основная область чата -->
         <div class="col-md-9 chat-area">
             <div class="chat-header">
-                <h4 id="currentRoomTitle">Выберите или создайте комнату</h4>
+                <h4 id="currentRoomTitle" th:text="${userName + ' Выберите или создайте чат'}"></h4>
                 <button id="deleteRoomBtn" class="btn-delete" title="Удалить чат" style="display: none;" >
                     <svg class="icon-delete" viewBox="0 0 24 24">
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -71,8 +71,8 @@
             <div id="error"></div>
 
             <div class="message-input">
-                <textarea id="messageInput" placeholder="Чем я могу помочь Вам сегодня?" disabled></textarea>
-                <button id="sendMessageBtn" class="btn btn-primary" disabled>Отправить</button>
+                <textarea id="messageInput" class="d-none" placeholder="Чем я могу помочь Вам сегодня?" disabled></textarea>
+                <button id="sendMessageBtn" class="btn btn-primary d-none" disabled>Отправить</button>
             </div>
         </div>
     </div>
