@@ -19,6 +19,8 @@ const elements = {
     userName: document.getElementById('userName').value,
 };
 
+let eventSource = null;
+
 // Инициализация приложения
 let state = {
     currentRoom: null,
@@ -88,6 +90,11 @@ async function switchRoom(room) {
     localStorage.setItem('lastRoomId', room.id);
     // Устанавливаем новую текущую комнату
     state.currentRoom = room;
+
+    // if (eventSource) {
+    //     eventSource.close();
+    //     typingIndicator.hide();//
+    // }
 
     try {
         renderRoomsList();
@@ -225,10 +232,11 @@ async function sendMessage() {
     const messageContent = elements.messageInput.value.trim();
     if (!messageContent || !state.currentRoom) return;
 
+    const roomId = state.currentRoom.id;
     // Создаем временное сообщение для мгновенного отображения
     const tempMessage = {
         id: 'user-' + Date.now(),
-        roomId: state.currentRoom.id,
+        roomId: roomId,
         userId: elements.userId,
         type: 'USER_MESSAGE',
         content: messageContent,
@@ -243,7 +251,7 @@ async function sendMessage() {
     typingIndicator.show();
 
     try {
-        const eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${state.currentRoom.id}&question=${encodeURIComponent(messageContent)}`);
+        eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${roomId}&question=${encodeURIComponent(messageContent)}`);
         const uuid = generateUUID;
         const messageElement = document.createElement('div');
         messageElement.id = uuid;
@@ -258,27 +266,32 @@ async function sendMessage() {
            if (!document.getElementById(uuid)) {
                elements.chatMessages.appendChild(messageElement);
            }
-            response += JSON.parse(e.data).value;
-            // response = DOMPurify.sanitize(response);
-            document.getElementById(`cm${uuid}`).innerHTML = marked.parse(response);
 
-            Prism.highlightAll();
+           const message = JSON.parse(e.data);
+            if (message.isEnd) {
+                eventSource.close();
+
+                const aiMessage = {
+                    id: 'ai-' + Date.now(),
+                    roomId: roomId,
+                    userId: 'ai-assistant',
+                    type: 'AI_MESSAGE',
+                    content: response,
+                    timestamp: new Date().toISOString()
+                };
+
+                state.messages.push(aiMessage);
+            } else {
+                response += message.content;
+                document.getElementById(`cm${uuid}`).innerHTML = marked.parse(response);
+                Prism.highlightAll();
+            }
+
             scrollToBottom();
-        };
+        }
 
         eventSource.onerror = (e) => {
             eventSource.close();
-
-            const aiMessage = {
-                id: 'ai-' + Date.now(),
-                roomId: state.currentRoom.id,
-                userId: 'ai-assistant',
-                type: 'AI_MESSAGE',
-                content: response,
-                timestamp: new Date().toISOString()
-            };
-
-            state.messages.push(aiMessage);
         };
 
         scrollToBottom();
@@ -292,6 +305,10 @@ async function sendMessage() {
             renderMessages();
         }
     }
+}
+
+function stopStream(chatId) {
+    eventSource.close();
 }
 
 // Настройка обработчиков событий

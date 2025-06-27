@@ -2,7 +2,6 @@ package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.dto.ChunkResponseDTO;
 import com.ps.ollamaai.service.ChatMessageService;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -11,11 +10,13 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.security.Principal;
 import java.util.List;
@@ -44,12 +45,13 @@ public class ChatAIController {
                         .param(ChatMemory.CONVERSATION_ID, chatId))
                 .stream()
                 .content()
-                .map(ChunkResponseDTO::new)
-                .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.value()))
+                .map(chunk -> new ChunkResponseDTO(chunk, false))
+                .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
                 .doOnComplete(() -> {
                     String response = chatMessageService.saveAiResponse(chatId);
                     currentHistory.add(new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(question)));
                     currentHistory.add(new AssistantMessage(response));
-                });
+                })
+                .concatWith(Mono.just(new ChunkResponseDTO("[END]", true)));
     }
 }
