@@ -20,6 +20,7 @@ const elements = {
 };
 
 let eventSource = null;
+const chatConnections = {};
 
 // Инициализация приложения
 let state = {
@@ -90,11 +91,6 @@ async function switchRoom(room) {
     localStorage.setItem('lastRoomId', room.id);
     // Устанавливаем новую текущую комнату
     state.currentRoom = room;
-
-    // if (eventSource) {
-    //     eventSource.close();
-    //     typingIndicator.hide();//
-    // }
 
     try {
         renderRoomsList();
@@ -227,6 +223,17 @@ async function createRoom(title) {
     }
 }
 
+function getTempMessage(roomId, messageContent, id, userID) {
+    return {
+        id: id + Date.now(),
+        roomId: roomId,
+        userId: userID,
+        type: userID !== "ai-assistant" ? 'USER_MESSAGE' : "AI_MESSAGE",
+        content: messageContent,
+        timestamp: new Date().toISOString()
+    };
+}
+
 // Отправка сообщения
 async function sendMessage() {
     const messageContent = elements.messageInput.value.trim();
@@ -234,14 +241,7 @@ async function sendMessage() {
 
     const roomId = state.currentRoom.id;
     // Создаем временное сообщение для мгновенного отображения
-    const tempMessage = {
-        id: 'user-' + Date.now(),
-        roomId: roomId,
-        userId: elements.userId,
-        type: 'USER_MESSAGE',
-        content: messageContent,
-        timestamp: new Date().toISOString()
-    };
+    const tempMessage = getTempMessage(roomId, messageContent, "user-", elements.userId);
 
     // Добавляем в состояние и рендерим
     state.messages.push(tempMessage);
@@ -252,6 +252,8 @@ async function sendMessage() {
 
     try {
         eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${roomId}&question=${encodeURIComponent(messageContent)}`);
+        chatConnections[roomId] = eventSource;
+
         const uuid = generateUUID;
         const messageElement = document.createElement('div');
         messageElement.id = uuid;
@@ -262,24 +264,18 @@ async function sendMessage() {
 
         let response = '';
         eventSource.onmessage = (e) => {
-           typingIndicator.hide();
-           if (!document.getElementById(uuid)) {
-               elements.chatMessages.appendChild(messageElement);
-           }
+            if (roomId !== state.currentRoom.id) return;
 
-           const message = JSON.parse(e.data);
+            typingIndicator.hide();
+            if (!document.getElementById(uuid)) {
+                elements.chatMessages.appendChild(messageElement);
+            }
+
+            const message = JSON.parse(e.data);
             if (message.isEnd) {
-                eventSource.close();
+                stopStream(roomId);
 
-                const aiMessage = {
-                    id: 'ai-' + Date.now(),
-                    roomId: roomId,
-                    userId: 'ai-assistant',
-                    type: 'AI_MESSAGE',
-                    content: response,
-                    timestamp: new Date().toISOString()
-                };
-
+                const aiMessage = getTempMessage(roomId, response, "ai-", 'ai-assistant');
                 state.messages.push(aiMessage);
             } else {
                 response += message.content;
@@ -291,7 +287,8 @@ async function sendMessage() {
         }
 
         eventSource.onerror = (e) => {
-            eventSource.close();
+            stopStream(roomId);
+            console.error('EventSource error:', e);
         };
 
         scrollToBottom();
@@ -308,7 +305,10 @@ async function sendMessage() {
 }
 
 function stopStream(chatId) {
-    eventSource.close();
+    if (chatConnections[chatId]) {
+        chatConnections[chatId].close();
+        delete chatConnections[chatId];
+    }
 }
 
 // Настройка обработчиков событий
