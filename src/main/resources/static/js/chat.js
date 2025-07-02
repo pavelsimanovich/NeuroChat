@@ -275,10 +275,28 @@ async function sendMessage() {
             if (message.isEnd) {
                 stopStream(roomId);
 
-                const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
-                state.messages.push(aiMessage);
+                if(message.error) {
+                    if (message.error === 'LIMIT_EXCEEDED') {
+                        elements.messageInput.disabled = true;
+                        elements.sendMessageBtn.disabled = true;
+                        elements.messageInput.classList.add("grey-color");
+                        document.getElementById(uuid).remove();
 
-                // messageElement добавить время ответа message.timestamp
+                        const limitMessages = document.getElementById('limitMessages');
+                        limitMessages.innerHTML = `
+                          <div class="limit-messages">
+                            Превышен лимит сообщений в комнате
+                          </div>
+                        `;
+                    }
+                } else {
+                    const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
+                    state.messages.push(aiMessage);
+
+                    // messageElement добавить время ответа message.timestamp
+                }
+
+
             } else {
                 response += message.content;
                 document.getElementById(`cm${uuid}`).innerHTML = marked.parse(response);
@@ -289,29 +307,26 @@ async function sendMessage() {
         }
 
         eventSource.onerror = (e) => {
-            stopStream(roomId);
-            console.error('EventSource error:', e);
+           onErrorSendMessage(e, roomId, tempMessage)
         };
 
-       // scrollToBottom();
     } catch (error) {
-        console.error('Error sending message:', error);
-        typingIndicator.hide();
+        onErrorSendMessage(error, roomId, tempMessage)
+    }
+}
 
-        //todo check
-        if (error.errorType === 'LIMIT_EXCEEDED') {
-            showNotification(error.error, 'error');
-            elements.messageInput.disabled = true;
-            elements.sendMessageBtn.disabled = true;
-            elements.messageInput.classList.add("grey-color");
-        }
+const onErrorSendMessage = (error, roomId, tempMessage) => {
+    console.error('Error sending message:', error);
+    showNotification("Error sending message", "error");
 
-        // Помечаем сообщение как неотправленное
-        const messageIndex = state.messages.findIndex(m => m.id === tempMessage.id);
-        if (messageIndex !== -1) {
-            state.messages[messageIndex].error = true;
-            renderMessages();
-        }
+    typingIndicator.hide();
+    stopStream(roomId);
+
+    // Помечаем сообщение как неотправленное
+    const messageIndex = state.messages.findIndex(m => m.id === tempMessage.id);
+    if (messageIndex !== -1) {
+        state.messages[messageIndex].error = true;
+        renderMessages();
     }
 }
 

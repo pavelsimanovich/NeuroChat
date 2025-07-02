@@ -16,6 +16,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -45,14 +46,21 @@ public class ChatMessageService {
     private final Map<String, List<Message>> conversationalHistory = new ConcurrentHashMap<>();
     private final Map<String, StringBuilder> buffers = new ConcurrentHashMap<>();
 
-    public List<Message> processChatMessage(String message, String chatId, String userName) {
+    @Transactional
+    public List<Message> processChatMessage(String message, String chatId, String userName) throws LimitExceededException {
         final User user = userService.findByEmail(userName);
         saveUserMessage(chatId, user.getId(), message);
 
         checkHistory(chatId);
 
         final List<Message> currentHistory = conversationalHistory.computeIfAbsent(chatId, k -> new ArrayList<>());
-        checkLimit(chatId, currentHistory);
+
+        try {
+            checkLimit(currentHistory);
+        } catch (RuntimeException e) {
+            conversationalHistory.remove(chatId);
+            throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
+        }
 
         return currentHistory;
     }
@@ -108,11 +116,9 @@ public class ChatMessageService {
         }
     }
 
-    private void checkLimit(String chatId, List<Message> currentHistory) {
+    private void checkLimit(List<Message> currentHistory) {
         if (currentHistory.size() >= maxHistoryChatLength + 1) {
-            conversationalHistory.remove(chatId);
-            roomRepository.setInactiveRoom(chatId);
-            throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
+            throw new RuntimeException(LIMIT_EXCEEDED_MESSAGE);
         }
     }
 

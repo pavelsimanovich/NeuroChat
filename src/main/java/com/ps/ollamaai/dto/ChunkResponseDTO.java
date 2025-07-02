@@ -5,5 +5,6 @@ import java.time.LocalDateTime;
 public record ChunkResponseDTO(
         String content,
         LocalDateTime timestamp,
-        boolean isEnd
+        boolean isEnd,
+        String error
 ) {}
