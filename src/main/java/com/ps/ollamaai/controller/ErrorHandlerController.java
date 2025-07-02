@@ -15,12 +15,12 @@ public class ErrorHandlerController {
 
     @ExceptionHandler(value = RuntimeException.class)
     public ResponseEntity<ChatMessageErrorDto> handleException(RuntimeException e) {
-        return  ResponseEntity.ok(new ChatMessageErrorDto(SYSTEM_ERROR, ErrorType.SERVER_ERROR));
+        return ResponseEntity.ok(new ChatMessageErrorDto(SYSTEM_ERROR, ErrorType.SERVER_ERROR));
     }
 
     @ExceptionHandler(value = LimitExceededException.class)
     public ResponseEntity<ChatMessageErrorDto> handleLimitException(LimitExceededException e) {
-        return  ResponseEntity.ok(new ChatMessageErrorDto(LIMIT_EXCEEDED_MESSAGE, ErrorType.LIMIT_EXCEEDED));
+        return ResponseEntity.ok(new ChatMessageErrorDto(LIMIT_EXCEEDED_MESSAGE, ErrorType.LIMIT_EXCEEDED));
     }
 
 }

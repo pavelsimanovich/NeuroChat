@@ -241,7 +241,7 @@ async function sendMessage() {
 
     const roomId = state.currentRoom.id;
     // Создаем временное сообщение для мгновенного отображения
-    const tempMessage = getTempMessage(roomId, messageContent, "user-", elements.userId);
+    const tempMessage = getTempMessage(roomId, messageContent, "temp-user-", elements.userId);
 
     // Добавляем в состояние и рендерим
     state.messages.push(tempMessage);
@@ -254,7 +254,7 @@ async function sendMessage() {
         eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${roomId}&question=${encodeURIComponent(messageContent)}`);
         chatConnections[roomId] = eventSource;
 
-        const uuid = generateUUID;
+        const uuid = generateUUID();
         const messageElement = document.createElement('div');
         messageElement.id = uuid;
         messageElement.className = 'message ai-message';
@@ -275,8 +275,10 @@ async function sendMessage() {
             if (message.isEnd) {
                 stopStream(roomId);
 
-                const aiMessage = getTempMessage(roomId, response, "ai-", 'ai-assistant');
+                const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
                 state.messages.push(aiMessage);
+
+                // messageElement добавить время ответа message.timestamp
             } else {
                 response += message.content;
                 document.getElementById(`cm${uuid}`).innerHTML = marked.parse(response);
@@ -291,10 +293,19 @@ async function sendMessage() {
             console.error('EventSource error:', e);
         };
 
-        scrollToBottom();
+       // scrollToBottom();
     } catch (error) {
         console.error('Error sending message:', error);
         typingIndicator.hide();
+
+        //todo check
+        if (error.errorType === 'LIMIT_EXCEEDED') {
+            showNotification(error.error, 'error');
+            elements.messageInput.disabled = true;
+            elements.sendMessageBtn.disabled = true;
+            elements.messageInput.classList.add("grey-color");
+        }
+
         // Помечаем сообщение как неотправленное
         const messageIndex = state.messages.findIndex(m => m.id === tempMessage.id);
         if (messageIndex !== -1) {
@@ -426,7 +437,7 @@ async function handleDeleteRoom() {
         return;
     }
 
-    if (!confirm(`Удалить чат "${state.currentRoom.title}"?`)) {
+    if (!await confirmDeleteChat(state.currentRoom.title)) {
         return;
     }
 
@@ -480,6 +491,29 @@ async function handleDeleteRoom() {
             deleteBtn.innerHTML = originalHtml;
         }
     }
+}
+
+async function confirmDeleteChat(title) {
+    const result = await Swal.fire({
+        title: 'Подтверждение удаления',
+        html: `Вы уверены, что хотите удалить чат <b>"${title}"</b>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Да, удалить',
+        cancelButtonText: 'Отмена',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        reverseButtons: true,
+        backdrop: true,
+        allowOutsideClick: false,
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp'
+        }
+    });
+    return result.isConfirmed;
 }
 
 // Обновление видимости кнопки

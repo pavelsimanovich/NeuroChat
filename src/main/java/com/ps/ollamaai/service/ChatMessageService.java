@@ -46,7 +46,7 @@ public class ChatMessageService {
     private final Map<String, StringBuilder> buffers = new ConcurrentHashMap<>();
 
     public List<Message> processChatMessage(String message, String chatId, String userName) {
-        User user = userService.findByEmail(userName);
+        final User user = userService.findByEmail(userName);
         saveUserMessage(chatId, user.getId(), message);
 
         checkHistory(chatId);

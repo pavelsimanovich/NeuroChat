@@ -1,3 +1,9 @@
 package com.ps.ollamaai.dto;
 
-public record ChunkResponseDTO(String content, boolean isEnd) {}
+import java.time.LocalDateTime;
+
+public record ChunkResponseDTO(
+        String content,
+        LocalDateTime timestamp,
+        boolean isEnd
+) {}

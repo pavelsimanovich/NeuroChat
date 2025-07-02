@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import static com.ps.ollamaai.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 
 @Configuration
-public class ChatConfig {
+public class ChatClientConfig {
 
     @Bean
     public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
