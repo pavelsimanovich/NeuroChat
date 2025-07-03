@@ -19,10 +19,12 @@ const elements = {
     userName: document.getElementById('userName').value,
 };
 
+let eventSource = null;
+const chatConnections = {};
+
 // Инициализация приложения
 let state = {
     currentRoom: null,
-    stompClient: null,
     rooms: [],
     messages: [], // Добавляем хранилище сообщений
 };
@@ -30,7 +32,7 @@ let state = {
 function init() {
     loadRooms();
     setupEventListeners();
-    updateDeleteButtonVisibility()
+    updateDeleteButtonVisibility();
 }
 
 function switchToLastRoom() {
@@ -52,24 +54,14 @@ async function loadRooms() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Проверяем content-type
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error("Invalid content type");
-        }
-
         const rooms = await response.json();
 
         if (rooms.length === 0) {
-            // todo прятать инпут
             return;
         }
 
-        // Сохраняем только если данные валидны
         state.rooms = rooms;
         renderRoomsList();
-
-        // Восстанавливаем последнюю комнату если есть
         switchToLastRoom()
     } catch (error) {
         console.error('Error loading rooms:', error);
@@ -97,11 +89,6 @@ function renderRoomsList() {
 // Переключение комнаты
 async function switchRoom(room) {
     localStorage.setItem('lastRoomId', room.id);
-    // Отключаемся от текущей комнаты, если есть
-    if (state.stompClient) {
-        state.stompClient.disconnect();
-    }
-
     // Устанавливаем новую текущую комнату
     state.currentRoom = room;
 
@@ -114,14 +101,9 @@ async function switchRoom(room) {
         // Загружаем сообщения комнаты
         await loadRoomMessages(room.id);
 
-        // Подключаемся к WebSocket
-        connectToRoom(room.id);
-
         // Доступность поля ввода сообщений
         if (!room.active) {
-            elements.messageInput.disabled = true;
-            elements.sendMessageBtn.disabled = true;
-
+            hideInputs(true)
             elements.messageInput.classList.add("grey-color");
             this.limitMessages = document.getElementById('limitMessages');
             this.limitMessages.innerHTML = `
@@ -130,8 +112,8 @@ async function switchRoom(room) {
               </div>
             `;
         } else {
-            elements.messageInput.disabled = false;
-            elements.sendMessageBtn.disabled = false;
+            hideInputs(false)
+
             elements.messageInput.classList.remove("grey-color");
             this.limitMessages.innerHTML = '';
         }
@@ -141,7 +123,8 @@ async function switchRoom(room) {
         updateDeleteButtonVisibility();
 
     } catch (error) {
-        showNotification("Ошибка загрузки", error)
+        console.error(error)
+        showNotification("Ошибка загрузки", 'error')
     }
 }
 
@@ -166,14 +149,7 @@ async function loadRoomMessages(roomId) {
 
     } catch (error) {
         console.error('Error loading messages:', error);
-        showNotification("Ошибка загрузки сообщений", error)
-        //todo
-        const errorDiv = document.getElementById("error");
-        errorDiv.innerHTML = `
-            <div class="error-message">
-                Ошибка загрузки сообщений: ${error.message}
-            </div>
-        `;
+        showNotification("Ошибка загрузки сообщений. Обновите страницу.", 'error')
     }
 }
 
@@ -181,7 +157,7 @@ async function loadRoomMessages(roomId) {
 function renderMessages() {
     elements.chatMessages.innerHTML = '';
 
-    if (state.messages.length === 0) {
+    if (state.messages.length === 0 && state.currentRoom !== null ) {
         elements.chatMessages.innerHTML = `
       <div class="no-messages">
         Нет сообщений
@@ -203,7 +179,6 @@ function renderMessages() {
         if (message.error) {
             messageElement.classList.add('message-error');
         }
-        // <div className="message-content">${DOMPurify.sanitize(marked.parse(message.content))}</div>
 
         messageElement.innerHTML = `
             <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
@@ -218,36 +193,6 @@ function renderMessages() {
     });
 
     Prism.highlightAll();
-
-    // document.querySelectorAll('.message-content pre').forEach(block => {
-    //     // Проверяем, нет ли уже кнопки
-    //     if (!block.querySelector('.copy-code-btn')) {
-    //         const button = document.createElement('button');
-    //         button.className = 'copy-code-btn';
-    //         button.textContent = 'Копировать';
-    //
-    //         button.addEventListener('click', () => {
-    //             const code = block.querySelector('code');
-    //             const text = code ? code.textContent : '';
-    //
-    //             navigator.clipboard.writeText(text).then(() => {
-    //                 const originalText = button.textContent;
-    //                 button.textContent = 'Скопировано!';
-    //                 button.classList.add('copied');
-    //
-    //                 setTimeout(() => {
-    //                     button.textContent = originalText;
-    //                     button.classList.remove('copied');
-    //                 }, 2000);
-    //             }).catch(err => {
-    //                 console.error('Ошибка копирования:', err);
-    //             });
-    //         });
-    //
-    //         block.appendChild(button);
-    //     }
-    // });
-
     scrollToBottom();
 }
 
@@ -257,42 +202,6 @@ function formatTime(timestamp) {
 
 function scrollToBottom() {
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
-}
-
-// Подключение к комнате через WebSocket
-function connectToRoom(roomId) {
-    const socket = new SockJS('/ws-chat');
-    state.stompClient = Stomp.over(socket);
-
-    state.stompClient.connect({}, function (frame) {
-        console.log('Connected to room:', roomId);
-
-        state.stompClient.subscribe(`/topic/room/${roomId}`, function (message) {
-            typingIndicator.hide();
-            const messageData = JSON.parse(message.body);
-            console.log('Received message:', messageData);
-
-            if (messageData.error) {
-                showNotification(messageData.error, 'error');
-                if (messageData.errorType === 'LIMIT_EXCEEDED') {
-                    elements.messageInput.disabled = true;
-                    elements.sendMessageBtn.disabled = true;
-                    elements.messageInput.classList.add("grey-color");
-                }
-            }
-
-            // Удаляем временное сообщение если есть
-            if (messageData.id && messageData.id.startsWith('temp-')) {
-                state.messages = state.messages.filter(m => m.id !== messageData.id);
-            }
-
-            // Проверяем нет ли уже такого сообщения
-            if (!state.messages.some(m => m.id === messageData.id)) {
-                state.messages.push(messageData);
-                renderMessages();
-            }
-        });
-    });
 }
 
 // Создание новой комнаты
@@ -314,48 +223,137 @@ async function createRoom(title) {
     }
 }
 
+function getTempMessage(roomId, messageContent, id, userID) {
+    return {
+        id: id + Date.now(),
+        roomId: roomId,
+        userId: userID,
+        type: userID !== "ai-assistant" ? 'USER_MESSAGE' : "AI_MESSAGE",
+        content: messageContent,
+        timestamp: new Date().toISOString()
+    };
+}
+
 // Отправка сообщения
 async function sendMessage() {
     const messageContent = elements.messageInput.value.trim();
     if (!messageContent || !state.currentRoom) return;
 
+    const roomId = state.currentRoom.id;
     // Создаем временное сообщение для мгновенного отображения
-    const tempMessage = {
-        id: 'temp-' + Date.now(),
-        roomId: state.currentRoom.id,
-        userId: elements.userId,
-        type: 'USER_MESSAGE',
-        content: messageContent,
-        timestamp: new Date().toISOString()
-    };
+    const tempMessage = getTempMessage(roomId, messageContent, "temp-user-", elements.userId);
 
     // Добавляем в состояние и рендерим
     state.messages.push(tempMessage);
     renderMessages();
+    scrollToBottom();
+
     elements.messageInput.value = '';
 
     typingIndicator.show();
 
     try {
-        // Отправляем на сервер через WebSocket
-        state.stompClient.send(
-            `/app/chat/${state.currentRoom.id}/send`,
-            {},
-            JSON.stringify({
-                userId: elements.userId,
-                content: messageContent
-            })
-        );
-        scrollToBottom();
-    } catch (error) {
-        console.error('Error sending message:', error);
-        typingIndicator.hide();
-        // Помечаем сообщение как неотправленное
-        const messageIndex = state.messages.findIndex(m => m.id === tempMessage.id);
-        if (messageIndex !== -1) {
-            state.messages[messageIndex].error = true;
-            renderMessages();
+        eventSource = new EventSource(`http://localhost:8080/api/direct/stream?chatId=${roomId}&question=${encodeURIComponent(messageContent)}`);
+        chatConnections[roomId] = eventSource;
+
+        const uuid = generateUUID();
+        const messageElement = document.createElement('div');
+        messageElement.id = uuid;
+        messageElement.className = 'message ai-message';
+
+        const contentDiv = document.createElement('div');
+        contentDiv.id = `cm${uuid}`;
+        contentDiv.className = 'message-content';
+
+        const senderDiv = document.createElement('div');
+        senderDiv.className = 'message-sender';
+        senderDiv.textContent = 'AI';
+
+        messageElement.appendChild(senderDiv);
+        messageElement.appendChild(contentDiv);
+
+        let response = '';
+        let isStreamActive = true;
+
+        // 4. onmessage handler
+        eventSource.onmessage = (e) => {
+            if (roomId !== state.currentRoom.id || !isStreamActive) return;
+
+            typingIndicator.hide();
+
+            if (!document.getElementById(uuid)) {
+                elements.chatMessages.appendChild(messageElement);
+            }
+
+            const message = JSON.parse(e.data);
+
+            if (message.isEnd) {
+                isStreamActive = false;
+                stopStream(roomId);
+
+                if(message.error) {
+                    if (message.error === 'LIMIT_EXCEEDED') {
+                        elements.messageInput.disabled = true;
+                        elements.sendMessageBtn.disabled = true;
+                        elements.messageInput.classList.add("grey-color");
+                        document.getElementById(uuid).remove();
+
+                        const limitMessages = document.getElementById('limitMessages');
+                        limitMessages.innerHTML = `
+                          <div class="limit-messages">
+                            Превышен лимит сообщений в комнате
+                          </div>
+                        `;
+                    }
+                    return;
+                } else {
+                    const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
+                    state.messages.push(aiMessage);
+
+                    renderMessages(); // Обновляем UI
+                    scrollToBottom();
+                    return;
+                }
+
+            } else {
+                response += message.content;
+                contentDiv.innerHTML = marked.parse(response);
+                Prism.highlightAllUnder(contentDiv);
+                scrollToBottom();
+            }
+
+            scrollToBottom();
         }
+
+        eventSource.onerror = (e) => {
+            isStreamActive = false;
+            onErrorSendMessage(e, roomId, tempMessage)
+        };
+
+    } catch (error) {
+        onErrorSendMessage(error, roomId, tempMessage)
+    }
+}
+
+const onErrorSendMessage = (error, roomId, tempMessage) => {
+    console.error('Error sending message:', error);
+    showNotification("Error sending message", "error");
+
+    typingIndicator.hide();
+    stopStream(roomId);
+
+    // Помечаем сообщение как неотправленное
+    const messageIndex = state.messages.findIndex(m => m.id === tempMessage.id);
+    if (messageIndex !== -1) {
+        state.messages[messageIndex].error = true;
+        renderMessages();
+    }
+}
+
+function stopStream(chatId) {
+    if (chatConnections[chatId]) {
+        chatConnections[chatId].close();
+        delete chatConnections[chatId];
     }
 }
 
@@ -474,7 +472,7 @@ async function handleDeleteRoom() {
         return;
     }
 
-    if (!confirm(`Удалить чат "${state.currentRoom.title}"?`)) {
+    if (!await confirmDeleteChat(state.currentRoom.title)) {
         return;
     }
 
@@ -504,15 +502,8 @@ async function handleDeleteRoom() {
         // Обновляем интерфейс
         renderRoomsList();
         renderMessages();
-        elements.currentRoomTitle.textContent = 'Выберите чат';
-        elements.messageInput.disabled = true;
-        elements.sendMessageBtn.disabled = true;
-
-        // Отключаем WebSocket соединение
-        if (state.stompClient) {
-            state.stompClient.disconnect();
-            state.stompClient = null;
-        }
+        elements.currentRoomTitle.textContent = `${elements.userName} Выберите или создайте чат`;
+        hideInputs(true)
 
         // Удаляем ID последней комнаты из localStorage
         localStorage.removeItem('lastRoomId');
@@ -522,7 +513,6 @@ async function handleDeleteRoom() {
             await switchRoom(state.rooms[0]);
         } else {
             // Если комнат не осталось, обновляем интерфейс
-            //todo
             updateDeleteButtonVisibility();
         }
 
@@ -536,6 +526,29 @@ async function handleDeleteRoom() {
             deleteBtn.innerHTML = originalHtml;
         }
     }
+}
+
+async function confirmDeleteChat(title) {
+    const result = await Swal.fire({
+        title: 'Подтверждение удаления',
+        html: `Вы уверены, что хотите удалить чат <b>"${title}"</b>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Да, удалить',
+        cancelButtonText: 'Отмена',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        reverseButtons: true,
+        backdrop: true,
+        allowOutsideClick: false,
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp'
+        }
+    });
+    return result.isConfirmed;
 }
 
 // Обновление видимости кнопки
@@ -566,6 +579,7 @@ function showNotification(message, type = 'info') {
 
 // Инициализация при полной загрузке DOM
 document.addEventListener('DOMContentLoaded', ()=> {
+    Prism.highlightAll();
     init()
 } );
 
@@ -581,4 +595,34 @@ marked.setOptions({
     breaks: true,
     gfm: true
 });
+
+hideInputs = (disabled) => {
+    if (disabled) {
+        elements.messageInput.disabled = true;
+        elements.sendMessageBtn.disabled = true;
+        elements.messageInput.classList.add("d-none");
+        elements.sendMessageBtn.classList.add("d-none");
+    } else {
+        elements.messageInput.disabled = false;
+        elements.sendMessageBtn.disabled = false;
+        elements.messageInput.classList.remove("d-none");
+        elements.sendMessageBtn.classList.remove("d-none");
+    }
+}
+
+function generateUUID() {
+    var d = new Date().getTime();//Timestamp
+    var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16;//random number between 0 and 16
+        if(d > 0){//Use timestamp until depleted
+            r = (d + r)%16 | 0;
+            d = Math.floor(d/16);
+        } else {//Use microseconds since page-load if supported
+            r = (d2 + r)%16 | 0;
+            d2 = Math.floor(d2/16);
+        }
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
 

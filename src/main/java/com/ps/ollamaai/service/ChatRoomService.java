@@ -3,7 +3,6 @@ package com.ps.ollamaai.service;
 import com.ps.ollamaai.domain.ChatRoom;
 import com.ps.ollamaai.dto.ChatRoomDto;
 import com.ps.ollamaai.dto.converter.ChatRoomToDtoConverter;
-import com.ps.ollamaai.llm.ChatWithHistoryService;
 import com.ps.ollamaai.repository.ChatMessageRepository;
 import com.ps.ollamaai.repository.ChatRoomRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,7 +20,7 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomToDtoConverter chatRoomToDtoConverter;
-    private final ChatWithHistoryService chatWithHistoryService;
+    private final ChatMessageService chatMessageService;
 
     public ChatRoomDto createRoom(final String userId, final String title) {
         final ChatRoom room = new ChatRoom();
@@ -48,10 +47,11 @@ public class ChatRoomService {
         }
         chatMessageRepository.deleteByRoomId(roomId);
         chatRoomRepository.deleteById(roomId);
-        chatWithHistoryService.deleteRoomHistory(roomId);
+        chatMessageService.deleteConversationHistory(roomId);
     }
 
-    public void setInActiveRoom(String roomId) {
+    @Transactional
+    public void setInactive(final String roomId) {
         chatRoomRepository.setInactiveRoom(roomId);
     }
 }
