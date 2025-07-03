@@ -246,6 +246,8 @@ async function sendMessage() {
     // Добавляем в состояние и рендерим
     state.messages.push(tempMessage);
     renderMessages();
+    scrollToBottom();
+
     elements.messageInput.value = '';
 
     typingIndicator.show();
@@ -258,21 +260,35 @@ async function sendMessage() {
         const messageElement = document.createElement('div');
         messageElement.id = uuid;
         messageElement.className = 'message ai-message';
-        messageElement.innerHTML = `
-            <div class="message-sender">AI</div>
-            <div id="cm${uuid}" class="message-content"></div>`;
+
+        const contentDiv = document.createElement('div');
+        contentDiv.id = `cm${uuid}`;
+        contentDiv.className = 'message-content';
+
+        const senderDiv = document.createElement('div');
+        senderDiv.className = 'message-sender';
+        senderDiv.textContent = 'AI';
+
+        messageElement.appendChild(senderDiv);
+        messageElement.appendChild(contentDiv);
 
         let response = '';
+        let isStreamActive = true;
+
+        // 4. onmessage handler
         eventSource.onmessage = (e) => {
-            if (roomId !== state.currentRoom.id) return;
+            if (roomId !== state.currentRoom.id || !isStreamActive) return;
 
             typingIndicator.hide();
+
             if (!document.getElementById(uuid)) {
                 elements.chatMessages.appendChild(messageElement);
             }
 
             const message = JSON.parse(e.data);
+
             if (message.isEnd) {
+                isStreamActive = false;
                 stopStream(roomId);
 
                 if(message.error) {
@@ -289,18 +305,21 @@ async function sendMessage() {
                           </div>
                         `;
                     }
+                    return;
                 } else {
                     const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
                     state.messages.push(aiMessage);
 
-                    // messageElement добавить время ответа message.timestamp
+                    renderMessages(); // Обновляем UI
+                    scrollToBottom();
+                    return;
                 }
-
 
             } else {
                 response += message.content;
-                document.getElementById(`cm${uuid}`).innerHTML = marked.parse(response);
-                Prism.highlightAll();
+                contentDiv.innerHTML = marked.parse(response);
+                Prism.highlightAllUnder(contentDiv);
+                scrollToBottom();
             }
 
             scrollToBottom();
