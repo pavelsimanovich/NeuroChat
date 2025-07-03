@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: ${ACTIVE_PROFILE:dev}
   application:
     name: ollama-ai
   ai:
@@ -6,9 +8,10 @@ spring:
       base-url: http://localhost:11434
       chat:
         options:
-          model: deepseek-r1:14b
+          model: gemma3:12b
           temperature: 1
           num-ctx: 32768
+          keep-alive: 2s
   datasource:
     url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
     username: ${MYSQL_ROOT_USER:root}
@@ -19,6 +22,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
 
 logging:
   level:
@@ -27,3 +31,7 @@ logging:
 
 app:
   chat-limit: 100
+
+server:
+  http2:
+    enabled: true
