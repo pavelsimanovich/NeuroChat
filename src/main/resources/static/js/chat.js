@@ -73,11 +73,11 @@ async function loadRooms() {
 function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
-    const sortedRooms = [...state.rooms].sort((a, b) =>
+    state.rooms = [...state.rooms].sort((a, b) =>
         new Date(b.createdAt) - new Date(a.createdAt)
     );
 
-    sortedRooms.forEach(room => {
+    state.rooms.forEach(room => {
         const roomElement = document.createElement('div');
         roomElement.className = `room-item ${state.currentRoom?.id === room.id ? 'active' : ''}`;
         roomElement.textContent = room.title;
@@ -301,7 +301,7 @@ async function sendMessage() {
                         const limitMessages = document.getElementById('limitMessages');
                         limitMessages.innerHTML = `
                           <div class="limit-messages">
-                            Превышен лимит сообщений в комнате
+                            Превышен лимит сообщений в комнате, пожалуйста создайте новую.
                           </div>
                         `;
                     }
@@ -319,7 +319,7 @@ async function sendMessage() {
                 response += message.content;
                 contentDiv.innerHTML = marked.parse(response);
                 Prism.highlightAllUnder(contentDiv);
-                scrollToBottom();
+                //scrollToBottom();
             }
 
             scrollToBottom();
