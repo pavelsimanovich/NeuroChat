@@ -326,7 +326,8 @@ async function sendMessage() {
         }
 
         eventSource.onerror = (e) => {
-           onErrorSendMessage(e, roomId, tempMessage)
+            isStreamActive = false;
+            onErrorSendMessage(e, roomId, tempMessage)
         };
 
     } catch (error) {

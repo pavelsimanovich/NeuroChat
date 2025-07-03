@@ -4,8 +4,6 @@ import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.dto.ChatMessageDto;
 import org.springframework.stereotype.Component;
 
-import static com.ps.ollamaai.utils.MessageConverter.formatMessageContent;
-
 @Component
 public class ChatMessageToDtoConverter {
 
@@ -15,7 +13,7 @@ public class ChatMessageToDtoConverter {
         dto.setRoomId(message.getRoom().getId());
         dto.setUserId(message.getUserId());
         dto.setType(message.getType());
-        dto.setContent(formatMessageContent(message.getContent()));
+        dto.setContent(message.getContent());
         dto.setTimestamp(message.getTimestamp());
         return dto;
     }
