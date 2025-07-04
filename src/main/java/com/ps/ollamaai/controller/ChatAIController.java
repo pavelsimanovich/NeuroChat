@@ -63,10 +63,7 @@ public class ChatAIController {
                             return null;
                         })
                         .subscribeOn(Schedulers.boundedElastic())
-                        .thenReturn(new ChunkResponseDTO(
-                                e.getMessage(),
-                                true,
-                                LIMIT_EXCEEDED.name()
+                        .thenReturn(new ChunkResponseDTO(e.getMessage(), true, LIMIT_EXCEEDED.name()
                         ))
                         .flux())
                 .onErrorResume(e -> {
