@@ -9,23 +9,21 @@
     <link th:href="@{/css/lib/prism.css}" rel="stylesheet" />
     <link th:href="@{/css/chat.css}" rel="stylesheet" />
 
-
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<!--    &lt;!&ndash; Анимации (опционально) &ndash;&gt;-->
-<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">-->
 </head>
 <body>
 
 <input type="hidden" id="userId" th:value="${userId}" >
 <input type="hidden" id="userName" th:value="${userName}" >
+<input type="hidden" id="modelName" th:value="${modelName}" >
 
 <div class="container-fluid">
     <div class="row">
         <!-- Сайдбар с комнатами -->
         <div class="col-md-3 sidebar">
             <div class="sidebar-header">
-                <h4>Мои комнаты</h4>
+                <h4>Мои чаты</h4>
                 <button id="createRoomBtn" class="btn btn-primary btn-sm">+ Новая комната</button>
             </div>
             <div id="roomsList" class="rooms-list">
@@ -33,6 +31,7 @@
             </div>
 
             <div id="logout" class="logout">
+                <a style="color: #656e79" th:text="${'Based on ' + modelName}"></a>
                 <form th:action="@{/logout}" method="post">
                     <input type="submit" value="Выход" class="btn btn-link"/>
                 </form>
@@ -111,12 +110,11 @@
 <script th:src="@{/js/lib/marked.min.js}" type="text/javascript"></script>
 <script th:src="@{/js/lib/prism.js}" type="text/javascript"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>-->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!--User scripts-->
 <script type="text/javascript" th:src="@{/js/chat.js}"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 </body>
 </html>

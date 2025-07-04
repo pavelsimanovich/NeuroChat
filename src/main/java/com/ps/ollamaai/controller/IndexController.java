@@ -1,5 +1,6 @@
 package com.ps.ollamaai.controller;
 
+import com.ps.ollamaai.service.OllamaService;
 import com.ps.ollamaai.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +16,7 @@ import java.text.MessageFormat;
 public class IndexController {
 
     private final UserService userService;
+    private final OllamaService ollamaService;
 
     @GetMapping({"/", "/index"})
     public String index() {
@@ -24,6 +26,7 @@ public class IndexController {
     @GetMapping("/home")
     public String home(Model model, @AuthenticationPrincipal UserDetails currentUser) {
         final var user = userService.findByEmail(currentUser.getUsername());
+        model.addAttribute("modelName", ollamaService.getCurrentNodelName());
         model.addAttribute("userId", user.getId());
         model.addAttribute("userName", MessageFormat.format("{0} {1}",
                 user.getFirstName(), user.getLastName()));

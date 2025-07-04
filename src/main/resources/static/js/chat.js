@@ -73,11 +73,11 @@ async function loadRooms() {
 function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
-    const sortedRooms = [...state.rooms].sort((a, b) =>
+    state.rooms = [...state.rooms].sort((a, b) =>
         new Date(b.createdAt) - new Date(a.createdAt)
     );
 
-    sortedRooms.forEach(room => {
+    state.rooms.forEach(room => {
         const roomElement = document.createElement('div');
         roomElement.className = `room-item ${state.currentRoom?.id === room.id ? 'active' : ''}`;
         roomElement.textContent = room.title;
@@ -154,6 +154,7 @@ async function loadRoomMessages(roomId) {
 }
 
 // Рендер сообщений
+//todo
 function renderMessages() {
     elements.chatMessages.innerHTML = '';
 
@@ -301,33 +302,28 @@ async function sendMessage() {
                         const limitMessages = document.getElementById('limitMessages');
                         limitMessages.innerHTML = `
                           <div class="limit-messages">
-                            Превышен лимит сообщений в комнате
+                            Превышен лимит сообщений в комнате, пожалуйста создайте новую.
                           </div>
                         `;
                     }
-                    return;
                 } else {
                     const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
                     state.messages.push(aiMessage);
 
                     renderMessages(); // Обновляем UI
                     scrollToBottom();
-                    return;
                 }
 
             } else {
                 response += message.content;
                 contentDiv.innerHTML = marked.parse(response);
                 Prism.highlightAllUnder(contentDiv);
-                scrollToBottom();
             }
-
-            scrollToBottom();
         }
 
         eventSource.onerror = (e) => {
             isStreamActive = false;
-            onErrorSendMessage(e, roomId, tempMessage)
+            onErrorSendMessage(null, roomId, tempMessage)
         };
 
     } catch (error) {
@@ -336,7 +332,9 @@ async function sendMessage() {
 }
 
 const onErrorSendMessage = (error, roomId, tempMessage) => {
-    console.error('Error sending message:', error);
+    if (error) {
+        console.error('Error sending message:', error);
+    }
     showNotification("Error sending message", "error");
 
     typingIndicator.hide();
