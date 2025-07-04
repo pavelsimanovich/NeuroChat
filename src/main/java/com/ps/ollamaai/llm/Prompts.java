@@ -1,10 +1,9 @@
 package com.ps.ollamaai.llm;
 
-public final class Prompts {
+import lombok.experimental.UtilityClass;
 
-    private Prompts() {
-        throw new IllegalStateException("Utility class");
-    }
+@UtilityClass
+public final class Prompts {
 
     public static final String CURRENT_PROMPT_INSTRUCTIONS = """
             

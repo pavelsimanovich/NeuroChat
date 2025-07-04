@@ -154,6 +154,7 @@ async function loadRoomMessages(roomId) {
 }
 
 // Рендер сообщений
+//todo
 function renderMessages() {
     elements.chatMessages.innerHTML = '';
 
@@ -305,29 +306,24 @@ async function sendMessage() {
                           </div>
                         `;
                     }
-                    return;
                 } else {
                     const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
                     state.messages.push(aiMessage);
 
                     renderMessages(); // Обновляем UI
                     scrollToBottom();
-                    return;
                 }
 
             } else {
                 response += message.content;
                 contentDiv.innerHTML = marked.parse(response);
                 Prism.highlightAllUnder(contentDiv);
-                //scrollToBottom();
             }
-
-            scrollToBottom();
         }
 
         eventSource.onerror = (e) => {
             isStreamActive = false;
-            onErrorSendMessage(e, roomId, tempMessage)
+            onErrorSendMessage(null, roomId, tempMessage)
         };
 
     } catch (error) {
@@ -336,7 +332,9 @@ async function sendMessage() {
 }
 
 const onErrorSendMessage = (error, roomId, tempMessage) => {
-    console.error('Error sending message:', error);
+    if (error) {
+        console.error('Error sending message:', error);
+    }
     showNotification("Error sending message", "error");
 
     typingIndicator.hide();
