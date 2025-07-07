@@ -294,17 +294,7 @@ async function sendMessage() {
 
                 if(message.error) {
                     if (message.error === 'LIMIT_EXCEEDED') {
-                        elements.messageInput.disabled = true;
-                        elements.sendMessageBtn.disabled = true;
-                        elements.messageInput.classList.add("grey-color");
-                        document.getElementById(uuid).remove();
-
-                        const limitMessages = document.getElementById('limitMessages');
-                        limitMessages.innerHTML = `
-                          <div class="limit-messages">
-                            Превышен лимит сообщений в комнате, пожалуйста создайте новую.
-                          </div>
-                        `;
+                        handleLimitExceeded(uuid);
                     }
                 } else {
                     const aiMessage = getTempMessage(roomId, response, "temp-ai-", 'ai-assistant');
@@ -323,12 +313,26 @@ async function sendMessage() {
 
         eventSource.onerror = (e) => {
             isStreamActive = false;
-            onErrorSendMessage(null, roomId, tempMessage)
+            onErrorSendMessage(null, roomId, tempMessage);
         };
 
     } catch (error) {
-        onErrorSendMessage(error, roomId, tempMessage)
+        onErrorSendMessage(error, roomId, tempMessage);
     }
+}
+
+const handleLimitExceeded = (uuid) => {
+    elements.messageInput.disabled = true;
+    elements.sendMessageBtn.disabled = true;
+    elements.messageInput.classList.add("grey-color");
+    document.getElementById(uuid).remove();
+
+    const limitMessages = document.getElementById('limitMessages');
+    limitMessages.innerHTML = `
+      <div class="limit-messages">
+        Превышен лимит сообщений в комнате, пожалуйста создайте новую.
+      </div>
+    `;
 }
 
 const onErrorSendMessage = (error, roomId, tempMessage) => {
@@ -348,7 +352,7 @@ const onErrorSendMessage = (error, roomId, tempMessage) => {
     }
 }
 
-function stopStream(chatId) {
+const stopStream = (chatId) => {
     if (chatConnections[chatId]) {
         chatConnections[chatId].close();
         delete chatConnections[chatId];

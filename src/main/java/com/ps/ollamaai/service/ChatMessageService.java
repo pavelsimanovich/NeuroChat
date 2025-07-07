@@ -71,17 +71,17 @@ public class ChatMessageService {
 
     public String saveAiResponse(String roomId) {
         final String fullResponse = buffers.remove(roomId).toString();
-        final ChatMessage aiResponse = getChatMessage(roomId, "ai-assistant", AI_RESPONSE, fullResponse);
+        final ChatMessage aiResponse = createChatMessage(roomId, "ai-assistant", AI_RESPONSE, fullResponse);
         chatMessageRepository.save(aiResponse);
         return fullResponse;
     }
 
     public void saveUserMessage(final String roomId, final String userId, final String userPrompt) {
-        final ChatMessage message = getChatMessage(roomId, userId, USER_MESSAGE, userPrompt);
+        final ChatMessage message = createChatMessage(roomId, userId, USER_MESSAGE, userPrompt);
         chatMessageRepository.save(message);
     }
 
-    private ChatMessage getChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage, String userPrompt) {
+    private ChatMessage createChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage, String userPrompt) {
         final ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         // Получаем последний порядковый номер для этой комнаты

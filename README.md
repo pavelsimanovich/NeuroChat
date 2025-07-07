@@ -89,17 +89,3 @@ https://huggingface.co/
 ### P.S.
 - Project in development and can contain errors, some part of code should be rewritten.
 - Any help would be appreciated
-
-## License
-
-ALL RIGHTS TO THIS PROJECT OWNED BY PAVEL SIMANOVICH (paul.simanovich@gmail.com) (hereinafter referred to as the "Owner").
-
-This License Agreement grants individuals who wish to use, study, modify, or contribute to the project a limited right to use the source code of the project for **non-commercial and/or research purposes only**, provided the following conditions are met:
-
-1. All copyright notices and attributions to the original owner must be retained in all copies or substantial portions of the project.
-2. The project or any part of it may not be used for commercial purposes without prior written permission from the Owner.
-3. Neither the source code nor compiled versions of the project may be distributed as a standalone product, plugin, library, or SDK without prior coordination with the Owner.
-
-## Disclaimer of Warranty
-
-THE PROJECT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
