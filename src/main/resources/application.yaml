@@ -1,4 +1,12 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+  web:
+    resources:
+      static-locations: "classpath:/static/,file:${file.upload-dir:uploads}"
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   application:
@@ -31,6 +39,8 @@ logging:
 
 app:
   chat-limit: 100
+  file:
+    upload-dir: ${UPLOAD_DIR:src/main/resources/upload/}
 
 server:
   http2:
