@@ -102,10 +102,6 @@ async function loadRooms() {
             throw new Error('Invalid rooms data received from server');
         }
 
-        state.rooms = [...state.rooms].sort((a, b) =>
-            new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-        );
-
         renderRoomsList();
         if (state.rooms.length) {
             await switchToLastRoom();
@@ -125,6 +121,10 @@ function renderRoomsList() {
         elements.roomsList.innerHTML = '<div class="no-rooms">Нет доступных чатов</div>';
         return;
     }
+
+    state.rooms = [...state.rooms].sort((a, b) =>
+        new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
 
     state.rooms.forEach(room => {
         if (!room?.id || !room?.title) return;
