@@ -15,6 +15,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
@@ -49,6 +50,9 @@ public class ChatAIController {
     private final ChatRoomService chatRoomService;
     private final ReactiveService reactiveService;
     private final FileService fileService;
+
+    @Value("${app.file.upload-dir}")
+    private String uploadDir;
 
     @PostMapping("/upload")
     public String handleFileUpload(@RequestParam("file") MultipartFile file) {
@@ -117,7 +121,7 @@ public class ChatAIController {
         UserMessage userMessage;
         if (fileUrl != null && !fileUrl.isEmpty()) {
             // Обрабатываем файл изображения
-            Path filePath = Path.of("src/main/resources/upload/",
+            Path filePath = Path.of(uploadDir,
                     fileUrl.replace("[\"", "").replace("\"]", ""));
             Resource resource = new UrlResource(filePath.toUri());
 

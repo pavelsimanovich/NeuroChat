@@ -17,7 +17,6 @@ const elements = (function() {
         createRoomModal: document.getElementById('createRoomModal')
             ? new bootstrap.Modal('#createRoomModal')
             : null,
-        deleteRoomBtn: document.getElementById('deleteRoomBtn'),
         userId: document.getElementById('userId')?.value || '',
         userName: document.getElementById('userName')?.value || 'User',
         fileInput: null,
@@ -30,7 +29,7 @@ const elements = (function() {
         // Инициализация элементов для загрузки файлов
         elements.fileInput = document.createElement('input');
         elements.fileInput.type = 'file';
-        elements.fileInput.multiple = true;
+        elements.fileInput.multiple = false;
         elements.fileInput.style.display = 'none';
 
         elements.uploadButton = document.querySelector('#uploadButton') ||
@@ -131,9 +130,39 @@ function renderRoomsList() {
 
         const roomElement = document.createElement('div');
         roomElement.className = `room-item ${state.currentRoom?.id === room.id ? 'active' : ''}`;
-        roomElement.textContent = room.title;
-        roomElement.title = room.title;
-        roomElement.addEventListener('click', () => switchRoom(room));
+
+        // Контейнер для названия и кнопки удаления
+        const roomContent = document.createElement('div');
+        roomContent.className = 'room-content';
+        roomContent.style.display = 'flex';
+        roomContent.style.alignItems = 'center';
+        roomContent.style.justifyContent = 'space-between';
+
+        // Название комнаты
+        const titleElement = document.createElement('span');
+        titleElement.textContent = room.title;
+        titleElement.title = room.title;
+        titleElement.style.flex = '1';
+        titleElement.style.cursor = 'pointer';
+        titleElement.addEventListener('click', () => switchRoom(room));
+
+        // Кнопка удаления
+        const deleteButton = document.createElement('button');
+         deleteButton.id= 'deleteRoomBtn';
+         deleteButton.className = 'btn-delete';
+         deleteButton.innerHTML = '<svg class="icon-delete" viewBox="0 0 24 24">\n' +
+             '                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>' +
+             '                    </svg>';
+        deleteButton.title = `Удалить "${room.title}"`;
+        deleteButton.style.marginLeft = '10px';
+        deleteButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Предотвращаем переключение комнаты при клике на кнопку
+            handleDeleteRoom(room);
+        });
+
+        roomContent.appendChild(titleElement);
+        roomContent.appendChild(deleteButton);
+        roomElement.appendChild(roomContent);
 
         elements.roomsList.appendChild(roomElement);
     });
@@ -160,7 +189,6 @@ async function switchRoom(room) {
         }
 
         scrollToBottom();
-        updateDeleteButtonVisibility();
     } catch (error) {
         console.error('Error switching room:', error);
         showNotification('Ошибка загрузки', 'error');
@@ -293,18 +321,8 @@ async function sendMessage() {
     try {
         let fileUrls = [];
         if (files.length) {
-            fileUrls = await Promise.all(
-                Array.from(files).map(async file => {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    const response = await fetch(`/api/direct/upload`, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (!response.ok) throw new Error('File upload failed');
-                    return await response.text();
-                })
-            );
+            let fileUrl = await uploadFile(files[0]);
+            fileUrls.push(fileUrl);
         }
 
         if (!state.currentRoom) throw new Error('No current room selected');
@@ -798,15 +816,7 @@ const typingIndicator = {
 async function handleDeleteRoom() {
     if (!state.currentRoom || !await confirmDeleteChat(state.currentRoom.title)) return;
 
-    const deleteBtn = elements.deleteRoomBtn;
-    const originalHtml = deleteBtn?.innerHTML;
-
     try {
-        if (deleteBtn) {
-            deleteBtn.disabled = true;
-            deleteBtn.innerHTML = '<div class="spinner"></div>';
-        }
-
         const response = await fetch(`/api/chat/rooms/${state.currentRoom.id}`, {
             method: 'DELETE',
             headers: {
@@ -829,19 +839,12 @@ async function handleDeleteRoom() {
 
         if (state.rooms.length) {
             await switchRoom(state.rooms[0]);
-        } else {
-            updateDeleteButtonVisibility();
         }
 
         showNotification('Чат успешно удален', 'success');
     } catch (error) {
         console.error('Error deleting room:', error);
         showNotification('Не удалось удалить чат', 'error');
-    } finally {
-        if (deleteBtn) {
-            deleteBtn.disabled = false;
-            deleteBtn.innerHTML = originalHtml;
-        }
     }
 }
 
@@ -862,14 +865,6 @@ async function confirmDeleteChat(title) {
         hideClass: { popup: 'animate__animated animate__fadeOutUp' }
     });
     return result.isConfirmed;
-}
-
-function updateDeleteButtonVisibility() {
-    if (elements.deleteRoomBtn) {
-        elements.deleteRoomBtn.style.display = state.currentRoom ? 'flex' : 'none';
-        elements.deleteRoomBtn.removeEventListener('click', handleDeleteRoom);
-        elements.deleteRoomBtn.addEventListener('click', handleDeleteRoom);
-    }
 }
 
 function showNotification(message, type = 'info') {
@@ -899,7 +894,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         setupEventListeners();
         loadRooms();
-        updateDeleteButtonVisibility();
         updateSendButtonState();
 
         if (elements.messageInput) {

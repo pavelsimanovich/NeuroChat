@@ -1,6 +1,5 @@
 package com.ps.ollamaai.service;
 
-import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,11 +44,8 @@ public class FileService {
     }
 
     public void deleteFile(final String name) {
-        try {
-            FileUtils.deleteDirectory(new File(uploadDir +
-                    name.replace("[\"", "").replace("\"]","")));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        new File(uploadDir + name.replace("[\"", "").replace("\"]",""))
+                .delete();
+
     }
 }

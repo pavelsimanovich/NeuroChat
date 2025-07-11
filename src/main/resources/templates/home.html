@@ -8,9 +8,8 @@
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css" />
     <link th:href="@{/css/lib/prism.css}" rel="stylesheet" />
     <link th:href="@{/css/chat.css}" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
@@ -44,11 +43,6 @@
         <div class="col-md-9 chat-area">
             <div class="chat-header">
                 <h4 id="currentRoomTitle" th:text="${userName + ' Выберите или создайте чат'}"></h4>
-                <button id="deleteRoomBtn" class="btn-delete" title="Удалить чат" style="display: none;" >
-                    <svg class="icon-delete" viewBox="0 0 24 24">
-                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                    </svg>
-                </button>
             </div>
 
             <!-- Контейнер для уведомлений -->
