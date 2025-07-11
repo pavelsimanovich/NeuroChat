@@ -952,6 +952,28 @@ function setupFileUpload() {
     }
 }
 
+// Удаление файла из превью и input
+function removeFile(index) {
+    const fileInput = elements.fileInput;
+    const files = Array.from(fileInput.files);
+    
+    // Удаляем файл из массива
+    files.splice(index, 1);
+    
+    // Создаем новый DataTransfer для обновления input.files
+    const dataTransfer = new DataTransfer();
+    files.forEach(file => dataTransfer.items.add(file));
+    
+    // Обновляем input.files
+    fileInput.files = dataTransfer.files;
+    
+    // Обновляем превью
+    showFilePreviews(Array.from(fileInput.files));
+    
+    // Обновляем состояние кнопки отправки
+    updateSendButtonState();
+}
+
 function showFilePreviews(files) {
     const filePreview = document.getElementById('filePreview');
     if (!filePreview) return;
