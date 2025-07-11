@@ -6,7 +6,7 @@ spring:
       enabled: true
   web:
     resources:
-      static-locations: "classpath:/static/,file:${file.upload-dir:uploads}"
+      static-locations: "classpath:/static/,file:${file.upload-dir:upload}"
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   application:
