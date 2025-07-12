@@ -533,7 +533,7 @@ body {
 .icon-delete {
     width: 20px;
     height: 20px;
-    fill: #ff4444;
+    fill: gray;
 }
 
 /* Header actions */
