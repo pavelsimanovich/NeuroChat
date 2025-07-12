@@ -522,18 +522,18 @@ body {
 }
 
 .btn-delete:hover {
-    background: rgba(255, 0, 0, 0.1);
+    background: rgba(255, 0, 0, 0.56);
 }
 
 .btn-delete:focus {
     outline: none;
-    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 53, 0.83);
 }
 
 .icon-delete {
     width: 20px;
     height: 20px;
-    fill: gray;
+    fill: rgba(255, 106, 0, 0.48);
 }
 
 /* Header actions */
@@ -631,33 +631,3 @@ body {
     bottom: 0;
     position: absolute;
 }
-
-
-/*.message-content pre {*/
-/*    position: relative;*/
-/*    overflow: auto;*/
-/*    padding-right: 100px;*/
-/*}*/
-
-/*.copy-code-btn {*/
-/*    position: absolute;*/
-/*    top: 8px;*/
-/*    right: 8px;*/
-/*    padding: 4px 10px;*/
-/*    font-size: 12px;*/
-/*    background-color: #555;*/
-/*    color: #fff;*/
-/*    border: none;*/
-/*    border-radius: 4px;*/
-/*    cursor: pointer;*/
-/*    z-index: 10;*/
-/*    transition: background-color 0.3s ease;*/
-/*}*/
-
-/*.copy-code-btn:hover {*/
-/*    background-color: #777;*/
-/*}*/
-
-/*.copy-code-btn.copied {*/
-/*    background-color: #28a745;*/
-/*}*/
