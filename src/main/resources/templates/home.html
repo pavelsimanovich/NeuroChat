@@ -41,9 +41,21 @@
 
         <!-- Основная область чата -->
         <div class="col-md-9 chat-area">
-            <div class="chat-header">
+            <div class="chat-header d-flex justify-content-between align-items-center">
                 <h4 id="currentRoomTitle" th:text="${userName + ' Выберите или создайте чат'}"></h4>
+                <button id="toggleSearch" class="btn btn-link text-decoration-none">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
+            <div class="search-bar mb-3 d-none">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Поиск сообщений...">
+                    <button id="searchButton" class="btn btn-outline-secondary" type="button">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="search-results d-none" id="searchResults"></div>
 
             <!-- Контейнер для уведомлений -->
             <div id="toastContainer" class="toast-container"></div>
@@ -135,6 +147,7 @@
 
 <!--User scripts-->
 <script type="text/javascript" th:src="@{/js/chat.js}"></script>
+<script type="text/javascript" th:src="@{/js/search.js}"></script>
 
 </body>
 </html>

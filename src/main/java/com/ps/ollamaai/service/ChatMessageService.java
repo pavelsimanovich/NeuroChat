@@ -46,6 +46,13 @@ public class ChatMessageService {
     private final Map<String, List<Message>> conversationalHistory = new ConcurrentHashMap<>();
     private final Map<String, StringBuilder> buffers = new ConcurrentHashMap<>();
 
+    public List<ChatMessageDto> searchMessages(String roomId, String query) {
+        return chatMessageRepository.searchMessages(roomId, query)
+                .stream()
+                .map(chatMessageToDtoConverter::convertToDto)
+                .toList();
+    }
+
     @Transactional
     public List<Message> processChatMessage(String message, String chatId, String userName) throws LimitExceededException {
         final User user = userService.findByEmail(userName);

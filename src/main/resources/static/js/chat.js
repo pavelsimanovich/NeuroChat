@@ -21,8 +21,7 @@ const elements = (function() {
         userName: document.getElementById('userName')?.value || 'User',
         fileInput: null,
         filePreview: null,
-        uploadButton: null,
-        limitMessages: document.getElementById('limitMessages')
+        uploadButton: null
     };
 
     function init() {
@@ -227,6 +226,7 @@ function renderMessages() {
     sortedMessages.forEach(message => {
         const messageElement = document.createElement('div');
         messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
+        messageElement.setAttribute('data-message-id', message.id);
         if (message.error) messageElement.classList.add('message-error');
 
         messageElement.innerHTML = `

@@ -48,4 +48,12 @@ public class ChatRoomApiController {
         chatRoomService.deleteRoom(roomId, userId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/messages/search")
+    public ResponseEntity<List<ChatMessageDto>> searchMessages(
+            final @RequestParam String roomId,
+            final @RequestParam String query) {
+        final List<ChatMessageDto> messages = chatMessageService.searchMessages(roomId, query);
+        return ResponseEntity.ok(messages);
+    }
 }
