@@ -26,6 +26,7 @@ function toggleSearch() {
         searchElements.searchBar.classList.remove('d-none');
         searchElements.searchResults.classList.remove('d-none');
         searchElements.searchInput.focus();
+        searchElements.searchResults.innerHTML = '';
     } else {
         searchElements.searchBar.classList.add('d-none');
         searchElements.searchResults.classList.add('d-none');
