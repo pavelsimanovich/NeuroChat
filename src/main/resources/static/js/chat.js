@@ -520,6 +520,7 @@ function setupFileUpload() {
         drop: (e) => {
             e.preventDefault();
             e.stopPropagation();
+            dragCounter = 0; // Reset drag counter
             hideDragOverlay();
             if (e.dataTransfer.files?.length) {
                 elements.fileInput.files = e.dataTransfer.files;
@@ -873,7 +874,7 @@ function showNotification(message, type = 'info') {
         textContent: message
     });
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
+    setTimeout(() => notification.remove(), 4000);
 }
 
 function hideInputs(disabled) {
