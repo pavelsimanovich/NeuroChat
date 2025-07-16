@@ -93,17 +93,12 @@ public class ChatMessageService {
         return fullResponse;
     }
 
-    @Transactional
     public ChatMessage saveUserMessage(final String roomId, final String userId, final String userPrompt, FileData fileData) {
         final ChatMessage message = createChatMessage(roomId, userId, USER_MESSAGE, userPrompt);
         if (fileData != null) {
             message.setFileData(fileData);
         }
         return chatMessageRepository.save(message);
-    }
-    
-    public void saveUserMessage(final String roomId, final String userId, final String userPrompt) {
-        saveUserMessage(roomId, userId, userPrompt, null);
     }
 
     private ChatMessage createChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage, String userPrompt) {

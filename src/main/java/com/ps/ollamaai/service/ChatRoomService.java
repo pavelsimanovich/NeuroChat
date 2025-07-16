@@ -5,6 +5,7 @@ import com.ps.ollamaai.dto.ChatRoomDto;
 import com.ps.ollamaai.dto.converter.ChatRoomToDtoConverter;
 import com.ps.ollamaai.repository.ChatMessageRepository;
 import com.ps.ollamaai.repository.ChatRoomRepository;
+import com.ps.ollamaai.repository.FileDataRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class ChatRoomService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomToDtoConverter chatRoomToDtoConverter;
     private final ChatMessageService chatMessageService;
+    private final FileDataRepository fileDataRepository;
 
     public ChatRoomDto createRoom(final String userId, final String title) {
         final ChatRoom room = new ChatRoom();
@@ -48,6 +50,11 @@ public class ChatRoomService {
         chatMessageRepository.deleteByRoomId(roomId);
         chatRoomRepository.deleteById(roomId);
         chatMessageService.deleteConversationHistory(roomId);
+        room.getMessages().forEach(message -> {
+            if (message.getFileData() != null) {
+                fileDataRepository.deleteById(message.getFileData().getId());
+            }
+        });
     }
 
     @Transactional

@@ -5,7 +5,6 @@ import com.ps.ollamaai.dto.ChunkResponseDTO;
 import com.ps.ollamaai.exceptions.LimitExceededException;
 import com.ps.ollamaai.service.ChatMessageService;
 import com.ps.ollamaai.service.ChatRoomService;
-import com.ps.ollamaai.service.FileService;
 import com.ps.ollamaai.service.FileStorageService;
 import com.ps.ollamaai.service.ReactiveService;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +45,6 @@ public class ChatAIController {
     private final ChatMessageService chatMessageService;
     private final ChatRoomService chatRoomService;
     private final ReactiveService reactiveService;
-    private final FileService fileService;
     private final FileStorageService fileStorageService;
 
 
@@ -64,7 +62,6 @@ public class ChatAIController {
             fileData = null;
         }
 
-
         return reactiveService.processChatMessageReactive(question, chatId, principal.getName(), fileData)
                 .flatMapMany(currentHistory -> {
                     try {
@@ -78,13 +75,12 @@ public class ChatAIController {
                                 .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId))
                                 .stream()
                                 .content()
-                                .filter(chunk -> chunk != null && !chunk.isEmpty())
                                 .map(chunk -> new ChunkResponseDTO(chunk, false, null))
                                 .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
                                 .doOnComplete(() -> {
                                     String response = chatMessageService.saveAiResponse(chatId);
                                     // Обновляем currentHistory
-                                    currentHistory.add(new UserMessage(CURRENT_PROMPT_INSTRUCTIONS.concat(question)));
+                                    currentHistory.add(new UserMessage(question));
                                     currentHistory.add(new AssistantMessage(response));
                                 })
                                 .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
@@ -107,15 +103,12 @@ public class ChatAIController {
     }
 
     private List<Message> getMessages(String question, FileData fileData, List<Message> currentHistory) {
-        // Copy the current message history
         List<Message> messages = new ArrayList<>(currentHistory);
 
-        // Create UserMessage for the current request
         UserMessage userMessage;
-        // Create a final copy of fileData for use in the lambda
         final FileData finalFileData = fileData;
+        //todo
         if (fileData != null && fileData.getContentType() != null) {
-            // Handle file
             ByteArrayResource resource = new ByteArrayResource(finalFileData.getData()) {
                 @Override
                 public String getFilename() {
@@ -123,23 +116,17 @@ public class ChatAIController {
                 }
             };
 
-            // Create Media object for the image
             Media imageMedia = Media.builder()
                     .data(resource)
                     .mimeType(MimeType.valueOf(finalFileData.getContentType()))
                     .build();
-
-            // Create UserMessage with text and image
             userMessage = UserMessage.builder()
                     .text(CURRENT_PROMPT_INSTRUCTIONS + question)
                     .media(List.of(imageMedia))
                     .build();
         } else {
-            // If no image, just text
             userMessage = new UserMessage(CURRENT_PROMPT_INSTRUCTIONS + question);
         }
-
-        // Add the new UserMessage to the message list
         messages.add(userMessage);
         return messages;
     }

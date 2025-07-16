@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
@@ -34,10 +32,7 @@ public class FileController {
             FileData fileData = fileStorageService.storeFile(file);
             FileDataDto dto = fileDataToDtoConverter.convertToDto(fileData);
             return ResponseEntity.ok(dto);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
-        } catch (Exception e) {
+        }  catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
         }
