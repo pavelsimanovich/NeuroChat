@@ -46,4 +46,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, String
         ORDER BY q.timestamp ASC
         """)
     List<ChatMessage> searchMessages(@Param("roomId") String roomId, @Param("query") String query);
+
+    long countByFileDataId(String fileDataId);
 }
