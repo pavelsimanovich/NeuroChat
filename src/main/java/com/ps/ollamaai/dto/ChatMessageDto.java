@@ -13,4 +13,5 @@ public class ChatMessageDto {
     private ChatMessage.MessageType type;
     private String content;
     private LocalDateTime timestamp;
+    private FileDataDto fileData; // Reference to file data
 }

@@ -43,7 +43,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, String
     @Query("""
         SELECT q FROM ChatMessage q
         WHERE q.content LIKE %:query% AND q.room.id = :roomId
-        ORDER BY q.timestamp DESC
+        ORDER BY q.timestamp ASC
         """)
     List<ChatMessage> searchMessages(@Param("roomId") String roomId, @Param("query") String query);
 }

@@ -23,8 +23,10 @@ body {
     padding: 8px 12px;
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    max-width: 300px;
+    max-width: 500px;
     position: relative;
+    margin-left: auto;
+    margin-right: 0;
 }
 
 .file-thumbnail {
@@ -146,10 +148,93 @@ body {
 
 .message {
     margin-bottom: 15px;
-    max-width: 70%;
-    padding: 10px 15px;
-    border-radius: 15px;
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 18px;
     word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* File previews in messages */
+.message-files {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.message-file-preview {
+    max-width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.message-file-thumbnail {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+}
+
+.message-file {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    max-width: 300px;
+    transition: background-color 0.2s;
+}
+
+.ai-message .message-file {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.user-message .message-file {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.message-file .file-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    margin-right: 10px;
+    color: inherit;
+}
+
+.message-file .file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-file .file-name {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+}
+
+.message-file .file-size {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.file-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.file-link:hover {
+    text-decoration: none;
 }
 
 .user-message {
@@ -676,4 +761,12 @@ body {
     border-top: 1px solid #dee2e6;
     bottom: 0;
     position: absolute;
+}
+
+.file-preview-image {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
 }

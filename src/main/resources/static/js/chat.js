@@ -28,6 +28,7 @@ const elements = (function() {
         // Инициализация элементов для загрузки файлов
         elements.fileInput = document.createElement('input');
         elements.fileInput.type = 'file';
+        elements.fileInput.accept = 'image/*'; // Только изображения
         elements.fileInput.multiple = false;
         elements.fileInput.style.display = 'none';
 
@@ -229,9 +230,43 @@ function renderMessages() {
         messageElement.setAttribute('data-message-id', message.id);
         if (message.error) messageElement.classList.add('message-error');
 
+        // Handle file data if it exists
+        let filePreviews = '';
+        if (message.fileData) {
+            const fileData = message.fileData;
+            const fileExtension = fileData.fileName ? fileData.fileName.split('.').pop().toLowerCase() : '';
+            const isImage = fileData.contentType && fileData.contentType.startsWith('image/');
+            const fileUrl = `/api/files/${fileData.id}`;
+            const previewUrl = getFilePreviewUrl(fileData);
+            
+            if (isImage) {
+                filePreviews = `
+                    <div class="file-preview">
+                        <img src="${previewUrl}" alt="${fileData.fileName || 'Image'}" class="file-preview-image">
+                    </div>
+                `;
+            } else {
+                filePreviews = `
+                    <div class="file-preview">
+                        <div class="file-icon">
+                            <i class="bi ${getFileIconClass(fileExtension)}"></i>
+                        </div>
+                        <div class="file-preview-info">
+                            <div class="file-preview-name">${fileData.fileName || 'File'}</div>
+                            ${fileData.size ? `<div class="file-preview-size">${formatFileSize(fileData.size)}${fileExtension ? ' • ' + fileExtension.toUpperCase() : ''}</div>` : ''}
+                        </div>
+                        <a href="${fileUrl}" class="file-download" download="${fileData.fileName || 'download'}" title="Скачать">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+
         messageElement.innerHTML = `
             <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
-            <div class="message-content">${marked.parse(message.content)}</div>
+            ${filePreviews}
+            <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
             <div class="message-meta">
                 <span class="message-time">${formatTime(message.timestamp)}</span>
                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
@@ -299,7 +334,8 @@ function getTempMessage(roomId, messageContent, idPrefix, userId) {
         userId,
         type: userId !== 'ai-assistant' ? 'USER_MESSAGE' : 'AI_MESSAGE',
         content: messageContent,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        fileUrls: null
     };
 }
 
@@ -313,21 +349,34 @@ async function sendMessage() {
     elements.sendButton.disabled = true;
 
     const roomId = state.currentRoom.id;
+    let fileData = null;
+    
+    // Upload file first if exists
+    if (files.length) {
+        try {
+            fileData = await uploadFile(files[0]);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            showNotification('Ошибка при загрузке файла', 'error');
+            elements.sendButton.disabled = false;
+            return;
+        }
+    }
+    
+    // Create temp message with file data if available
     const tempMessage = getTempMessage(roomId, messageContent, 'temp-user-', elements.userId);
+    if (fileData) {
+        tempMessage.fileData = fileData;
+    }
+    
     state.messages.push(tempMessage);
     renderMessages();
     scrollToBottom();
 
     try {
-        let fileUrls = [];
-        if (files.length) {
-            let fileUrl = await uploadFile(files[0]);
-            fileUrls.push(fileUrl);
-        }
-
         if (!state.currentRoom) throw new Error('No current room selected');
 
-        if (window.eventSource) {//todo
+        if (window.eventSource) {
             window.eventSource.close();
         }
 
@@ -343,9 +392,14 @@ async function sendMessage() {
         const url = new URL(`/api/direct/stream`, window.location.origin);
         url.searchParams.append('chatId', roomId);
         url.searchParams.append('question', messageContent);
-        if (fileUrls.length) {
-            url.searchParams.append('fileUrl', JSON.stringify(fileUrls));
+        if (fileData) {
+            url.searchParams.append('fileId', fileData.id);
         }
+        
+        // Clear message input and file input
+        if (elements.messageInput) elements.messageInput.value = '';
+        if (elements.fileInput) elements.fileInput.value = '';
+
 
         eventSource = new EventSource(url.toString());
         chatConnections[roomId] = eventSource;
@@ -696,18 +750,33 @@ async function uploadFile(file) {
     formData.append('file', file);
 
     try {
-        const response = await fetch('/api/direct/upload', {
+        const response = await fetch('/api/files/upload', {
             method: 'POST',
             body: formData
         });
 
-        if (!response.ok) throw new Error('File upload failed');
-        return await response.text();
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`File upload failed: ${error}`);
+        }
+        
+        // Get the file data from the response
+        return await response.json();
     } catch (error) {
         console.error('Error uploading file:', error);
-        showNotification('Не удалось загрузить файл', 'error');
+        showNotification(`Не удалось загрузить файл: ${error.message}`, 'error');
         throw error;
     }
+}
+
+function getFilePreviewUrl(fileData) {
+    if (!fileData) return '';
+    
+    if (fileData.contentType && fileData.contentType.startsWith('image/')) {
+        return `/api/files/${fileData.id}/preview`;
+    }
+    
+    return ''; // For non-image files, we'll just show an icon
 }
 
 function setupEventListeners() {
