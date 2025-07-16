@@ -1,5 +1,6 @@
 package com.ps.ollamaai.service;
 
+import com.ps.ollamaai.domain.FileData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
@@ -14,8 +15,8 @@ public class ReactiveService {
 
     private final ChatMessageService chatMessageService;
 
-    public Mono<List<Message>> processChatMessageReactive(String question, String chatId, String username) {
-        return Mono.fromCallable(() -> chatMessageService.processChatMessage(question, chatId, username))
+    public Mono<List<Message>> processChatMessageReactive(String question, String chatId, String username, FileData fileData) {
+        return Mono.fromCallable(() -> chatMessageService.processChatMessage(question, chatId, username, fileData))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 }

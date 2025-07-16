@@ -51,4 +51,7 @@ public class ChatMessage implements Serializable {
     @Column(name = "message_order", nullable = false, updatable = false)
     private Long order =  System.currentTimeMillis(); // Для сохранения порядка сообщений
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "file_data_id")
+    private FileData fileData;
 }
