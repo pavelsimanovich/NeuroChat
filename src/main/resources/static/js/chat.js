@@ -28,6 +28,7 @@ const elements = (function() {
         // Инициализация элементов для загрузки файлов
         elements.fileInput = document.createElement('input');
         elements.fileInput.type = 'file';
+        elements.fileInput.accept = 'image/*'; // Только изображения
         elements.fileInput.multiple = false;
         elements.fileInput.style.display = 'none';
 
