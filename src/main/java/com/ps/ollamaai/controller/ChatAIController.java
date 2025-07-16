@@ -114,8 +114,8 @@ public class ChatAIController {
         UserMessage userMessage;
         // Create a final copy of fileData for use in the lambda
         final FileData finalFileData = fileData;
-        if (fileData != null && fileData.getContentType() != null && fileData.getContentType().startsWith("image/")) {
-            // Handle image file
+        if (fileData != null && fileData.getContentType() != null) {
+            // Handle file
             ByteArrayResource resource = new ByteArrayResource(finalFileData.getData()) {
                 @Override
                 public String getFilename() {
