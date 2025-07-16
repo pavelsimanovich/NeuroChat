@@ -84,6 +84,7 @@ https://huggingface.co/
     - Conversation continuity across sessions
 - **Usage Controls**:
     - Configurable rate limiting
+- **Image Analysis**:
 
 
 ### P.S.

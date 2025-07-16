@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,14 +21,12 @@ public class FileStorageService {
             throw new IllegalArgumentException("File cannot be null or empty");
         }
 
-        // Create a new transient entity
         FileData fileData = new FileData();
         fileData.setFileName(file.getOriginalFilename());
         fileData.setContentType(file.getContentType());
         fileData.setData(file.getBytes());
         fileData.setSize(file.getSize());
         
-        // Save and return the managed entity
         return fileDataRepository.save(fileData);
     }
 

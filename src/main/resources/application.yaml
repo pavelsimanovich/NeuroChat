@@ -6,7 +6,7 @@ spring:
       enabled: true
   web:
     resources:
-      static-locations: "classpath:/static/,file:${file.upload-dir:upload}"
+      static-locations: "classpath:/static/"
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   application:
@@ -16,10 +16,10 @@ spring:
       base-url: http://localhost:11434
       chat:
         options:
-          model: gemma3:12b
+          model: gemma3:4b
           temperature: 1
           num-ctx: 32768
-          keep-alive: 2s
+          keep-alive: 30s
   datasource:
     url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
     username: ${MYSQL_ROOT_USER:root}
@@ -39,8 +39,6 @@ logging:
 
 app:
   chat-limit: 100
-  file:
-    upload-dir: ${UPLOAD_DIR:src/main/resources/upload/}
 
 server:
   http2:

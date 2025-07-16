@@ -28,7 +28,7 @@ const elements = (function() {
         // Инициализация элементов для загрузки файлов
         elements.fileInput = document.createElement('input');
         elements.fileInput.type = 'file';
-        elements.fileInput.accept = 'image/*'; // Только изображения
+        elements.fileInput.accept = 'image/*'; // Только изображения, модель не поддерживает другие форматы
         elements.fileInput.multiple = false;
         elements.fileInput.style.display = 'none';
 
@@ -118,8 +118,11 @@ function renderRoomsList() {
 
     if (!state.rooms?.length) {
         elements.roomsList.innerHTML = '<div class="no-rooms">Нет доступных чатов</div>';
+        hideInputs(true); // Прячем ввод и кнопку загрузки, если комнат нет
         return;
     }
+
+    hideInputs(false); // Показываем ввод и кнопку загрузки, если комнаты есть
 
     state.rooms = [...state.rooms].sort((a, b) =>
         new Date(b.createdAt || 0) - new Date(a.createdAt || 0)

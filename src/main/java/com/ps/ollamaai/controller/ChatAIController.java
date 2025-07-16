@@ -107,7 +107,6 @@ public class ChatAIController {
 
         UserMessage userMessage;
         final FileData finalFileData = fileData;
-        //todo
         if (fileData != null && fileData.getContentType() != null) {
             ByteArrayResource resource = new ByteArrayResource(finalFileData.getData()) {
                 @Override
