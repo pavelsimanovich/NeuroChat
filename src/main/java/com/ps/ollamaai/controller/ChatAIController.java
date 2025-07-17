@@ -2,6 +2,7 @@ package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.FileData;
 import com.ps.ollamaai.dto.ChunkResponseDTO;
+import com.ps.ollamaai.exceptions.GeneralFluxException;
 import com.ps.ollamaai.exceptions.LimitExceededException;
 import com.ps.ollamaai.service.ChatMessageService;
 import com.ps.ollamaai.service.ChatRoomService;
@@ -67,7 +68,6 @@ public class ChatAIController {
                     try {
                         List<Message> messages = getMessages(question, fileData, currentHistory);
 
-                        // Создаем Prompt с историей сообщений и текущим запросом
                         Prompt prompt = new Prompt(messages);
 
                         return chatClient
@@ -85,7 +85,7 @@ public class ChatAIController {
                                 })
                                 .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
                     } catch (Exception e) {
-                        throw new RuntimeException("Error building prompt: " + e.getMessage(), e);
+                        throw new GeneralFluxException("Error building prompt: " + e.getMessage(), e);
                     }
                 })
                 .publishOn(Schedulers.boundedElastic())

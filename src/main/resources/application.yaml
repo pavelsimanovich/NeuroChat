@@ -18,7 +18,7 @@ spring:
         options:
           model: gemma3:4b
           temperature: 1
-          num-ctx: 32768
+          num-ctx: 65536
           keep-alive: 30s
   datasource:
     url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
