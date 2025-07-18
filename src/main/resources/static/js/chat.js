@@ -437,8 +437,11 @@ async function sendMessage() {
                 isStreamActive = false;
                 stopStream(roomId);
 
+                //todo
                 if (message.error === 'LIMIT_EXCEEDED') {
                     handleLimitExceeded(uuid);
+                } if (message.error === 'SERVER_ERROR') {
+                    onErrorSendMessage(message.content, roomId, tempMessage);
                 } else {
                     state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
                     window.dispatchEvent(new CustomEvent('messageSent'));
@@ -455,7 +458,7 @@ async function sendMessage() {
             }
         };
 
-        eventSource.onerror = () => {
+        eventSource.onerror = (e) => {
             isStreamActive = false;
             onErrorSendMessage(null, roomId, tempMessage);
         };
@@ -472,14 +475,19 @@ function handleLimitExceeded(uuid) {
     elements.messageInput.classList.add('grey-color');
     document.getElementById(uuid)?.remove();
 
-    if (elements.limitMessages) {
-        elements.limitMessages.innerHTML = '<div class="limit-messages">Превышен лимит сообщений в комнате, пожалуйста создайте новую.</div>';
-    }
+    const limitMessages = document.getElementById('limitMessages');
+    limitMessages.innerHTML = `
+      <div class="limit-messages">
+        Превышен лимит сообщений в комнате, пожалуйста создайте новую.
+      </div>
+    `;
 }
 
 function onErrorSendMessage(error, roomId, tempMessage) {
-    if (error) console.error('Error sending message:', error);
-    showNotification('Ошибка отправки сообщения', 'error');
+    if (error) {
+        console.error('Error sending message:', error);
+        showNotification('Ошибка отправки сообщения', 'error');
+    }
 
     typingIndicator.hide();
     stopStream(roomId);
@@ -784,55 +792,6 @@ function getFilePreviewUrl(fileData) {
     return ''; // For non-image files, we'll just show an icon
 }
 
-function setupEventListeners() {
-    setupFileUpload();
-
-    if (elements.sendButton) {
-        elements.sendButton.addEventListener('click', sendMessage);
-    }
-
-    if (elements.messageInput) {
-        elements.messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-
-        elements.messageInput.addEventListener('input', () => {
-            autoResize(elements.messageInput);
-            updateSendButtonState();
-        });
-
-        elements.messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.shiftKey) {
-                e.preventDefault();
-                const { selectionStart, selectionEnd, value } = elements.messageInput;
-                elements.messageInput.value = value.slice(0, selectionStart) + '\n' + value.slice(selectionEnd);
-                elements.messageInput.selectionStart = elements.messageInput.selectionEnd = selectionStart + 1;
-                autoResize(elements.messageInput);
-            }
-        });
-    }
-
-    if (elements.createRoomBtn && elements.createRoomModal) {
-        elements.createRoomBtn.addEventListener('click', () => {
-            elements.roomTitleInput.value = '';
-            elements.createRoomModal.show();
-        });
-    }
-
-    if (elements.confirmCreateRoom) {
-        elements.confirmCreateRoom.addEventListener('click', () => {
-            const title = elements.roomTitleInput.value.trim();
-            if (title) {
-                createRoom(title);
-                elements.createRoomModal.hide();
-            }
-        });
-    }
-}
-
 function autoResize(element) {
     element.style.height = 'auto';
     element.style.height = Math.min(element.scrollHeight, 100) + 'px';
@@ -969,19 +928,55 @@ function generateUUID() {
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        setupEventListeners();
-        loadRooms();
-        updateSendButtonState();
+        setupFileUpload();
+
+        if (elements.sendButton) {
+            elements.sendButton.addEventListener('click', sendMessage);
+        }
 
         if (elements.messageInput) {
-            elements.messageInput.addEventListener('input', updateSendButtonState);
-            elements.messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !elements.sendButton.disabled) {
+            elements.messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                 }
             });
+
+            elements.messageInput.addEventListener('input', () => {
+                autoResize(elements.messageInput);
+                updateSendButtonState();
+            });
+
+            elements.messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.shiftKey) {
+                    e.preventDefault();
+                    const { selectionStart, selectionEnd, value } = elements.messageInput;
+                    elements.messageInput.value = value.slice(0, selectionStart) + '\n' + value.slice(selectionEnd);
+                    elements.messageInput.selectionStart = elements.messageInput.selectionEnd = selectionStart + 1;
+                    autoResize(elements.messageInput);
+                }
+            });
         }
+
+        if (elements.createRoomBtn && elements.createRoomModal) {
+            elements.createRoomBtn.addEventListener('click', () => {
+                elements.roomTitleInput.value = '';
+                elements.createRoomModal.show();
+            });
+        }
+
+        if (elements.confirmCreateRoom) {
+            elements.confirmCreateRoom.addEventListener('click', () => {
+                const title = elements.roomTitleInput.value.trim();
+                if (title) {
+                    createRoom(title);
+                    elements.createRoomModal.hide();
+                }
+            });
+        }
+
+        loadRooms();
+        updateSendButtonState();
 
         if (elements.fileInput) {
             elements.fileInput.addEventListener('change', () => {

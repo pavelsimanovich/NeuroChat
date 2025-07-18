@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.ps.ollamaai.dto.enums.ErrorType.LIMIT_EXCEEDED;
+import static com.ps.ollamaai.dto.enums.ErrorType.SERVER_ERROR;
 import static com.ps.ollamaai.llm.Prompts.CURRENT_PROMPT_INSTRUCTIONS;
 
 @Slf4j
@@ -98,7 +99,7 @@ public class ChatAIController {
                         .flux())
                 .onErrorResume(e -> {
                     log.error("Error processing chat message", e);
-                    return Flux.empty();
+                    return Mono.just(new ChunkResponseDTO(e.getLocalizedMessage(), true, SERVER_ERROR.name()));
                 });
     }
 

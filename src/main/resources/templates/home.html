@@ -31,7 +31,15 @@
             </div>
 
             <div id="logout" class="logout">
-                <a style="color: #656e79" th:text="${'Based on ' + modelName}"></a>
+                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                    <small class="text-muted small">
+                        <span id="modelStatus" class="badge bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                            <span th:text="${modelName}"></span>
+                        </span>
+                    </small>
+                </div>
+
                 <form th:action="@{/logout}" method="post">
                     <input type="submit" value="Выход" class="btn btn-link"/>
                 </form>
