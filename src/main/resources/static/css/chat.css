@@ -98,15 +98,78 @@ body {
     background-color: #343a40;
     color: white;
     height: 100vh;
-    padding: 20px;
+    padding: 0;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar-header {
+    background-color: #2c3034;
+    padding: 1.25rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+}
+
+/* Modern create room button */
+#createRoomBtn {
+    background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: white;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    font-size: 0.9rem;
+    height: 36px;
+    margin: 0;
+}
+
+#createRoomBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #4e6bf5 0%, #4621c2 100%);
+}
+
+#createRoomBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+#createRoomBtn i {
+    font-size: 1rem;
+    margin-right: 4px;
+}
+
+/* Dark theme styles */
+[data-bs-theme="dark"] .sidebar {
+    background-color: #1e1e2d;
+    border-right-color: #2d2d3a;
+}
+
+[data-bs-theme="dark"] .sidebar-header {
+    background-color: #1a1a27;
+    border-bottom-color: #2d2d3a;
+}
+
+[data-bs-theme="dark"] #createRoomBtn {
+    background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme="dark"] #createRoomBtn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 .rooms-list {
