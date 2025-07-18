@@ -143,6 +143,8 @@ function renderRoomsList() {
 
         // Название комнаты
         const titleElement = document.createElement('span');
+        titleElement.className = 'room-title';
+        titleElement.textContent = room.title || 'Без названия';
         titleElement.textContent = room.title;
         titleElement.title = room.title;
         titleElement.style.flex = '1';

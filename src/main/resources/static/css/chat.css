@@ -120,6 +120,32 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.2s;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.room-item .btn-delete {
+    opacity: 0;
+    transition: opacity 0.2s;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+}
+
+.room-item:hover .btn-delete {
+    opacity: 1;
+}
+
+.room-item .room-title {
+    flex: 1;
+    padding-right: 30px; /* Оставляем место для кнопки */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .room-item:hover {

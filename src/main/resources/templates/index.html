@@ -1,88 +1,84 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
-    <title>ИИ чат</title>
-    <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-
-    <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/webjars/jquery/jquery.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в ИИ чат</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/index.css}" rel="stylesheet" />
 </head>
 
-<style>
-    .gradient-custom {
-        background: #6a11cb;
-        /* Chrome 10-25, Safari 5.1-6 */
-        background: -webkit-linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
-        /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-        background: linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1))
-    }
-
-    .icons-padding {
-        padding-right: 10px;
-    }
-</style>
-
 <body>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <!--                <div class="auth-logo">-->
+            <!--                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 24 24">-->
+            <!--                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>-->
+            <!--                    </svg>-->
+            <!--                </div>-->
+            <h1 class="auth-title">Добро пожаловать</h1>
+            <p class="auth-subtitle">Войдите в свой аккаунт, чтобы продолжить</p>
 
-<section class="vh-100 gradient-custom">
-    <div class="container py-5 h-100">
-        <div class="row d-flex justify-content-center align-items-center h-100">
-            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
-                <div class="card bg-dark text-white" style="border-radius: 1rem;">
-                    <div class="card-body p-5 text-center">
-
-                        <div class="mb-md-5 mt-md-4">
-
-                            <h2 class="fw-bold mb-2 text-uppercase">Login</h2>
-                            <p class="text-white-50 mb-5">Please enter your login and password!</p>
-
-                            <form th:action="@{/perform_login}" method="post">
-                                <div data-mdb-input-init class="form-outline form-white mb-4">
-                                    <input name="username" type="email" id="typeEmailX" class="form-control form-control-lg" />
-                                    <label class="form-label" for="typeEmailX">Email</label>
-                                </div>
-
-                                <div data-mdb-input-init class="form-outline form-white mb-4">
-                                    <input name="password" type="password" id="typePasswordX" class="form-control form-control-lg" />
-                                    <label class="form-label" for="typePasswordX">Password</label>
-                                </div>
-                                <button data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-light btn-lg px-5" type="submit">Login</button>
-                            </form>
-
-                            <br/>
-                            <p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>
-
-                            <div th:if="${param.error}">
-                                Неверный логин или пароль.
-                            </div>
-
-                            <p th:text="${message}"></p>
-
-                            <div th:if="${param.logout}">
-                                Вы вышли из системы.
-                            </div>
-
-                            <div class="d-flex justify-content-center text-center mt-4 pt-1">
-                                <a href="#!" class="text-white icons-padding"><i class="bi bi-facebook"></i></a>
-                                <a href="#!" class="text-white icons-padding"><i class="bi bi-google" ></i></a>
-                                <a href="#!" class="text-white"><i class="bi bi-twitter-x"></i></a>
-                            </div>
-
-                        </div>
-
-                        <div>
-                            <p class="mb-0">Don't have an account?
-                                <a href="/registration" class="text-white-50 fw-bold">Sign Up</a>
-                            </p>
-                        </div>
-
-                    </div>
-                </div>
+            <div th:if="${param.error}" class="error-message">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                Неверный email или пароль. Пожалуйста, попробуйте снова.
             </div>
+
+            <div th:if="${param.logout}" class="success-message">
+                <i class="bi bi-check-circle-fill"></i>
+                Вы успешно вышли из системы.
+            </div>
+
+            <p th:if="${message}" class="success-message">
+                <i class="bi bi-check-circle-fill"></i>
+                <span th:text="${message}"></span>
+            </p>
+        </div>
+
+        <form th:action="@{/perform_login}" method="post" class="auth-form">
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="username" placeholder="Введите ваш email" required>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <label for="password" class="form-label">Пароль</label>
+                </div>
+                <input type="password" class="form-control" id="password" name="password" required>
+                <!--                    <a href="#" class="forgot-password">Забыли пароль?</a>-->
+            </div>
+
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="remember-me" name="remember-me">
+                <label class="form-check-label" for="remember-me">
+                    Запомнить меня
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary mb-3">Войти</button>
+
+            <div class="divider">или продолжить с помощью</div>
+
+            <div class="social-login">
+                <button type="button" class="social-btn">
+                    <i class="bi bi-google"></i> Google
+                </button>
+                <button type="button" class="social-btn">
+                    <i class="bi bi-github"></i> GitHub
+                </button>
+            </div>
+        </form>
+
+        <div class="auth-footer">
+            Ещё нет аккаунта? <a href="/registration">Зарегистрируйтесь</a>
         </div>
     </div>
-</section>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </body>
 </html>

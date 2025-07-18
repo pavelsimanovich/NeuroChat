@@ -1,0 +1,252 @@
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --bg-light: #f9fafb;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.auth-container {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: none;
+}
+
+.auth-header {
+    text-align: center;
+    padding: 2rem 2rem 1.5rem;
+}
+
+.auth-logo {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+}
+
+.auth-form {
+    padding: 0 2rem 2rem;
+}
+
+.form-control {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+    font-size: 0.9375rem;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.auth-footer {
+    text-align: center;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #f3f4f6;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.auth-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+.error-message {
+    color: #dc2626;
+    background-color: #fef2f2;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.success-message {
+    color: #059669;
+    background-color: #ecfdf5;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.divider:not(:empty)::before {
+    margin-right: 1.5rem;
+}
+
+.divider:not(:empty)::after {
+    margin-left: 1.5rem;
+}
+
+.social-login {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.social-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: white;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.social-btn:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+    color: var(--text-primary);
+}
+
+.social-btn i {
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0;
+    margin-right: 0.5rem;
+    border-color: #d1d5db;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.forgot-password {
+    text-align: right;
+    margin-bottom: 1.5rem;
+}
+
+.forgot-password a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.forgot-password a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 1rem;
+    }
+
+    .auth-card {
+        border-radius: 0.75rem;
+    }
+
+    .auth-form {
+        padding: 0 1.5rem 1.5rem;
+    }
+
+    .social-login {
+        flex-direction: column;
+    }
+}
