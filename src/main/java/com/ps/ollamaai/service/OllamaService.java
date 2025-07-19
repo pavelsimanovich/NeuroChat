@@ -16,7 +16,7 @@ public class OllamaService {
         return ollamaChatModel.call(message);
     }
 
-    public String getCurrentNodelName() {
+    public String getCurrentModelName() {
         return ollamaChatModel.getDefaultOptions().getModel();
     }
 

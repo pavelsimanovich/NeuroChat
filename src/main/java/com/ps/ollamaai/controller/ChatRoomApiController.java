@@ -5,15 +5,21 @@ import com.ps.ollamaai.dto.ChatRoomDto;
 import com.ps.ollamaai.service.ChatMessageService;
 import com.ps.ollamaai.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -47,5 +53,31 @@ public class ChatRoomApiController {
                                            final @RequestHeader("X-User-ID") String userId) {
         chatRoomService.deleteRoom(roomId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/rooms/{roomId}/rename")
+    public ResponseEntity<Void> renameRoom(final @PathVariable String roomId, @RequestParam("title") String name) {
+       chatRoomService.renameRoom(roomId, name);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/messages/search")
+    public ResponseEntity<List<ChatMessageDto>> searchMessages(
+            final @RequestParam String roomId,
+            final @RequestParam String query) {
+        final List<ChatMessageDto> messages = chatMessageService.searchMessages(roomId, query);
+        return ResponseEntity.ok(messages);
+    }
+
+    @GetMapping(value = "/rooms/{roomId}/export", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<Resource> exportChatHistory(@PathVariable String roomId) {
+        String chatContent = chatMessageService.formatChatForExport(roomId);
+        ByteArrayResource resource = new ByteArrayResource(chatContent.getBytes(StandardCharsets.UTF_8));
+        String filename = "chat_export_" + roomId + ".txt";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.TEXT_PLAIN)
+                .contentLength(chatContent.length())
+                .body(resource);
     }
 }

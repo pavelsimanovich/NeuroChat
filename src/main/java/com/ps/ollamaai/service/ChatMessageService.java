@@ -2,6 +2,7 @@ package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.ChatMessage;
 import com.ps.ollamaai.domain.ChatRoom;
+import com.ps.ollamaai.domain.FileData;
 import com.ps.ollamaai.domain.User;
 import com.ps.ollamaai.dto.ChatMessageDto;
 import com.ps.ollamaai.dto.converter.ChatMessageToDtoConverter;
@@ -11,6 +12,7 @@ import com.ps.ollamaai.repository.ChatMessageRepository;
 import com.ps.ollamaai.repository.ChatRoomRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -28,7 +30,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.ps.ollamaai.constants.Messages.LIMIT_EXCEEDED_MESSAGE;
 import static com.ps.ollamaai.domain.ChatMessage.MessageType.AI_RESPONSE;
 import static com.ps.ollamaai.domain.ChatMessage.MessageType.USER_MESSAGE;
+import static com.ps.ollamaai.domain.ChatMessage.MessageType;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatMessageService {
@@ -46,10 +50,17 @@ public class ChatMessageService {
     private final Map<String, List<Message>> conversationalHistory = new ConcurrentHashMap<>();
     private final Map<String, StringBuilder> buffers = new ConcurrentHashMap<>();
 
+    public List<ChatMessageDto> searchMessages(String roomId, String query) {
+        return chatMessageRepository.searchMessages(roomId, query)
+                .stream()
+                .map(chatMessageToDtoConverter::convertToDto)
+                .toList();
+    }
+
     @Transactional
-    public List<Message> processChatMessage(String message, String chatId, String userName) throws LimitExceededException {
+    public List<Message> processChatMessage(String message, String chatId, String userName, FileData fileData) throws LimitExceededException {
         final User user = userService.findByEmail(userName);
-        saveUserMessage(chatId, user.getId(), message);
+        saveUserMessage(chatId, user.getId(), message, fileData);
 
         checkHistory(chatId);
 
@@ -70,18 +81,28 @@ public class ChatMessageService {
     }
 
     public String saveAiResponse(String roomId) {
-        final String fullResponse = buffers.remove(roomId).toString();
-        final ChatMessage aiResponse = getChatMessage(roomId, "ai-assistant", AI_RESPONSE, fullResponse);
-        chatMessageRepository.save(aiResponse);
+        StringBuilder buffer = buffers.remove(roomId);
+        if (buffer == null) {
+            log.warn("No buffer found for roomId: {}", roomId);
+            return "";
+        }
+        final String fullResponse = buffer.toString();
+        if (!fullResponse.isBlank()) {
+            final ChatMessage aiResponse = createChatMessage(roomId, "ai-assistant", AI_RESPONSE, fullResponse);
+            chatMessageRepository.save(aiResponse);
+        }
         return fullResponse;
     }
 
-    public void saveUserMessage(final String roomId, final String userId, final String userPrompt) {
-        final ChatMessage message = getChatMessage(roomId, userId, USER_MESSAGE, userPrompt);
-        chatMessageRepository.save(message);
+    public ChatMessage saveUserMessage(final String roomId, final String userId, final String userPrompt, FileData fileData) {
+        final ChatMessage message = createChatMessage(roomId, userId, USER_MESSAGE, userPrompt);
+        if (fileData != null) {
+            message.setFileData(fileData);
+        }
+        return chatMessageRepository.save(message);
     }
 
-    private ChatMessage getChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage, String userPrompt) {
+    private ChatMessage createChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage, String userPrompt) {
         final ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         // Получаем последний порядковый номер для этой комнаты
@@ -126,4 +147,28 @@ public class ChatMessageService {
         conversationalHistory.remove(chatId);
     }
 
+
+    @Transactional(readOnly = true)
+    public String formatChatForExport(String roomId) {
+        List<ChatMessage> messages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        if (messages.isEmpty()) {
+            return "No messages found in this chat.";
+        }
+        
+        StringBuilder exportContent = new StringBuilder();
+        String roomTitle = messages.get(0).getRoom().getTitle();
+        exportContent.append("Chat: ").append(roomTitle).append("\n");
+        exportContent.append("-".repeat(80)).append("\n\n");
+        
+        for (ChatMessage message : messages) {
+            String sender = message.getType() == MessageType.USER_MESSAGE ? "You" : "Assistant";
+            String timestamp = message.getTimestamp().toString();
+            
+            exportContent.append("[").append(timestamp).append("] ");
+            exportContent.append(sender).append(":\n");
+            exportContent.append(message.getContent()).append("\n\n");
+        }
+        
+        return exportContent.toString();
+    }
 }
