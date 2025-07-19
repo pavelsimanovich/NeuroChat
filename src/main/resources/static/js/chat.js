@@ -953,10 +953,20 @@ const uxFeatures = {
 };
 
 async function handleDeleteRoom(roomId, title) {
-    if (!state.currentRoom || !await confirmDeleteChat(title)) return;
+    if (!roomId || !title || !await confirmDeleteChat(title)) {
+        return;
+    }
+
+    // Show loading state
+    const deleteButton = document.querySelector(`[data-room-id="${roomId}"] .delete-room`);
+    const originalText = deleteButton?.innerHTML;
+    if (deleteButton) {
+        deleteButton.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
+        deleteButton.disabled = true;
+    }
 
     try {
-        const response = await fetch(`/api/chat/rooms/${roomId}`, {
+        const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -964,26 +974,109 @@ async function handleDeleteRoom(roomId, title) {
             }
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        state.rooms = state.rooms.filter(room => room.id !== roomId);
-        state.messages = [];
-        state.currentRoom = null;
-
-        renderRoomsList();
-        renderMessages();
-        elements.currentRoomTitle.textContent = `${elements.userName} Выберите или создайте чат`;
-        hideInputs(true);
-        localStorage.removeItem('lastRoomId');
-
-        if (state.rooms.length) {
-            await switchRoom(state.rooms[0]);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
-        showNotification('Чат успешно удален', 'success');
+        // Update state
+        const wasCurrentRoom = state.currentRoom?.id === roomId;
+        state.rooms = state.rooms.filter(room => room.id !== roomId);
+
+        if (wasCurrentRoom) {
+            state.currentRoom = null;
+            state.messages = [];
+            elements.chatMessages.innerHTML = '';
+            elements.currentRoomTitle.textContent = 'Выберите или создайте чат';
+        }
+
+        // Update UI
+        renderRoomsList();
+
+        // Switch to another room if available
+        if (state.rooms.length > 0) {
+            await switchRoom(state.rooms[0]);
+        } else {
+            // Create a new welcome screen
+            const welcomeScreen = document.createElement('div');
+            welcomeScreen.id = 'welcomeScreen';
+            welcomeScreen.className = 'h-100 d-flex flex-column align-items-center justify-content-center text-center p-4';
+            welcomeScreen.style.maxWidth = '700px';
+            welcomeScreen.style.margin = '0 auto';
+            welcomeScreen.style.display = 'flex';
+            
+            welcomeScreen.innerHTML = `
+                <div class="mb-4" style="width: 120px; height: 120px; background-color: #f0f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #4f46e5;"></i>
+                </div>
+                <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
+                <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
+<!--                <button id="createRoomBtn1" class="btn btn-primary">-->
+<!--                    <i class="bi bi-plus-lg me-2"></i>Новый чат-->
+<!--                </button>-->
+                <div class="mt-5 pt-4 border-top w-100">
+                    <h6 class="mb-3">Попробуйте спросить:</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                                            <i class="bi bi-lightbulb text-primary"></i>
+                                        </div>
+                                        <h6 class="mb-0">Идеи для проекта</h6>
+                                    </div>
+                                    <p class="text-muted small mb-0">Какие есть интересные идеи для веб-приложения?</p>
+                                </div>
+                            </div>
+                        </div>
+                      <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-success bg-opacity-10 p-2 rounded me-2">
+                                            <i class="bi bi-code-slash text-success"></i>
+                                        </div>
+                                        <h6 class="mb-0">Помощь с кодом</h6>
+                                    </div>
+                                    <p class="text-muted small mb-0">Как оптимизировать SQL-запрос?</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            // Clear chat messages and append new welcome screen
+            elements.chatMessages.innerHTML = '';
+            elements.chatMessages.appendChild(welcomeScreen);
+
+            // Add event listener for the create room button
+            const createRoomBtn = welcomeScreen.querySelector('#createRoomBtn1');
+            if (createRoomBtn) {
+                createRoomBtn.addEventListener('click', () => {
+                    createRoom('Новый чат');
+                });
+            }
+
+            // Hide the typing indicator if it's visible
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+            hideInputs(true);
+            localStorage.removeItem('lastRoomId');
+        }
+
+        showNotification('Чат успешно удалён', 'success');
     } catch (error) {
         console.error('Error deleting room:', error);
-        showNotification('Не удалось удалить чат', 'error');
+        showNotification(`Не удалось удалить чат: ${error.message}`, 'error');
+    } finally {
+        // Restore button state
+        if (deleteButton) {
+            deleteButton.innerHTML = originalText;
+            deleteButton.disabled = false;
+        }
     }
 }
 
@@ -1022,6 +1115,7 @@ function hideInputs(disabled) {
     elements.uploadButton.classList.toggle('d-none', disabled);
     elements.messageInput.classList.toggle('d-none', disabled);
     elements.sendButton.classList.toggle('d-none', disabled);
+    document.getElementById("messageInputArea").classList.toggle('d-none', disabled);
 }
 
 function generateUUID() {
