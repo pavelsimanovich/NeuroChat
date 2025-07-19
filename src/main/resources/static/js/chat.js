@@ -952,11 +952,11 @@ const uxFeatures = {
     }
 };
 
-async function handleDeleteRoom() {
-    if (!state.currentRoom || !await confirmDeleteChat(state.currentRoom.title)) return;
+async function handleDeleteRoom(roomId, title) {
+    if (!state.currentRoom || !await confirmDeleteChat(title)) return;
 
     try {
-        const response = await fetch(`/api/chat/rooms/${state.currentRoom.id}`, {
+        const response = await fetch(`/api/chat/rooms/${roomId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -966,7 +966,7 @@ async function handleDeleteRoom() {
 
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-        state.rooms = state.rooms.filter(room => room.id !== state.currentRoom.id);
+        state.rooms = state.rooms.filter(room => room.id !== roomId);
         state.messages = [];
         state.currentRoom = null;
 
@@ -1172,7 +1172,7 @@ function handleContextMenuAction(action) {
             exportChatHistory(roomId);
             break;
         case 'delete':
-            handleDeleteRoom({ id: roomId, title: roomElement.getAttribute('data-room-title') });
+            handleDeleteRoom(roomId, roomElement.getAttribute('data-room-title'));
             break;
     }
     
