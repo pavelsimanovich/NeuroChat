@@ -69,7 +69,8 @@ body {
 
 .model-status i {
     color: var(--accent-color);
-    font-size: 1rem;
+    font-size: 1.2rem;
+    animation: pulse 2s infinite;
 }
 
 .logout form {
@@ -375,7 +376,7 @@ body {
 .room-item.active {
     background-color: var(--accent-color);
     border-color: var(--accent-hover);
-    color: white;
+    color:  var(--text-primary);
 }
 
 .room-item .room-name {
@@ -869,23 +870,29 @@ body {
 }
 
 .drag-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    border: 2px dashed var(--accent-color);
-    pointer-events: none;
-    z-index: 1000;
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: rgba(255, 255, 255, 0.9);
+display: flex;
+align-items: center;
+justify-content: center;
+border-radius: 8px;
+border: 2px dashed var(--accent-color);
+pointer-events: none;
+z-index: 1000;
 }
 
 .drag-overlay p {
-    font-size: 1.2em;
+font-size: 1.2em;
+color: var(--accent-color);
+text-align: center;
+padding: 2rem;
+background: white;
+border-radius: 8px;
+box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     color: var(--accent-color);
     text-align: center;
     padding: 2rem;
@@ -1102,23 +1109,17 @@ body {
 
 /* Model status indicator */
 .model-status {
-    position: fixed;
-    top: 20px;
-    right: 70px;
-    z-index: 1000;
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
     padding: 8px 12px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--text-secondary);
     transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-right: 10px;
 }
 
 .model-status.online {
