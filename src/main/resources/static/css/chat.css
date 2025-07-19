@@ -920,6 +920,10 @@ body {
     background-color: #4CAF50;
 }
 
+.notification.штащ {
+    background-color: #5b95ea;
+}
+
 .notification.error {
     background-color: #F44336;
 }
@@ -969,4 +973,136 @@ body {
     object-fit: contain;
     display: block;
     margin: 0 auto;
+}
+
+.room-item .btn-delete:hover {
+    opacity: 1 !important;
+    color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.1);
+    transform: translateY(-50%) scale(1);
+}
+
+/* Chat grouping styles */
+.chat-group {
+    margin-bottom: 1.5rem;
+}
+
+.chat-group-header {
+    padding: 0.5rem 1rem 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #adb5bd;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chat-group-header i {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+[data-bs-theme="light"] .chat-group-header {
+    color: #6c757d;
+    border-bottom-color: #e9ecef;
+}
+
+.chat-group-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+/* Pinned chats styles */
+.room-item.pinned {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.2);
+    position: relative;
+}
+
+.room-item.pinned::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(135deg, #ffc107, #ff8f00);
+    border-radius: 0 2px 2px 0;
+}
+
+.room-item.pinned .room-name {
+    padding-left: 0.5rem;
+}
+
+[data-bs-theme="light"] .room-item.pinned {
+    background-color: rgba(255, 193, 7, 0.05);
+    border-color: rgba(255, 193, 7, 0.15);
+}
+
+/* Pin button styles */
+.room-item .btn-pin {
+    opacity: 0;
+    transition: all 0.2s ease;
+    position: absolute;
+    right: 32px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    margin: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #adb5bd;
+    font-size: 0.8rem;
+}
+
+.room-item:hover .btn-pin {
+    opacity: 0.6;
+}
+
+.room-item .btn-pin:hover {
+    opacity: 1 !important;
+    color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.1);
+    transform: translateY(-50%) scale(1);
+}
+
+.room-item.pinned .btn-pin {
+    opacity: 0.8;
+    color: #ffc107;
+}
+
+.room-item.pinned:hover .btn-pin {
+    opacity: 1;
+}
+
+/* Adjust delete button position when pin button is present */
+.room-item .btn-delete {
+    right: 8px;
+}
+
+.room-item:hover .btn-delete {
+    right: 8px;
+}
+
+/* Empty state for chat groups */
+.chat-group-empty {
+    padding: 1rem;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+[data-bs-theme="light"] .chat-group-empty {
+    color: #adb5bd;
 }

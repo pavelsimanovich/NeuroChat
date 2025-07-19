@@ -124,53 +124,170 @@ function renderRoomsList() {
 
     hideInputs(false); // Показываем ввод и кнопку загрузки, если комнаты есть
 
-    state.rooms = [...state.rooms].sort((a, b) =>
+    // Группировка чатов
+    const groupedRooms = groupRoomsByDate(state.rooms);
+    
+    // Отображение закрепленных чатов
+    if (groupedRooms.pinned.length > 0) {
+        renderChatGroup('pinned', 'Закрепленные', groupedRooms.pinned, 'bi-pin-angle-fill');
+    }
+    
+    // Отображение групп по времени
+    if (groupedRooms.today.length > 0) {
+        renderChatGroup('today', 'Сегодня', groupedRooms.today, 'bi-clock');
+    }
+    
+    if (groupedRooms.yesterday.length > 0) {
+        renderChatGroup('yesterday', 'Вчера', groupedRooms.yesterday, 'bi-clock-history');
+    }
+    
+    if (groupedRooms.thisWeek.length > 0) {
+        renderChatGroup('thisWeek', 'На этой неделе', groupedRooms.thisWeek, 'bi-calendar-week');
+    }
+    
+    if (groupedRooms.older.length > 0) {
+        renderChatGroup('older', 'Ранее', groupedRooms.older, 'bi-archive');
+    }
+}
+
+function groupRoomsByDate(rooms) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const groups = {
+        pinned: [],
+        today: [],
+        yesterday: [],
+        thisWeek: [],
+        older: []
+    };
+
+    // Сортируем комнаты по дате создания (новые сверху)
+    const sortedRooms = [...rooms].sort((a, b) => 
         new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
 
-    state.rooms.forEach(room => {
+    sortedRooms.forEach(room => {
         if (!room?.id || !room?.title) return;
 
-        const roomElement = document.createElement('div');
-        roomElement.className = `room-item ${state.currentRoom?.id === room.id ? 'active' : ''}`;
+        // Проверяем, закреплен ли чат
+        if (isPinned(room.id)) {
+            groups.pinned.push(room);
+            return;
+        }
 
-        // Контейнер для названия и кнопки удаления
-        const roomContent = document.createElement('div');
-        roomContent.className = 'room-content';
-        roomContent.style.display = 'flex';
-        roomContent.style.alignItems = 'center';
-        roomContent.style.justifyContent = 'space-between';
+        const roomDate = new Date(room.createdAt || 0);
+        const roomDay = new Date(roomDate.getFullYear(), roomDate.getMonth(), roomDate.getDate());
 
-        // Название комнаты
-        const titleElement = document.createElement('span');
-        titleElement.className = 'room-title';
-        titleElement.textContent = room.title || 'Без названия';
-        titleElement.textContent = room.title;
-        titleElement.title = room.title;
-        titleElement.style.flex = '1';
-        titleElement.style.cursor = 'pointer';
-        titleElement.addEventListener('click', () => switchRoom(room));
-
-        // Кнопка удаления
-        const deleteButton = document.createElement('button');
-         deleteButton.id= 'deleteRoomBtn';
-         deleteButton.className = 'btn-delete';
-         deleteButton.innerHTML = '<svg class="icon-delete" viewBox="0 0 24 24">' +
-             '                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>' +
-             '                    </svg>';
-        deleteButton.title = `Удалить "${room.title}"`;
-        deleteButton.style.marginLeft = '10px';
-        deleteButton.addEventListener('click', (e) => {
-            e.stopPropagation(); // Предотвращаем переключение комнаты при клике на кнопку
-            handleDeleteRoom(room);
-        });
-
-        roomContent.appendChild(titleElement);
-        roomContent.appendChild(deleteButton);
-        roomElement.appendChild(roomContent);
-
-        elements.roomsList.appendChild(roomElement);
+        if (roomDay.getTime() === today.getTime()) {
+            groups.today.push(room);
+        } else if (roomDay.getTime() === yesterday.getTime()) {
+            groups.yesterday.push(room);
+        } else if (roomDate >= weekAgo) {
+            groups.thisWeek.push(room);
+        } else {
+            groups.older.push(room);
+        }
     });
+
+    return groups;
+}
+
+function renderChatGroup(groupId, title, rooms, iconClass) {
+    if (!rooms.length) return;
+
+    const groupElement = document.createElement('div');
+    groupElement.className = 'chat-group';
+    groupElement.setAttribute('data-group', groupId);
+
+    // Заголовок группы
+    const headerElement = document.createElement('div');
+    headerElement.className = 'chat-group-header';
+    headerElement.innerHTML = `
+        <i class="bi ${iconClass}"></i>
+        <span>${title}</span>
+    `;
+
+    // Контент группы
+    const contentElement = document.createElement('div');
+    contentElement.className = 'chat-group-content';
+
+    rooms.forEach(room => {
+        const roomElement = createRoomElement(room);
+        contentElement.appendChild(roomElement);
+    });
+
+    groupElement.appendChild(headerElement);
+    groupElement.appendChild(contentElement);
+    elements.roomsList.appendChild(groupElement);
+}
+
+function createRoomElement(room) {
+    const roomElement = document.createElement('div');
+    const isActive = state.currentRoom?.id === room.id;
+    const pinned = isPinned(room.id);
+    
+    roomElement.className = `room-item ${isActive ? 'active' : ''} ${pinned ? 'pinned' : ''}`;
+    roomElement.setAttribute('data-room-id', room.id);
+
+    // Название комнаты
+    const nameElement = document.createElement('span');
+    nameElement.className = 'room-name';
+    nameElement.textContent = room.title || 'Без названия';
+    nameElement.title = room.title;
+    nameElement.addEventListener('click', () => switchRoom(room));
+
+    // Кнопка закрепления
+    const pinButton = document.createElement('button');
+    pinButton.className = 'btn-pin';
+    pinButton.innerHTML = pinned ? '<i class="bi bi-pin-angle-fill"></i>' : '<i class="bi bi-pin-angle"></i>';
+    pinButton.title = pinned ? 'Открепить чат' : 'Закрепить чат';
+    pinButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePin(room.id);
+    });
+
+    // Кнопка удаления
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'btn-delete';
+    deleteButton.innerHTML = '<i class="bi bi-x-lg"></i>';
+    deleteButton.title = `Удалить "${room.title}"`;
+    deleteButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleDeleteRoom(room);
+    });
+
+    roomElement.appendChild(nameElement);
+    roomElement.appendChild(pinButton);
+    roomElement.appendChild(deleteButton);
+
+    return roomElement;
+}
+
+// Функции для работы с закрепленными чатами
+function isPinned(roomId) {
+    const pinnedRooms = JSON.parse(localStorage.getItem('pinnedRooms') || '[]');
+    return pinnedRooms.includes(roomId);
+}
+
+function togglePin(roomId) {
+    const pinnedRooms = JSON.parse(localStorage.getItem('pinnedRooms') || '[]');
+    const index = pinnedRooms.indexOf(roomId);
+    
+    if (index > -1) {
+        pinnedRooms.splice(index, 1);
+        showNotification('Чат откреплен', 'info');
+    } else {
+        pinnedRooms.push(roomId);
+        showNotification('Чат закреплен', 'success');
+    }
+    
+    localStorage.setItem('pinnedRooms', JSON.stringify(pinnedRooms));
+    renderRoomsList(); // Перерисовываем список
 }
 
 async function switchRoom(room) {
