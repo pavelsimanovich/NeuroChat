@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.ps.ollamaai.constants.Messages.LIMIT_EXCEEDED_MESSAGE;
 import static com.ps.ollamaai.domain.ChatMessage.MessageType.AI_RESPONSE;
 import static com.ps.ollamaai.domain.ChatMessage.MessageType.USER_MESSAGE;
+import static com.ps.ollamaai.domain.ChatMessage.MessageType;
 
 @Slf4j
 @Service
@@ -146,4 +147,28 @@ public class ChatMessageService {
         conversationalHistory.remove(chatId);
     }
 
+
+    @Transactional(readOnly = true)
+    public String formatChatForExport(String roomId) {
+        List<ChatMessage> messages = messageRepository.findByRoomIdOrderByTimestampAsc(roomId);
+        if (messages.isEmpty()) {
+            return "No messages found in this chat.";
+        }
+        
+        StringBuilder exportContent = new StringBuilder();
+        String roomTitle = messages.get(0).getRoom().getTitle();
+        exportContent.append("Chat: ").append(roomTitle).append("\n");
+        exportContent.append("-".repeat(80)).append("\n\n");
+        
+        for (ChatMessage message : messages) {
+            String sender = message.getType() == MessageType.USER_MESSAGE ? "You" : "Assistant";
+            String timestamp = message.getTimestamp().toString();
+            
+            exportContent.append("[").append(timestamp).append("] ");
+            exportContent.append(sender).append(":\n");
+            exportContent.append(message.getContent()).append("\n\n");
+        }
+        
+        return exportContent.toString();
+    }
 }

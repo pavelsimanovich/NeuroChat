@@ -1343,35 +1343,98 @@ function showRenameRoomModal(roomId, currentTitle) {
     modal.show();
 }
 
-// Export chat history
-async function exportChatHistory(roomId) {
-    try {
-        showLoading(true);
+// Simple loading state management
+const loadingState = {
+    show: function() {
+        // Create the loading element if it doesn't exist
+        let loadingElement = document.getElementById('export-loading');
+        if (!loadingElement) {
+            loadingElement = document.createElement('div');
+            loadingElement.id = 'export-loading';
+            loadingElement.innerHTML = `
+                <div class="loading-overlay">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Экспорт истории чата...</p>
+                    <button class="btn btn-sm btn-outline-light mt-2" id="cancel-export">Отмена</button>
+                </div>
+            `;
+            document.body.appendChild(loadingElement);
+            
+            // Add cancel button handler
+            document.getElementById('cancel-export')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                loadingState.hide();
+                if (exportController) {
+                    exportController.abort();
+                    exportController = null;
+                }
+            });
+        }
+        
+        // Show the loading element
+        loadingElement.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    },
+    
+    hide: function() {
+        const loadingElement = document.getElementById('export-loading');
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+};
 
+// Export chat history
+let exportController = null;
+
+async function exportChatHistory(roomId) {
+    // Show loading state
+    loadingState.show();
+    
+    try {
+        // Create a new AbortController for this request
+        exportController = new AbortController();
+        const signal = exportController.signal;
+        
         const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/export`, {
             headers: {
                 'X-User-Id': elements.userId
-            }
+            },
+            signal: signal
         });
 
-        if (!response.ok) throw new Error('Не удалось экспортировать историю');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `chat_history_${new Date().toISOString().split('T')[0]}.txt`;
+        a.download = `chat_history_${roomId}.txt`;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
+        
+        // Cleanup
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        }, 100);
 
         showNotification('История чата успешно экспортирована', 'success');
     } catch (error) {
-        console.error('Error exporting chat history:', error);
-        showNotification('Ошибка при экспорте истории чата', 'error');
+        // Don't show error if the request was aborted
+        if (error.name !== 'AbortError') {
+            console.error('Export error:', error);
+            showNotification('Ошибка при экспорте истории: ' + (error.message || 'Неизвестная ошибка'), 'error');
+        }
     } finally {
-        showLoading(false);
+        loadingState.hide();
+        exportController = null;
     }
 }
 
