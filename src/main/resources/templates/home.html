@@ -20,28 +20,29 @@
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Сайдбар с комнатами -->
+        <!-- Modern Sidebar -->
         <div class="col-md-3 sidebar">
             <div class="sidebar-header">
                 <h4>Мои чаты</h4>
-                <button id="createRoomBtn" class="btn btn-primary btn-sm">+ Новый чат</button>
+                <button id="createRoomBtn" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Новый чат</span>
+                </button>
             </div>
-            <div id="roomsList" class="rooms-list">
-                <!-- Список комнат будет загружен здесь -->
-            </div>
+            
+            <!-- Chat List -->
+            <div id="roomsList" class="rooms-list"></div>
 
-            <div id="logout" class="logout">
-                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-                    <small class="text-muted small">
-                        <span id="modelStatus" class="badge bg-success bg-opacity-10 text-success">
-                            <i class="bi bi-lightning-charge-fill"></i>
-                            <span th:text="${modelName}"></span>
-                        </span>
-                    </small>
+            <!-- Footer with model status and logout -->
+            <div class="logout">
+                <div class="model-status">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <span class="model-name" th:text="${modelName}"></span>
                 </div>
-
                 <form th:action="@{/logout}" method="post">
-                    <input type="submit" value="Выход" class="btn btn-link"/>
+                    <button type="submit" class="btn btn-link">
+                        <i class="bi bi-box-arrow-right"></i> Выход
+                    </button>
                 </form>
             </div>
 
