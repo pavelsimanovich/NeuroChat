@@ -23,7 +23,7 @@
         <!-- Modern Sidebar -->
         <div class="col-md-3 sidebar">
             <div class="sidebar-header">
-                <h4>Мои чаты</h4>
+                <h4>AI Assistant</h4>
                 <button id="createRoomBtn" class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i>
                     <span>Новый чат</span>
@@ -124,22 +124,40 @@
 </div>
 
 <!-- Модальное окно создания комнаты -->
-<div class="modal fade" id="createRoomModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+<div class="modal fade" id="createRoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content create-room-modal">
             <div class="modal-header">
-                <h5 class="modal-title">Создать новую комнату</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-icon">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <h3 class="modal-title">Новый чат</h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label for="roomTitleInput" class="form-label">Название комнаты</label>
-                    <input type="text" class="form-control" id="roomTitleInput">
+                <div class="form-group mb-4">
+                    <label for="roomTitleInput" class="form-label">Название чата</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-chat-square-text"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="roomTitleInput" 
+                               placeholder="Введите название чата"
+                               maxlength="50"
+                               required>
+                    </div>
+                    <div class="form-text text-end">
+                        <span id="titleCharCount">0</span>/50 символов
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="confirmCreateRoom">Создать</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Отмена
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmCreateRoom">
+                    <i class="bi bi-plus-lg me-1"></i> Создать чат
+                </button>
             </div>
         </div>
     </div>
