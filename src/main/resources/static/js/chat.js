@@ -26,6 +26,7 @@ const elements = (function() {
         chatMessages: document.getElementById('chatMessages'),
         messageInput: document.getElementById('messageInput'),
         sendButton: document.getElementById('sendMessageBtn'),
+        stopButton: document.getElementById('stopGenerationBtn'),
         createRoomBtn: document.getElementById('createRoomBtn'),
         confirmCreateRoom: document.getElementById('confirmCreateRoom'),
         roomTitleInput: document.getElementById('roomTitleInput'),
@@ -40,6 +41,15 @@ const elements = (function() {
     };
 
     function init() {
+        // Initialize stop button if it exists
+        if (elements.stopButton) {
+            elements.stopButton.addEventListener('click', () => {
+                if (state.currentRoom && state.currentRoom.id) {
+                    stopStream(state.currentRoom.id);
+                }
+            });
+        }
+
         // Инициализация элементов для загрузки файлов
         elements.fileInput = document.createElement('input');
         elements.fileInput.type = 'file';
@@ -495,6 +505,15 @@ async function sendMessage() {
         eventSource = new EventSource(url.toString());
         chatConnections[roomId] = eventSource;
 
+        if (elements.stopButton) {
+            elements.stopButton.style.display = 'flex';
+            elements.stopButton.style.visibility = 'visible';
+            elements.stopButton.style.opacity = '1';
+            elements.stopButton.classList.remove('d-none');
+        }
+
+        toggleStreamingUI(true);
+
         const uuid = generateUUID();
         const messageElement = Object.assign(document.createElement('div'), {
             id: uuid,
@@ -534,6 +553,7 @@ async function sendMessage() {
                     renderMessages();
                     scrollToBottom();
                 }
+                elements.stopButton.classList.add('d-none');
             } else {
                 response += message.content;
                 const contentDiv = document.getElementById(`cm${uuid}`);
@@ -547,6 +567,7 @@ async function sendMessage() {
         eventSource.onerror = (e) => {
             isStreamActive = false;
             onErrorSendMessage(null, roomId, tempMessage);
+            toggleStreamingUI(false);
         };
     } catch (error) {
         onErrorSendMessage(error, roomId, tempMessage);
@@ -585,10 +606,52 @@ function onErrorSendMessage(error, roomId, tempMessage) {
     }
 }
 
+function toggleStreamingUI(isStreaming) {
+    if (!elements.stopButton) {
+        console.error('Stop button element not found in elements object');
+        return;
+    }
+
+    if (isStreaming) {
+        // Show stop button with smooth transition
+        elements.stopButton.classList.add('active');
+        elements.stopButton.disabled = false;
+        
+        // Disable send button and upload button during streaming
+        elements.sendButton.disabled = true;
+        if (elements.uploadButton) elements.uploadButton.disabled = true;
+        
+        // Update current room state
+        if (state.currentRoom) {
+            state.currentRoom.isStreaming = true;
+        }
+    } else {
+        // Hide stop button
+        elements.stopButton.classList.remove('active');
+        elements.stopButton.disabled = true;
+        
+        // Re-enable send button and upload button
+        elements.sendButton.disabled = false;
+        if (elements.uploadButton) elements.uploadButton.disabled = false;
+        
+        // Update current room state
+        if (state.currentRoom) {
+            state.currentRoom.isStreaming = false;
+        }
+        elements.stopButton.classList.add('d-none');
+    }
+}
+
 function stopStream(chatId) {
     if (chatConnections[chatId]) {
         chatConnections[chatId].close();
         delete chatConnections[chatId];
+        
+        if (state.currentRoom && state.currentRoom.id === chatId) {
+            state.currentRoom.isStreaming = false;
+        }
+        typingIndicator.hide();
+        toggleStreamingUI(false);
     }
 }
 
