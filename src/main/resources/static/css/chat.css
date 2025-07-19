@@ -42,6 +42,70 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Sidebar footer styles */
+.logout {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+}
+
+.model-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background-color: var(--bg-tertiary);
+    transition: all 0.2s ease;
+}
+
+.model-status i {
+    color: var(--accent-color);
+    font-size: 1rem;
+}
+
+.logout form {
+    margin: 0;
+}
+
+.logout .btn-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.logout .btn-link:hover {
+    color: var(--danger-color);
+    background-color: rgba(220, 53, 69, 0.1);
+    text-decoration: none;
+}
+
+.logout .btn-link i {
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.logout .btn-link:hover i {
+    transform: translateX(2px);
+}
+
 /* File upload styles */
 #filePreview {
     display: none;

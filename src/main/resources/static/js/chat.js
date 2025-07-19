@@ -293,11 +293,14 @@ function togglePin(roomId) {
 async function switchRoom(room) {
     if (!room) return;
 
-    localStorage.setItem('lastRoomId', room.id);
+    const previousRoomId = state.currentRoom?.id;
     state.currentRoom = room;
+    localStorage.setItem('lastRoomId', room.id);
 
     try {
-        renderRoomsList();
+        // Update UI for room selection without re-rendering the entire list
+        updateRoomActiveState(previousRoomId, room.id);
+        
         elements.currentRoomTitle.textContent = room.title;
         await loadRoomMessages(room.id);
 
@@ -317,6 +320,24 @@ async function switchRoom(room) {
     }
 }
 
+function updateRoomActiveState(previousRoomId, newRoomId) {
+    // Remove active class from previous room
+    if (previousRoomId) {
+        const prevRoomElement = document.querySelector(`.room-item[data-room-id="${previousRoomId}"]`);
+        if (prevRoomElement) {
+            prevRoomElement.classList.remove('active');
+        }
+    }
+
+    // Add active class to new room
+    if (newRoomId) {
+        const newRoomElement = document.querySelector(`.room-item[data-room-id="${newRoomId}"]`);
+        if (newRoomElement) {
+            newRoomElement.classList.add('active');
+        }
+    }
+}
+
 async function loadRoomMessages(roomId) {
     try {
         const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/messages`);
@@ -331,76 +352,6 @@ async function loadRoomMessages(roomId) {
         showNotification('Ошибка загрузки сообщений. Обновите страницу.', 'error');
     }
 }
-
-// function renderMessages() {
-//     if (!elements.chatMessages) return;
-//
-//     elements.chatMessages.innerHTML = '';
-//
-//     if (!state.messages.length && state.currentRoom) {
-//         elements.chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
-//         return;
-//     }
-//
-//     const sortedMessages = [...state.messages].sort((a, b) =>
-//         new Date(a.timestamp) - new Date(b.timestamp)
-//     );
-//
-//     sortedMessages.forEach(message => {
-//         const messageElement = document.createElement('div');
-//         messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
-//         messageElement.setAttribute('data-message-id', message.id);
-//         if (message.error) messageElement.classList.add('message-error');
-//
-//         // Handle file data if it exists
-//         let filePreviews = '';
-//         if (message.fileData) {
-//             const fileData = message.fileData;
-//             const fileExtension = fileData.fileName ? fileData.fileName.split('.').pop().toLowerCase() : '';
-//             const isImage = fileData.contentType && fileData.contentType.startsWith('image/');
-//             const fileUrl = `/api/files/${fileData.id}`;
-//             const previewUrl = getFilePreviewUrl(fileData);
-//
-//             if (isImage) {
-//                 filePreviews = `
-//                     <div class="file-preview">
-//                         <img src="${previewUrl}" alt="${fileData.fileName || 'Image'}" class="file-preview-image">
-//                     </div>
-//                 `;
-//             } else {
-//                 filePreviews = `
-//                     <div class="file-preview">
-//                         <div class="file-icon">
-//                             <i class="bi ${getFileIconClass(fileExtension)}"></i>
-//                         </div>
-//                         <div class="file-preview-info">
-//                             <div class="file-preview-name">${fileData.fileName || 'File'}</div>
-//                             ${fileData.size ? `<div class="file-preview-size">${formatFileSize(fileData.size)}${fileExtension ? ' • ' + fileExtension.toUpperCase() : ''}</div>` : ''}
-//                         </div>
-//                         <a href="${fileUrl}" class="file-download" download="${fileData.fileName || 'download'}" title="Скачать">
-//                             <i class="bi bi-download"></i>
-//                         </a>
-//                     </div>
-//                 `;
-//             }
-//         }
-//
-//         messageElement.innerHTML = `
-//             <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
-//             ${filePreviews}
-//             <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
-//             <div class="message-meta">
-//                 <span class="message-time">${formatTime(message.timestamp)}</span>
-//                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
-//             </div>
-//         `;
-//
-//         elements.chatMessages.appendChild(messageElement);
-//     });
-//
-//     Prism.highlightAll();
-//     scrollToBottom();
-// }
 
 function formatTime(timestamp) {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
