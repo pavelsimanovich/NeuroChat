@@ -32,6 +32,23 @@
             
             <!-- Chat List -->
             <div id="roomsList" class="rooms-list"></div>
+            
+            <!-- Context Menu for Chat Rooms -->
+            <div id="roomContextMenu" class="context-menu d-none">
+                <div class="context-menu-item" data-action="pin">
+                    <i class="bi bi-pin-angle"></i> <span class="pin-text">Закрепить</span>
+                </div>
+                <div class="context-menu-item" data-action="rename">
+                    <i class="bi bi-pencil"></i> Переименовать
+                </div>
+                <div class="context-menu-item" data-action="export">
+                    <i class="bi bi-download"></i> Экспортировать историю
+                </div>
+                <div class="divider"></div>
+                <div class="context-menu-item text-danger" data-action="delete">
+                    <i class="bi bi-trash"></i> Удалить чат
+                </div>
+            </div>
 
             <!-- Footer with model status and logout -->
             <div class="logout">
@@ -91,7 +108,10 @@
             <div id="error"></div>
 
             <div class="message-input">
-                <!-- File preview container -->
+                <!-- Hidden download link for chat export -->
+                <a id="exportChatLink" style="display: none;"></a>
+
+                <!-- Add error boundary container -->
                 <div id="filePreview" class="file-preview-container"></div>
                 
                 <div class="message-input-wrapper">
@@ -118,6 +138,47 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно переименования комнаты -->
+<div class="modal fade" id="renameRoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content create-room-modal">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="bi bi-pencil"></i>
+                </div>
+                <h3 class="modal-title">Переименовать чат</h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-4">
+                    <label for="renameRoomInput" class="form-label">Новое название</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-chat-square-text"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="renameRoomInput" 
+                               placeholder="Введите новое название"
+                               maxlength="50"
+                               required>
+                    </div>
+                    <div class="form-text text-end">
+                        <span id="renameCharCount">0</span>/50 символов
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="renamingRoomId">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Отмена
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmRenameRoom">
+                    <i class="bi bi-check-lg me-1"></i> Сохранить
+                </button>
             </div>
         </div>
     </div>

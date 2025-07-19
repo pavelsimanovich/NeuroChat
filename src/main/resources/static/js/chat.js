@@ -3,6 +3,12 @@ const config = {
     apiBaseUrl: 'http://localhost:8080/api/chat'
 };
 
+// Context menu state
+let contextMenuState = {
+    roomId: null,
+    roomElement: null
+};
+
 // DOM элементы
 const elements = (function() {
     const elements = {
@@ -233,37 +239,40 @@ function createRoomElement(room) {
     
     roomElement.className = `room-item ${isActive ? 'active' : ''} ${pinned ? 'pinned' : ''}`;
     roomElement.setAttribute('data-room-id', room.id);
+    roomElement.setAttribute('data-room-title', room.title);
 
     // Название комнаты
     const nameElement = document.createElement('span');
-    nameElement.className = 'room-name';
+    nameElement.className = 'room-name flex-grow-1';
     nameElement.textContent = room.title || 'Без названия';
     nameElement.title = room.title;
-    nameElement.addEventListener('click', () => switchRoom(room));
 
-    // Кнопка закрепления
-    const pinButton = document.createElement('button');
-    pinButton.className = 'btn-pin';
-    pinButton.innerHTML = pinned ? '<i class="bi bi-pin-angle-fill"></i>' : '<i class="bi bi-pin-angle"></i>';
-    pinButton.title = pinned ? 'Открепить чат' : 'Закрепить чат';
-    pinButton.addEventListener('click', (e) => {
+    // Контейнер для действий
+    const actionsContainer = document.createElement('div');
+    actionsContainer.className = 'room-actions';
+
+    // Кнопка меню (три точки)
+    const menuButton = document.createElement('button');
+    menuButton.className = 'btn-menu';
+    menuButton.innerHTML = '<i class="bi bi-three-dots-vertical"></i>';
+    menuButton.title = 'Действия';
+    menuButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        togglePin(room.id);
+        showContextMenu(e, room.id, roomElement, pinned);
     });
 
-    // Кнопка удаления
-    const deleteButton = document.createElement('button');
-    deleteButton.className = 'btn-delete';
-    deleteButton.innerHTML = '<i class="bi bi-x-lg"></i>';
-    deleteButton.title = `Удалить "${room.title}"`;
-    deleteButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleDeleteRoom(room);
-    });
+    // Добавляем элементы в контейнер действий
+    actionsContainer.appendChild(menuButton);
 
+    // Добавляем элементы в комнату
     roomElement.appendChild(nameElement);
-    roomElement.appendChild(pinButton);
-    roomElement.appendChild(deleteButton);
+    roomElement.appendChild(actionsContainer);
+
+    // Обработчик контекстного меню
+    roomElement.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showContextMenu(e, room.id, roomElement);
+    });
 
     return roomElement;
 }
@@ -1036,22 +1045,15 @@ const imageModal = {
         const modal = document.createElement('div');
         modal.className = 'image-modal';
         modal.innerHTML = `
-            <button class="image-modal-close" aria-label="Закрыть">
+            <button class="image-modal-close" aria-label="Close">
                 <i class="bi bi-x"></i>
             </button>
-            <img src="" alt="Увеличенное изображение">
+            <img src="" alt="">
         `;
         return modal;
     },
     
     setupEventListeners() {
-        // Close modal on background click
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) {
-                this.hide();
-            }
-        });
-        
         // Close modal on close button click
         this.modal.querySelector('.image-modal-close').addEventListener('click', () => {
             this.hide();
@@ -1078,6 +1080,197 @@ const imageModal = {
         document.body.style.overflow = '';
     }
 };
+
+// Initialize image modal
+imageModal.init();
+
+// Show context menu for room actions
+function showContextMenu(event, roomId, roomElement, isPinned = false) {
+    // Prevent default context menu
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Update state
+    contextMenuState.roomId = roomId;
+    contextMenuState.roomElement = roomElement;
+    
+    // Get context menu element
+    const contextMenu = document.getElementById('roomContextMenu');
+    if (!contextMenu) return;
+    
+    // Update pin menu item text and icon based on current pin state
+    const pinItem = contextMenu.querySelector('[data-action="pin"]');
+    if (pinItem) {
+        const pinIcon = pinItem.querySelector('i');
+        const pinText = pinItem.querySelector('.pin-text');
+        if (pinIcon) {
+            pinIcon.className = isPinned ? 'bi bi-pin-angle-fill' : 'bi bi-pin-angle';
+        }
+        if (pinText) {
+            pinText.textContent = isPinned ? 'Открепить' : 'Закрепить';
+        }
+    }
+    
+    // Position the menu
+    const x = Math.min(event.clientX, window.innerWidth - 250); // 250 is the min-width of the menu
+    const y = Math.min(event.clientY, window.innerHeight - 200); // Approximate height of the menu
+    
+    contextMenu.style.left = `${x}px`;
+    contextMenu.style.top = `${y}px`;
+    
+    // Show the context menu with animation
+    contextMenu.classList.remove('d-none');
+    contextMenu.classList.add('visible');
+    
+    // Add click handler for the entire document
+    const clickHandler = (e) => {
+        // If click is outside the context menu, hide it
+        if (!contextMenu.contains(e.target)) {
+            hideContextMenu();
+            document.removeEventListener('click', clickHandler);
+        }
+    };
+    
+    // Add the click handler with a small delay to prevent immediate closing
+    setTimeout(() => {
+        document.addEventListener('click', clickHandler, { once: true });
+    }, 10);
+}
+
+// Hide context menu
+function hideContextMenu() {
+    const contextMenu = document.getElementById('roomContextMenu');
+    if (contextMenu) {
+        contextMenu.classList.remove('visible');
+        setTimeout(() => {
+            contextMenu.classList.add('d-none');
+        }, 150); // Match this with CSS transition duration
+    }
+    document.removeEventListener('click', handleClickOutside);
+}
+
+// Handle clicks outside the context menu
+function handleClickOutside(event) {
+    hideContextMenu();
+}
+
+// Handle context menu actions
+function handleContextMenuAction(action) {
+    const roomId = contextMenuState.roomId;
+    const roomElement = contextMenuState.roomElement;
+    
+    if (!roomId || !roomElement) return;
+    
+    switch (action) {
+        case 'pin':
+            togglePin(roomId);
+            break;
+        case 'rename':
+            showRenameRoomModal(roomId, roomElement.getAttribute('data-room-title'));
+            break;
+        case 'export':
+            exportChatHistory(roomId);
+            break;
+        case 'delete':
+            handleDeleteRoom({ id: roomId, title: roomElement.getAttribute('data-room-title') });
+            break;
+    }
+    
+    hideContextMenu();
+}
+
+// Show rename room modal
+function showRenameRoomModal(roomId, currentTitle) {
+    const modal = new bootstrap.Modal(document.getElementById('renameRoomModal'));
+    const input = document.getElementById('renameRoomInput');
+    const charCount = document.getElementById('renameCharCount');
+    
+    document.getElementById('renamingRoomId').value = roomId;
+    input.value = currentTitle || '';
+    charCount.textContent = (currentTitle || '').length;
+    
+    // Update character count
+    input.addEventListener('input', () => {
+        charCount.textContent = input.value.length;
+    });
+    
+    // Handle confirm button click
+    document.getElementById('confirmRenameRoom').onclick = async () => {
+        const newTitle = input.value.trim();
+        if (!newTitle) {
+            showNotification('Название не может быть пустым', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/rename?title=${encodeURIComponent(newTitle)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Не удалось переименовать чат');
+            
+            // Update room title in the UI
+            const roomElement = document.querySelector(`.room-item[data-room-id="${roomId}"]`);
+            if (roomElement) {
+                const nameElement = roomElement.querySelector('.room-name');
+                if (nameElement) {
+                    nameElement.textContent = newTitle;
+                    nameElement.title = newTitle;
+                    roomElement.setAttribute('data-room-title', newTitle);
+                }
+                
+                // Update current room title if this is the active room
+                if (state.currentRoom?.id === roomId) {
+                    state.currentRoom.title = newTitle;
+                    document.getElementById('currentRoomTitle').textContent = newTitle;
+                }
+            }
+            
+            showNotification('Чат успешно переименован', 'success');
+            modal.hide();
+        } catch (error) {
+            console.error('Error renaming room:', error);
+            showNotification('Ошибка при переименовании чата', 'error');
+        }
+    };
+    
+    modal.show();
+}
+
+// Export chat history
+async function exportChatHistory(roomId) {
+    try {
+        showLoading(true);
+        
+        const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/export`, {
+            headers: {
+                'X-User-Id': elements.userId
+            }
+        });
+        
+        if (!response.ok) throw new Error('Не удалось экспортировать историю');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat_history_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+        
+        showNotification('История чата успешно экспортирована', 'success');
+    } catch (error) {
+        console.error('Error exporting chat history:', error);
+        showNotification('Ошибка при экспорте истории чата', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
 
 // Enhanced renderMessages function with image click handlers
 function renderMessages() {
@@ -1170,6 +1363,62 @@ function renderMessages() {
 document.addEventListener('DOMContentLoaded', () => {
     try {
         setupFileUpload();
+
+        // Initialize context menu event listeners
+        document.addEventListener('click', (e) => {
+            const clickedMenuItem = e.target.closest('.context-menu-item');
+            if (clickedMenuItem) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const action = clickedMenuItem.getAttribute('data-action');
+                if (action) {
+                    handleContextMenuAction(action);
+                }
+               // return;
+            }
+        });
+        
+        // Handle right-click on room items to show context menu
+        document.addEventListener('contextmenu', (e) => {
+            const roomItem = e.target.closest('.room-item');
+            if (roomItem) {
+                e.preventDefault();
+                const roomId = roomItem.getAttribute('data-room-id');
+                const isPinned = roomItem.classList.contains('pinned');
+                showContextMenu(e, roomId, roomItem, isPinned);
+            }
+        });
+        
+        // Handle click on room items for switching rooms
+        document.addEventListener('click', (e) => {
+            // Handle room item click (for switching rooms)
+            const roomItem = e.target.closest('.room-item');
+            if (roomItem && !e.target.closest('.room-actions') && !e.target.closest('.context-menu-item')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const roomId = roomItem.getAttribute('data-room-id');
+                const room = state.rooms.find(r => r.id === roomId);
+                if (room) {
+                    switchRoom(room);
+                }
+                return;
+            }
+
+            // Handle menu button click (three dots)
+            const menuButton = e.target.closest('.btn-menu');
+            if (menuButton) {
+                e.preventDefault();
+                e.stopPropagation();
+                const roomItem = menuButton.closest('.room-item');
+                if (roomItem) {
+                    const roomId = roomItem.getAttribute('data-room-id');
+                    const isPinned = roomItem.classList.contains('pinned');
+                    showContextMenu(e, roomId, roomItem, isPinned);
+                }
+            }
+        });
 
         if (elements.sendButton) {
             elements.sendButton.addEventListener('click', sendMessage);
