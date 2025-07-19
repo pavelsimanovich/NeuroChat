@@ -118,7 +118,7 @@ body {
     position: sticky;
     bottom: 0;
     background: var(--bg-secondary);
-    padding: 1.5rem 1.25rem;
+    padding: 1.45rem 1.25rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
