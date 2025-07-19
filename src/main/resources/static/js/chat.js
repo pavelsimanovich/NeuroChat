@@ -1,6 +1,15 @@
 // Конфигурация
 const config = {
-    apiBaseUrl: 'http://localhost:8080/api/chat'
+    apiBaseUrl: 'http://localhost:8080/api/chat',
+    theme: {
+        LIGHT: 'light',
+        DARK: 'dark',
+        STORAGE_KEY: 'chat_theme',
+        ICONS: {
+            LIGHT: 'bi-sun',
+            DARK: 'bi-moon-stars'
+        }
+    }
 };
 
 // Context menu state
