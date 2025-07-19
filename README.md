@@ -84,8 +84,9 @@ https://huggingface.co/
     - Conversation continuity across sessions
 - **Usage Controls**:
     - Configurable rate limiting
-- **Image Analysis**:
-
+- **Image Analysis**
+- **Chat Export**
+- **Lite and Dark Mode**
 
 ### P.S.
 - Project in development and can contain errors, some part of code should be rewritten.
