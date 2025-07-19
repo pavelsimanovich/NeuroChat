@@ -1184,9 +1184,6 @@ const imageModal = {
     }
 };
 
-// Initialize image modal
-imageModal.init();
-
 // Show context menu for room actions
 function showContextMenu(event, roomId, roomElement, isPinned = false) {
     // Prevent default context menu
