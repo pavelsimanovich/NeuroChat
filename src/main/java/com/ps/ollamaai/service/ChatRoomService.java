@@ -48,12 +48,11 @@ public class ChatRoomService {
                 .toList();
     }
 
-    public ChatRoomDto renameRoom(final String roomId, final String newName) {
+    public void renameRoom(final String roomId, final String newName) {
         final ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         chatRoom.setTitle(newName);
-        ChatRoom save = chatRoomRepository.save(chatRoom);
-        return chatRoomToDtoConverter.convert(save);
+        chatRoomRepository.save(chatRoom);
     }
 
     @Transactional

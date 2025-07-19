@@ -18,6 +18,32 @@
     --shadow-medium: rgba(0, 0, 0, 0.15);
 }
 
+/* Smooth theme transitions */
+html, body, .sidebar, .chat-container, .message-input, .message, .sidebar-header, .rooms-list {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Theme toggle button */
+#themeToggleBtn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+#themeToggleBtn:hover {
+    transform: scale(1.1);
+}
+
+#themeToggleBtn i {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
 /* Dark theme variables */
 [data-bs-theme="dark"] {
     --bg-primary: #1a1a1a;
@@ -324,6 +350,102 @@ body {
     color: var(--text-primary);
 }
 
+/* Context Menu Styles */
+#roomContextMenu {
+    position: fixed;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-medium);
+    padding: 8px 0;
+    z-index: 1000;
+    min-width: 200px;
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+#roomContextMenu.visible {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    transition: background-color 0.15s ease;
+    font-size: 0.9rem;
+}
+
+.context-menu-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.context-menu-item i {
+    width: 20px;
+    text-align: center;
+}
+
+.context-menu-item.text-danger {
+    color: var(--danger-color);
+}
+
+.context-menu-item.text-danger:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.context-menu .divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 4px 0;
+}
+
+/* Room actions */
+.room-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.room-item:hover .room-actions,
+.room-item.active .room-actions {
+    opacity: 1;
+}
+
+.btn-pin,
+.btn-menu {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-pin:hover,
+.btn-menu:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.btn-pin.pinned {
+    color: var(--accent-color);
+}
+
 .rooms-list {
     display: flex;
     flex-direction: column;
@@ -436,10 +558,23 @@ body {
     white-space: nowrap;
 }
 
+.room-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-right: 8px;
+}
+
 .room-item:hover {
     background-color: var(--glass-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+}
+
+.room-item .room-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
 }
 
 .room-item.active {
@@ -617,18 +752,18 @@ body {
     .chat-header {
         padding: 12px 16px;
     }
-    
+
     .chat-header h4 {
         font-size: 1rem;
         padding-right: 12px;
     }
-    
+
     .chat-header .btn {
         min-width: 36px;
         height: 36px;
         padding: 6px;
     }
-    
+
     .chat-actions .btn {
         min-width: 32px;
         height: 32px;
@@ -640,7 +775,7 @@ body {
     .chat-header {
         padding: 10px 12px;
     }
-    
+
     .chat-header h4 {
         font-size: 0.9rem;
     }
@@ -1498,33 +1633,33 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 
 /* Enhanced animations */
 @keyframes slideInFromLeft {
-    from { 
+    from {
         opacity: 0;
         transform: translateX(-20px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateX(0);
     }
 }
 
 @keyframes slideInRight {
-    from { 
+    from {
         opacity: 0;
         transform: translateX(20px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateX(0);
     }
 }
 
 @keyframes fadeInUp {
-    from { 
+    from {
         opacity: 0;
         transform: translateY(10px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateY(0);
     }
@@ -1674,17 +1809,29 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 }
 
 [data-bs-theme="dark"] .room-item.pinned {
-    background-color: rgba(255, 193, 7, 0.05);
-    border-color: rgba(255, 193, 7, 0.15);
+background-color: rgba(255, 193, 7, 0.05);
+border-color: rgba(255, 193, 7, 0.15);
 }
 
 /* Pin button styles */
 .room-item .btn-pin {
-    opacity: 0;
-    transition: all 0.2s ease;
-    position: absolute;
-    right: 32px;
-    top: 50%;
+opacity: 0;
+transition: all 0.2s ease;
+position: absolute;
+right: 32px;
+top: 50%;
+transform: translateY(-50%) scale(0.9);
+margin: 0;
+width: 24px;
+height: 24px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+background: transparent;
+border: none;
+color: var(--text-muted);
+font-size: 0.8rem;
     transform: translateY(-50%) scale(0.9);
     margin: 0;
     width: 24px;
@@ -1746,11 +1893,11 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     .message-input {
         padding: 12px 15px;
     }
-    
+
     .message-input-container {
         padding: 6px 10px;
     }
-    
+
     .message-input button {
         width: 36px;
         height: 36px;
@@ -1791,35 +1938,35 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     animation: bounce 1.4s infinite ease-in-out;
 }
 
-.dot:nth-child(1) { 
-    animation-delay: 0s; 
+.dot:nth-child(1) {
+    animation-delay: 0s;
 }
 
-.dot:nth-child(2) { 
-    animation-delay: 0.2s; 
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
 }
 
-.dot:nth-child(3) { 
-    animation-delay: 0.4s; 
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
 }
 
 @keyframes bounce {
-    0%, 60%, 100% { 
-        transform: translateY(0); 
+    0%, 60%, 100% {
+        transform: translateY(0);
         opacity: 0.4;
     }
-    30% { 
-        transform: translateY(-8px); 
+    30% {
+        transform: translateY(-8px);
         opacity: 1;
     }
 }
 
 @keyframes fadeIn {
-    from { 
+    from {
         opacity: 0;
         transform: translateY(10px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateY(0);
     }
@@ -1838,17 +1985,17 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 
 /* Additional utility animations */
 @keyframes spin {
-    to { 
-        transform: rotate(360deg); 
+    to {
+        transform: rotate(360deg);
     }
 }
 
 @keyframes slideIn {
-    from { 
-        transform: translateX(100%); 
+    from {
+        transform: translateX(100%);
     }
-    to { 
-        transform: translateX(0); 
+    to {
+        transform: translateX(0);
     }
 }
 
@@ -1972,7 +2119,7 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     .message-file-preview {
         max-width: 280px;
     }
-    
+
     .message-file-thumbnail {
         max-height: 150px;
     }
@@ -1982,16 +2129,16 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     .message-file-preview {
         max-width: 220px;
     }
-    
+
     .message-file-thumbnail {
         max-height: 120px;
     }
-    
+
     .image-modal img {
         max-width: 95%;
         max-height: 95%;
     }
-    
+
     .image-modal-close {
         top: 10px;
         right: 10px;

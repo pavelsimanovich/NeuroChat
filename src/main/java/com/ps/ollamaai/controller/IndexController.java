@@ -9,8 +9,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.text.MessageFormat;
-
 @RequiredArgsConstructor
 @Controller
 public class IndexController {
@@ -28,8 +26,7 @@ public class IndexController {
         final var user = userService.findByEmail(currentUser.getUsername());
         model.addAttribute("modelName", ollamaService.getCurrentModelName());
         model.addAttribute("userId", user.getId());
-        model.addAttribute("userName", MessageFormat.format("{0} {1}",
-                user.getFirstName(), user.getLastName()));
+        model.addAttribute("userName", user.getFirstName());
         return "home";
     }
 }

@@ -1,6 +1,21 @@
 // Конфигурация
 const config = {
-    apiBaseUrl: 'http://localhost:8080/api/chat'
+    apiBaseUrl: 'http://localhost:8080/api/chat',
+    theme: {
+        LIGHT: 'light',
+        DARK: 'dark',
+        STORAGE_KEY: 'chat_theme',
+        ICONS: {
+            LIGHT: 'bi-sun',
+            DARK: 'bi-moon-stars'
+        }
+    }
+};
+
+// Context menu state
+let contextMenuState = {
+    roomId: null,
+    roomElement: null
 };
 
 // DOM элементы
@@ -233,37 +248,40 @@ function createRoomElement(room) {
     
     roomElement.className = `room-item ${isActive ? 'active' : ''} ${pinned ? 'pinned' : ''}`;
     roomElement.setAttribute('data-room-id', room.id);
+    roomElement.setAttribute('data-room-title', room.title);
 
     // Название комнаты
     const nameElement = document.createElement('span');
-    nameElement.className = 'room-name';
+    nameElement.className = 'room-name flex-grow-1';
     nameElement.textContent = room.title || 'Без названия';
     nameElement.title = room.title;
-    nameElement.addEventListener('click', () => switchRoom(room));
 
-    // Кнопка закрепления
-    const pinButton = document.createElement('button');
-    pinButton.className = 'btn-pin';
-    pinButton.innerHTML = pinned ? '<i class="bi bi-pin-angle-fill"></i>' : '<i class="bi bi-pin-angle"></i>';
-    pinButton.title = pinned ? 'Открепить чат' : 'Закрепить чат';
-    pinButton.addEventListener('click', (e) => {
+    // Контейнер для действий
+    const actionsContainer = document.createElement('div');
+    actionsContainer.className = 'room-actions';
+
+    // Кнопка меню (три точки)
+    const menuButton = document.createElement('button');
+    menuButton.className = 'btn-menu';
+    menuButton.innerHTML = '<i class="bi bi-three-dots-vertical"></i>';
+    menuButton.title = 'Действия';
+    menuButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        togglePin(room.id);
+        showContextMenu(e, room.id, roomElement, pinned);
     });
 
-    // Кнопка удаления
-    const deleteButton = document.createElement('button');
-    deleteButton.className = 'btn-delete';
-    deleteButton.innerHTML = '<i class="bi bi-x-lg"></i>';
-    deleteButton.title = `Удалить "${room.title}"`;
-    deleteButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleDeleteRoom(room);
-    });
+    // Добавляем элементы в контейнер действий
+    actionsContainer.appendChild(menuButton);
 
+    // Добавляем элементы в комнату
     roomElement.appendChild(nameElement);
-    roomElement.appendChild(pinButton);
-    roomElement.appendChild(deleteButton);
+    roomElement.appendChild(actionsContainer);
+
+    // Обработчик контекстного меню
+    roomElement.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showContextMenu(e, room.id, roomElement);
+    });
 
     return roomElement;
 }
@@ -300,7 +318,7 @@ async function switchRoom(room) {
     try {
         // Update UI for room selection without re-rendering the entire list
         updateRoomActiveState(previousRoomId, room.id);
-        
+
         elements.currentRoomTitle.textContent = room.title;
         await loadRoomMessages(room.id);
 
@@ -923,7 +941,7 @@ const uxFeatures = {
             copyBtn.className = 'message-copy-btn';
             copyBtn.innerHTML = '<i class="bi bi-copy"></i>';
             copyBtn.title = 'Копировать сообщение';
-            
+
             copyBtn.addEventListener('click', async () => {
                 try {
                     await navigator.clipboard.writeText(content);
@@ -937,17 +955,27 @@ const uxFeatures = {
                     showNotification('Ошибка копирования', 'error');
                 }
             });
-            
+
             messageElement.appendChild(copyBtn);
         }
     }
 };
 
-async function handleDeleteRoom() {
-    if (!state.currentRoom || !await confirmDeleteChat(state.currentRoom.title)) return;
+async function handleDeleteRoom(roomId, title) {
+    if (!roomId || !title || !await confirmDeleteChat(title)) {
+        return;
+    }
+
+    // Show loading state
+    const deleteButton = document.querySelector(`[data-room-id="${roomId}"] .delete-room`);
+    const originalText = deleteButton?.innerHTML;
+    if (deleteButton) {
+        deleteButton.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
+        deleteButton.disabled = true;
+    }
 
     try {
-        const response = await fetch(`/api/chat/rooms/${state.currentRoom.id}`, {
+        const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -955,26 +983,109 @@ async function handleDeleteRoom() {
             }
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        state.rooms = state.rooms.filter(room => room.id !== state.currentRoom.id);
-        state.messages = [];
-        state.currentRoom = null;
-
-        renderRoomsList();
-        renderMessages();
-        elements.currentRoomTitle.textContent = `${elements.userName} Выберите или создайте чат`;
-        hideInputs(true);
-        localStorage.removeItem('lastRoomId');
-
-        if (state.rooms.length) {
-            await switchRoom(state.rooms[0]);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
-        showNotification('Чат успешно удален', 'success');
+        // Update state
+        const wasCurrentRoom = state.currentRoom?.id === roomId;
+        state.rooms = state.rooms.filter(room => room.id !== roomId);
+
+        if (wasCurrentRoom) {
+            state.currentRoom = null;
+            state.messages = [];
+            elements.chatMessages.innerHTML = '';
+            elements.currentRoomTitle.textContent = 'Выберите или создайте чат';
+        }
+
+        // Update UI
+        renderRoomsList();
+
+        // Switch to another room if available
+        if (state.rooms.length > 0) {
+            await switchRoom(state.rooms[0]);
+        } else {
+            // Create a new welcome screen
+            const welcomeScreen = document.createElement('div');
+            welcomeScreen.id = 'welcomeScreen';
+            welcomeScreen.className = 'h-100 d-flex flex-column align-items-center justify-content-center text-center p-4';
+            welcomeScreen.style.maxWidth = '700px';
+            welcomeScreen.style.margin = '0 auto';
+            welcomeScreen.style.display = 'flex';
+
+            welcomeScreen.innerHTML = `
+                <div class="mb-4" style="width: 120px; height: 120px; background-color: #f0f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #4f46e5;"></i>
+                </div>
+                <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
+                <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
+<!--                <button id="createRoomBtn1" class="btn btn-primary">-->
+<!--                    <i class="bi bi-plus-lg me-2"></i>Новый чат-->
+<!--                </button>-->
+                <div class="mt-5 pt-4 border-top w-100">
+                    <h6 class="mb-3">Попробуйте спросить:</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                                            <i class="bi bi-lightbulb text-primary"></i>
+                                        </div>
+                                        <h6 class="mb-0">Идеи для проекта</h6>
+                                    </div>
+                                    <p class="text-muted small mb-0">Какие есть интересные идеи для веб-приложения?</p>
+                                </div>
+                            </div>
+                        </div>
+                      <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-success bg-opacity-10 p-2 rounded me-2">
+                                            <i class="bi bi-code-slash text-success"></i>
+                                        </div>
+                                        <h6 class="mb-0">Помощь с кодом</h6>
+                                    </div>
+                                    <p class="text-muted small mb-0">Как оптимизировать SQL-запрос?</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            // Clear chat messages and append new welcome screen
+            elements.chatMessages.innerHTML = '';
+            elements.chatMessages.appendChild(welcomeScreen);
+
+            // Add event listener for the create room button
+            const createRoomBtn = welcomeScreen.querySelector('#createRoomBtn1');
+            if (createRoomBtn) {
+                createRoomBtn.addEventListener('click', () => {
+                    createRoom('Новый чат');
+                });
+            }
+
+            // Hide the typing indicator if it's visible
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+            hideInputs(true);
+            localStorage.removeItem('lastRoomId');
+        }
+
+        showNotification('Чат успешно удалён', 'success');
     } catch (error) {
         console.error('Error deleting room:', error);
-        showNotification('Не удалось удалить чат', 'error');
+        showNotification(`Не удалось удалить чат: ${error.message}`, 'error');
+    } finally {
+        // Restore button state
+        if (deleteButton) {
+            deleteButton.innerHTML = originalText;
+            deleteButton.disabled = false;
+        }
     }
 }
 
@@ -1013,6 +1124,7 @@ function hideInputs(disabled) {
     elements.uploadButton.classList.toggle('d-none', disabled);
     elements.messageInput.classList.toggle('d-none', disabled);
     elements.sendButton.classList.toggle('d-none', disabled);
+    document.getElementById("messageInputArea").classList.toggle('d-none', disabled);
 }
 
 function generateUUID() {
@@ -1025,38 +1137,31 @@ function generateUUID() {
 // Image modal functionality
 const imageModal = {
     modal: null,
-    
+
     init() {
         this.modal = this.createModal();
         document.body.appendChild(this.modal);
         this.setupEventListeners();
     },
-    
+
     createModal() {
         const modal = document.createElement('div');
         modal.className = 'image-modal';
         modal.innerHTML = `
-            <button class="image-modal-close" aria-label="Закрыть">
+            <button class="image-modal-close" aria-label="Close">
                 <i class="bi bi-x"></i>
             </button>
-            <img src="" alt="Увеличенное изображение">
+            <img src="" alt="">
         `;
         return modal;
     },
-    
+
     setupEventListeners() {
-        // Close modal on background click
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) {
-                this.hide();
-            }
-        });
-        
         // Close modal on close button click
         this.modal.querySelector('.image-modal-close').addEventListener('click', () => {
             this.hide();
         });
-        
+
         // Close modal on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.modal.classList.contains('show')) {
@@ -1064,7 +1169,7 @@ const imageModal = {
             }
         });
     },
-    
+
     show(imageSrc, imageAlt = '') {
         const img = this.modal.querySelector('img');
         img.src = imageSrc;
@@ -1072,12 +1177,203 @@ const imageModal = {
         this.modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     },
-    
+
     hide() {
         this.modal.classList.remove('show');
         document.body.style.overflow = '';
     }
 };
+
+// Initialize image modal
+imageModal.init();
+
+// Show context menu for room actions
+function showContextMenu(event, roomId, roomElement, isPinned = false) {
+    // Prevent default context menu
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Update state
+    contextMenuState.roomId = roomId;
+    contextMenuState.roomElement = roomElement;
+
+    // Get context menu element
+    const contextMenu = document.getElementById('roomContextMenu');
+    if (!contextMenu) return;
+
+    // Update pin menu item text and icon based on current pin state
+    const pinItem = contextMenu.querySelector('[data-action="pin"]');
+    if (pinItem) {
+        const pinIcon = pinItem.querySelector('i');
+        const pinText = pinItem.querySelector('.pin-text');
+        if (pinIcon) {
+            pinIcon.className = isPinned ? 'bi bi-pin-angle-fill' : 'bi bi-pin-angle';
+        }
+        if (pinText) {
+            pinText.textContent = isPinned ? 'Открепить' : 'Закрепить';
+        }
+    }
+
+    // Position the menu
+    const x = Math.min(event.clientX, window.innerWidth - 250); // 250 is the min-width of the menu
+    const y = Math.min(event.clientY, window.innerHeight - 200); // Approximate height of the menu
+
+    contextMenu.style.left = `${x}px`;
+    contextMenu.style.top = `${y}px`;
+
+    // Show the context menu with animation
+    contextMenu.classList.remove('d-none');
+    contextMenu.classList.add('visible');
+
+    // Add click handler for the entire document
+    const clickHandler = (e) => {
+        // If click is outside the context menu, hide it
+        if (!contextMenu.contains(e.target)) {
+            hideContextMenu();
+            document.removeEventListener('click', clickHandler);
+        }
+    };
+
+    // Add the click handler with a small delay to prevent immediate closing
+    setTimeout(() => {
+        document.addEventListener('click', clickHandler, { once: true });
+    }, 10);
+}
+
+// Hide context menu
+function hideContextMenu() {
+    const contextMenu = document.getElementById('roomContextMenu');
+    if (contextMenu) {
+        contextMenu.classList.remove('visible');
+        setTimeout(() => {
+            contextMenu.classList.add('d-none');
+        }, 150); // Match this with CSS transition duration
+    }
+    document.removeEventListener('click', handleClickOutside);
+}
+
+// Handle clicks outside the context menu
+function handleClickOutside(event) {
+    hideContextMenu();
+}
+
+// Handle context menu actions
+function handleContextMenuAction(action) {
+    const roomId = contextMenuState.roomId;
+    const roomElement = contextMenuState.roomElement;
+
+    if (!roomId || !roomElement) return;
+
+    switch (action) {
+        case 'pin':
+            togglePin(roomId);
+            break;
+        case 'rename':
+            showRenameRoomModal(roomId, roomElement.getAttribute('data-room-title'));
+            break;
+        case 'export':
+            exportChatHistory(roomId);
+            break;
+        case 'delete':
+            handleDeleteRoom(roomId, roomElement.getAttribute('data-room-title'));
+            break;
+    }
+
+    hideContextMenu();
+}
+
+// Show rename room modal
+function showRenameRoomModal(roomId, currentTitle) {
+    const modal = new bootstrap.Modal(document.getElementById('renameRoomModal'));
+    const input = document.getElementById('renameRoomInput');
+    const charCount = document.getElementById('renameCharCount');
+
+    document.getElementById('renamingRoomId').value = roomId;
+    input.value = currentTitle || '';
+    charCount.textContent = (currentTitle || '').length;
+
+    // Update character count
+    input.addEventListener('input', () => {
+        charCount.textContent = input.value.length;
+    });
+
+    // Handle confirm button click
+    document.getElementById('confirmRenameRoom').onclick = async () => {
+        const newTitle = input.value.trim();
+        if (!newTitle) {
+            showNotification('Название не может быть пустым', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/rename?title=${encodeURIComponent(newTitle)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error('Не удалось переименовать чат');
+
+            // Update room title in the UI
+            const roomElement = document.querySelector(`.room-item[data-room-id="${roomId}"]`);
+            if (roomElement) {
+                const nameElement = roomElement.querySelector('.room-name');
+                if (nameElement) {
+                    nameElement.textContent = newTitle;
+                    nameElement.title = newTitle;
+                    roomElement.setAttribute('data-room-title', newTitle);
+                }
+
+                // Update current room title if this is the active room
+                if (state.currentRoom?.id === roomId) {
+                    state.currentRoom.title = newTitle;
+                    document.getElementById('currentRoomTitle').textContent = newTitle;
+                }
+            }
+
+            showNotification('Чат успешно переименован', 'success');
+            modal.hide();
+        } catch (error) {
+            console.error('Error renaming room:', error);
+            showNotification('Ошибка при переименовании чата', 'error');
+        }
+    };
+
+    modal.show();
+}
+
+// Export chat history
+async function exportChatHistory(roomId) {
+    try {
+        showLoading(true);
+
+        const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/export`, {
+            headers: {
+                'X-User-Id': elements.userId
+            }
+        });
+
+        if (!response.ok) throw new Error('Не удалось экспортировать историю');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat_history_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+
+        showNotification('История чата успешно экспортирована', 'success');
+    } catch (error) {
+        console.error('Error exporting chat history:', error);
+        showNotification('Ошибка при экспорте истории чата', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
 
 // Enhanced renderMessages function with image click handlers
 function renderMessages() {
@@ -1107,9 +1403,9 @@ function renderMessages() {
             const isImage = fileData.contentType && fileData.contentType.startsWith('image/');
             const fileUrl = `/api/files/${fileData.id}`;
             const previewUrl = getFilePreviewUrl(fileData);
-            
+
             filePreviews = '<div class="message-files">';
-            
+
             if (isImage) {
                 filePreviews += `
                     <div class="message-file-preview">
@@ -1170,6 +1466,62 @@ function renderMessages() {
 document.addEventListener('DOMContentLoaded', () => {
     try {
         setupFileUpload();
+
+        // Initialize context menu event listeners
+        document.addEventListener('click', (e) => {
+            const clickedMenuItem = e.target.closest('.context-menu-item');
+            if (clickedMenuItem) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const action = clickedMenuItem.getAttribute('data-action');
+                if (action) {
+                    handleContextMenuAction(action);
+                }
+               // return;
+            }
+        });
+
+        // Handle right-click on room items to show context menu
+        document.addEventListener('contextmenu', (e) => {
+            const roomItem = e.target.closest('.room-item');
+            if (roomItem) {
+                e.preventDefault();
+                const roomId = roomItem.getAttribute('data-room-id');
+                const isPinned = roomItem.classList.contains('pinned');
+                showContextMenu(e, roomId, roomItem, isPinned);
+            }
+        });
+
+        // Handle click on room items for switching rooms
+        document.addEventListener('click', (e) => {
+            // Handle room item click (for switching rooms)
+            const roomItem = e.target.closest('.room-item');
+            if (roomItem && !e.target.closest('.room-actions') && !e.target.closest('.context-menu-item')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const roomId = roomItem.getAttribute('data-room-id');
+                const room = state.rooms.find(r => r.id === roomId);
+                if (room) {
+                    switchRoom(room);
+                }
+                return;
+            }
+
+            // Handle menu button click (three dots)
+            const menuButton = e.target.closest('.btn-menu');
+            if (menuButton) {
+                e.preventDefault();
+                e.stopPropagation();
+                const roomItem = menuButton.closest('.room-item');
+                if (roomItem) {
+                    const roomId = roomItem.getAttribute('data-room-id');
+                    const isPinned = roomItem.classList.contains('pinned');
+                    showContextMenu(e, roomId, roomItem, isPinned);
+                }
+            }
+        });
 
         if (elements.sendButton) {
             elements.sendButton.addEventListener('click', sendMessage);
@@ -1252,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.uploadButton) {
             elements.uploadButton.addEventListener('click', () => elements.fileInput.click());
         }
-        
+
         imageModal.init();
     } catch (error) {
         console.error('Initialization error:', error);
