@@ -332,75 +332,75 @@ async function loadRoomMessages(roomId) {
     }
 }
 
-function renderMessages() {
-    if (!elements.chatMessages) return;
-
-    elements.chatMessages.innerHTML = '';
-
-    if (!state.messages.length && state.currentRoom) {
-        elements.chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
-        return;
-    }
-
-    const sortedMessages = [...state.messages].sort((a, b) =>
-        new Date(a.timestamp) - new Date(b.timestamp)
-    );
-
-    sortedMessages.forEach(message => {
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
-        messageElement.setAttribute('data-message-id', message.id);
-        if (message.error) messageElement.classList.add('message-error');
-
-        // Handle file data if it exists
-        let filePreviews = '';
-        if (message.fileData) {
-            const fileData = message.fileData;
-            const fileExtension = fileData.fileName ? fileData.fileName.split('.').pop().toLowerCase() : '';
-            const isImage = fileData.contentType && fileData.contentType.startsWith('image/');
-            const fileUrl = `/api/files/${fileData.id}`;
-            const previewUrl = getFilePreviewUrl(fileData);
-            
-            if (isImage) {
-                filePreviews = `
-                    <div class="file-preview">
-                        <img src="${previewUrl}" alt="${fileData.fileName || 'Image'}" class="file-preview-image">
-                    </div>
-                `;
-            } else {
-                filePreviews = `
-                    <div class="file-preview">
-                        <div class="file-icon">
-                            <i class="bi ${getFileIconClass(fileExtension)}"></i>
-                        </div>
-                        <div class="file-preview-info">
-                            <div class="file-preview-name">${fileData.fileName || 'File'}</div>
-                            ${fileData.size ? `<div class="file-preview-size">${formatFileSize(fileData.size)}${fileExtension ? ' • ' + fileExtension.toUpperCase() : ''}</div>` : ''}
-                        </div>
-                        <a href="${fileUrl}" class="file-download" download="${fileData.fileName || 'download'}" title="Скачать">
-                            <i class="bi bi-download"></i>
-                        </a>
-                    </div>
-                `;
-            }
-        }
-
-        messageElement.innerHTML = `
-            <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
-            ${filePreviews}
-            <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
-            <div class="message-meta">
-                <span class="message-time">${formatTime(message.timestamp)}</span>
-                ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
-            </div>
-        `;
-
-        elements.chatMessages.appendChild(messageElement);
-    });
-
-    Prism.highlightAll();
-    scrollToBottom();
-}
+// function renderMessages() {
+//     if (!elements.chatMessages) return;
+//
+//     elements.chatMessages.innerHTML = '';
+//
+//     if (!state.messages.length && state.currentRoom) {
+//         elements.chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
+//         return;
+//     }
+//
+//     const sortedMessages = [...state.messages].sort((a, b) =>
+//         new Date(a.timestamp) - new Date(b.timestamp)
+//     );
+//
+//     sortedMessages.forEach(message => {
+//         const messageElement = document.createElement('div');
+//         messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
+//         messageElement.setAttribute('data-message-id', message.id);
+//         if (message.error) messageElement.classList.add('message-error');
+//
+//         // Handle file data if it exists
+//         let filePreviews = '';
+//         if (message.fileData) {
+//             const fileData = message.fileData;
+//             const fileExtension = fileData.fileName ? fileData.fileName.split('.').pop().toLowerCase() : '';
+//             const isImage = fileData.contentType && fileData.contentType.startsWith('image/');
+//             const fileUrl = `/api/files/${fileData.id}`;
+//             const previewUrl = getFilePreviewUrl(fileData);
+//
+//             if (isImage) {
+//                 filePreviews = `
+//                     <div class="file-preview">
+//                         <img src="${previewUrl}" alt="${fileData.fileName || 'Image'}" class="file-preview-image">
+//                     </div>
+//                 `;
+//             } else {
+//                 filePreviews = `
+//                     <div class="file-preview">
+//                         <div class="file-icon">
+//                             <i class="bi ${getFileIconClass(fileExtension)}"></i>
+//                         </div>
+//                         <div class="file-preview-info">
+//                             <div class="file-preview-name">${fileData.fileName || 'File'}</div>
+//                             ${fileData.size ? `<div class="file-preview-size">${formatFileSize(fileData.size)}${fileExtension ? ' • ' + fileExtension.toUpperCase() : ''}</div>` : ''}
+//                         </div>
+//                         <a href="${fileUrl}" class="file-download" download="${fileData.fileName || 'download'}" title="Скачать">
+//                             <i class="bi bi-download"></i>
+//                         </a>
+//                     </div>
+//                 `;
+//             }
+//         }
+//
+//         messageElement.innerHTML = `
+//             <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
+//             ${filePreviews}
+//             <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
+//             <div class="message-meta">
+//                 <span class="message-time">${formatTime(message.timestamp)}</span>
+//                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
+//             </div>
+//         `;
+//
+//         elements.chatMessages.appendChild(messageElement);
+//     });
+//
+//     Prism.highlightAll();
+//     scrollToBottom();
+// }
 
 function formatTime(timestamp) {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -964,6 +964,34 @@ const typingIndicator = {
     }
 };
 
+const uxFeatures = {
+    // Copy message functionality
+    copyMessage: {
+        addCopyButton(messageElement, content) {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'message-copy-btn';
+            copyBtn.innerHTML = '<i class="bi bi-copy"></i>';
+            copyBtn.title = 'Копировать сообщение';
+            
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(content);
+                    copyBtn.innerHTML = '<i class="bi bi-check"></i>';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i class="bi bi-copy"></i>';
+                    }, 2000);
+                    showNotification('Сообщение скопировано', 'success');
+                } catch (error) {
+                    console.error('Failed to copy:', error);
+                    showNotification('Ошибка копирования', 'error');
+                }
+            });
+            
+            messageElement.appendChild(copyBtn);
+        }
+    }
+};
+
 async function handleDeleteRoom() {
     if (!state.currentRoom || !await confirmDeleteChat(state.currentRoom.title)) return;
 
@@ -1041,6 +1069,151 @@ function generateUUID() {
         const r = Math.random() * 16 | 0;
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
+}
+
+// Image modal functionality
+const imageModal = {
+    modal: null,
+    
+    init() {
+        this.modal = this.createModal();
+        document.body.appendChild(this.modal);
+        this.setupEventListeners();
+    },
+    
+    createModal() {
+        const modal = document.createElement('div');
+        modal.className = 'image-modal';
+        modal.innerHTML = `
+            <button class="image-modal-close" aria-label="Закрыть">
+                <i class="bi bi-x"></i>
+            </button>
+            <img src="" alt="Увеличенное изображение">
+        `;
+        return modal;
+    },
+    
+    setupEventListeners() {
+        // Close modal on background click
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.hide();
+            }
+        });
+        
+        // Close modal on close button click
+        this.modal.querySelector('.image-modal-close').addEventListener('click', () => {
+            this.hide();
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modal.classList.contains('show')) {
+                this.hide();
+            }
+        });
+    },
+    
+    show(imageSrc, imageAlt = '') {
+        const img = this.modal.querySelector('img');
+        img.src = imageSrc;
+        img.alt = imageAlt;
+        this.modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    },
+    
+    hide() {
+        this.modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+};
+
+// Enhanced renderMessages function with image click handlers
+function renderMessages() {
+    if (!elements.chatMessages) return;
+
+    elements.chatMessages.innerHTML = '';
+
+    if (!state.messages.length && state.currentRoom) {
+        elements.chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
+        return;
+    }
+
+    const sortedMessages = [...state.messages].sort((a, b) =>
+        new Date(a.timestamp) - new Date(b.timestamp)
+    );
+
+    sortedMessages.forEach(message => {
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
+        messageElement.setAttribute('data-message-id', message.id);
+
+        // File previews with click handlers
+        let filePreviews = '';
+        if (message.fileData) {
+            const fileData = message.fileData;
+            const fileExtension = fileData.fileName ? fileData.fileName.split('.').pop().toLowerCase() : '';
+            const isImage = fileData.contentType && fileData.contentType.startsWith('image/');
+            const fileUrl = `/api/files/${fileData.id}`;
+            const previewUrl = getFilePreviewUrl(fileData);
+            
+            filePreviews = '<div class="message-files">';
+            
+            if (isImage) {
+                filePreviews += `
+                    <div class="message-file-preview">
+                        <img src="${previewUrl || fileUrl}" 
+                             alt="${fileData.fileName || 'Image'}" 
+                             class="message-file-thumbnail" 
+                             loading="lazy"
+                             data-full-src="${fileUrl}"
+                             data-filename="${fileData.fileName || 'image'}">
+                    </div>`;
+            } else {
+                filePreviews += `
+                    <div class="message-file">
+                        <a href="${fileUrl}" download="${fileData.fileName || 'download'}" class="file-link">
+                            <i class="bi ${getFileIconClass(fileExtension)} file-icon"></i>
+                            <div class="file-info">
+                                <div class="file-name">${fileData.fileName || 'File'}</div>
+                                ${fileData.size ? `<div class="file-size">${formatFileSize(fileData.size)}</div>` : ''}
+                            </div>
+                        </a>
+                    </div>`;
+            }
+            filePreviews += '</div>';
+        }
+
+        messageElement.innerHTML = `
+            <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
+            ${filePreviews}
+            <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
+            <div class="message-meta">
+                <span class="message-time">${formatTime(message.timestamp)}</span>
+                ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
+            </div>
+        `;
+
+        // Add copy button for non-empty messages
+        if (message.content && message.content.trim()) {
+            uxFeatures.copyMessage.addCopyButton(messageElement, message.content);
+        }
+
+        elements.chatMessages.appendChild(messageElement);
+    });
+
+    // Add click handlers for images
+    elements.chatMessages.querySelectorAll('.message-file-thumbnail').forEach(img => {
+        img.addEventListener('click', (e) => {
+            e.preventDefault();
+            const fullSrc = img.getAttribute('data-full-src');
+            const filename = img.getAttribute('data-filename');
+            imageModal.show(fullSrc, filename);
+        });
+    });
+
+    Prism.highlightAll();
+    scrollToBottom();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1128,6 +1301,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.uploadButton) {
             elements.uploadButton.addEventListener('click', () => elements.fileInput.click());
         }
+        
+        imageModal.init();
     } catch (error) {
         console.error('Initialization error:', error);
         showNotification('Ошибка при инициализации приложения', 'error');
