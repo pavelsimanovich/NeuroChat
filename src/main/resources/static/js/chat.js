@@ -318,7 +318,7 @@ async function switchRoom(room) {
     try {
         // Update UI for room selection without re-rendering the entire list
         updateRoomActiveState(previousRoomId, room.id);
-        
+
         elements.currentRoomTitle.textContent = room.title;
         await loadRoomMessages(room.id);
 
@@ -941,7 +941,7 @@ const uxFeatures = {
             copyBtn.className = 'message-copy-btn';
             copyBtn.innerHTML = '<i class="bi bi-copy"></i>';
             copyBtn.title = 'Копировать сообщение';
-            
+
             copyBtn.addEventListener('click', async () => {
                 try {
                     await navigator.clipboard.writeText(content);
@@ -955,7 +955,7 @@ const uxFeatures = {
                     showNotification('Ошибка копирования', 'error');
                 }
             });
-            
+
             messageElement.appendChild(copyBtn);
         }
     }
@@ -1013,7 +1013,7 @@ async function handleDeleteRoom(roomId, title) {
             welcomeScreen.style.maxWidth = '700px';
             welcomeScreen.style.margin = '0 auto';
             welcomeScreen.style.display = 'flex';
-            
+
             welcomeScreen.innerHTML = `
                 <div class="mb-4" style="width: 120px; height: 120px; background-color: #f0f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                     <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #4f46e5;"></i>
@@ -1137,13 +1137,13 @@ function generateUUID() {
 // Image modal functionality
 const imageModal = {
     modal: null,
-    
+
     init() {
         this.modal = this.createModal();
         document.body.appendChild(this.modal);
         this.setupEventListeners();
     },
-    
+
     createModal() {
         const modal = document.createElement('div');
         modal.className = 'image-modal';
@@ -1155,13 +1155,13 @@ const imageModal = {
         `;
         return modal;
     },
-    
+
     setupEventListeners() {
         // Close modal on close button click
         this.modal.querySelector('.image-modal-close').addEventListener('click', () => {
             this.hide();
         });
-        
+
         // Close modal on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.modal.classList.contains('show')) {
@@ -1169,7 +1169,7 @@ const imageModal = {
             }
         });
     },
-    
+
     show(imageSrc, imageAlt = '') {
         const img = this.modal.querySelector('img');
         img.src = imageSrc;
@@ -1177,7 +1177,7 @@ const imageModal = {
         this.modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     },
-    
+
     hide() {
         this.modal.classList.remove('show');
         document.body.style.overflow = '';
@@ -1196,11 +1196,11 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
     // Update state
     contextMenuState.roomId = roomId;
     contextMenuState.roomElement = roomElement;
-    
+
     // Get context menu element
     const contextMenu = document.getElementById('roomContextMenu');
     if (!contextMenu) return;
-    
+
     // Update pin menu item text and icon based on current pin state
     const pinItem = contextMenu.querySelector('[data-action="pin"]');
     if (pinItem) {
@@ -1213,18 +1213,18 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
             pinText.textContent = isPinned ? 'Открепить' : 'Закрепить';
         }
     }
-    
+
     // Position the menu
     const x = Math.min(event.clientX, window.innerWidth - 250); // 250 is the min-width of the menu
     const y = Math.min(event.clientY, window.innerHeight - 200); // Approximate height of the menu
-    
+
     contextMenu.style.left = `${x}px`;
     contextMenu.style.top = `${y}px`;
-    
+
     // Show the context menu with animation
     contextMenu.classList.remove('d-none');
     contextMenu.classList.add('visible');
-    
+
     // Add click handler for the entire document
     const clickHandler = (e) => {
         // If click is outside the context menu, hide it
@@ -1233,7 +1233,7 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
             document.removeEventListener('click', clickHandler);
         }
     };
-    
+
     // Add the click handler with a small delay to prevent immediate closing
     setTimeout(() => {
         document.addEventListener('click', clickHandler, { once: true });
@@ -1261,9 +1261,9 @@ function handleClickOutside(event) {
 function handleContextMenuAction(action) {
     const roomId = contextMenuState.roomId;
     const roomElement = contextMenuState.roomElement;
-    
+
     if (!roomId || !roomElement) return;
-    
+
     switch (action) {
         case 'pin':
             togglePin(roomId);
@@ -1278,7 +1278,7 @@ function handleContextMenuAction(action) {
             handleDeleteRoom(roomId, roomElement.getAttribute('data-room-title'));
             break;
     }
-    
+
     hideContextMenu();
 }
 
@@ -1287,16 +1287,16 @@ function showRenameRoomModal(roomId, currentTitle) {
     const modal = new bootstrap.Modal(document.getElementById('renameRoomModal'));
     const input = document.getElementById('renameRoomInput');
     const charCount = document.getElementById('renameCharCount');
-    
+
     document.getElementById('renamingRoomId').value = roomId;
     input.value = currentTitle || '';
     charCount.textContent = (currentTitle || '').length;
-    
+
     // Update character count
     input.addEventListener('input', () => {
         charCount.textContent = input.value.length;
     });
-    
+
     // Handle confirm button click
     document.getElementById('confirmRenameRoom').onclick = async () => {
         const newTitle = input.value.trim();
@@ -1304,7 +1304,7 @@ function showRenameRoomModal(roomId, currentTitle) {
             showNotification('Название не может быть пустым', 'error');
             return;
         }
-        
+
         try {
             const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/rename?title=${encodeURIComponent(newTitle)}`, {
                 method: 'POST',
@@ -1312,9 +1312,9 @@ function showRenameRoomModal(roomId, currentTitle) {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) throw new Error('Не удалось переименовать чат');
-            
+
             // Update room title in the UI
             const roomElement = document.querySelector(`.room-item[data-room-id="${roomId}"]`);
             if (roomElement) {
@@ -1324,14 +1324,14 @@ function showRenameRoomModal(roomId, currentTitle) {
                     nameElement.title = newTitle;
                     roomElement.setAttribute('data-room-title', newTitle);
                 }
-                
+
                 // Update current room title if this is the active room
                 if (state.currentRoom?.id === roomId) {
                     state.currentRoom.title = newTitle;
                     document.getElementById('currentRoomTitle').textContent = newTitle;
                 }
             }
-            
+
             showNotification('Чат успешно переименован', 'success');
             modal.hide();
         } catch (error) {
@@ -1339,7 +1339,7 @@ function showRenameRoomModal(roomId, currentTitle) {
             showNotification('Ошибка при переименовании чата', 'error');
         }
     };
-    
+
     modal.show();
 }
 
@@ -1347,15 +1347,15 @@ function showRenameRoomModal(roomId, currentTitle) {
 async function exportChatHistory(roomId) {
     try {
         showLoading(true);
-        
+
         const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/export`, {
             headers: {
                 'X-User-Id': elements.userId
             }
         });
-        
+
         if (!response.ok) throw new Error('Не удалось экспортировать историю');
-        
+
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1365,7 +1365,7 @@ async function exportChatHistory(roomId) {
         a.click();
         window.URL.revokeObjectURL(url);
         a.remove();
-        
+
         showNotification('История чата успешно экспортирована', 'success');
     } catch (error) {
         console.error('Error exporting chat history:', error);
@@ -1403,9 +1403,9 @@ function renderMessages() {
             const isImage = fileData.contentType && fileData.contentType.startsWith('image/');
             const fileUrl = `/api/files/${fileData.id}`;
             const previewUrl = getFilePreviewUrl(fileData);
-            
+
             filePreviews = '<div class="message-files">';
-            
+
             if (isImage) {
                 filePreviews += `
                     <div class="message-file-preview">
@@ -1473,7 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (clickedMenuItem) {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 const action = clickedMenuItem.getAttribute('data-action');
                 if (action) {
                     handleContextMenuAction(action);
@@ -1481,7 +1481,7 @@ document.addEventListener('DOMContentLoaded', () => {
                // return;
             }
         });
-        
+
         // Handle right-click on room items to show context menu
         document.addEventListener('contextmenu', (e) => {
             const roomItem = e.target.closest('.room-item');
@@ -1492,7 +1492,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showContextMenu(e, roomId, roomItem, isPinned);
             }
         });
-        
+
         // Handle click on room items for switching rooms
         document.addEventListener('click', (e) => {
             // Handle room item click (for switching rooms)
@@ -1604,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.uploadButton) {
             elements.uploadButton.addEventListener('click', () => elements.fileInput.click());
         }
-        
+
         imageModal.init();
     } catch (error) {
         console.error('Initialization error:', error);

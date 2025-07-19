@@ -752,18 +752,18 @@ body {
     .chat-header {
         padding: 12px 16px;
     }
-    
+
     .chat-header h4 {
         font-size: 1rem;
         padding-right: 12px;
     }
-    
+
     .chat-header .btn {
         min-width: 36px;
         height: 36px;
         padding: 6px;
     }
-    
+
     .chat-actions .btn {
         min-width: 32px;
         height: 32px;
@@ -775,7 +775,7 @@ body {
     .chat-header {
         padding: 10px 12px;
     }
-    
+
     .chat-header h4 {
         font-size: 0.9rem;
     }
@@ -1633,33 +1633,33 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 
 /* Enhanced animations */
 @keyframes slideInFromLeft {
-    from { 
+    from {
         opacity: 0;
         transform: translateX(-20px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateX(0);
     }
 }
 
 @keyframes slideInRight {
-    from { 
+    from {
         opacity: 0;
         transform: translateX(20px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateX(0);
     }
 }
 
 @keyframes fadeInUp {
-    from { 
+    from {
         opacity: 0;
         transform: translateY(10px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateY(0);
     }
@@ -1893,11 +1893,11 @@ font-size: 0.8rem;
     .message-input {
         padding: 12px 15px;
     }
-    
+
     .message-input-container {
         padding: 6px 10px;
     }
-    
+
     .message-input button {
         width: 36px;
         height: 36px;
@@ -1938,35 +1938,35 @@ font-size: 0.8rem;
     animation: bounce 1.4s infinite ease-in-out;
 }
 
-.dot:nth-child(1) { 
-    animation-delay: 0s; 
+.dot:nth-child(1) {
+    animation-delay: 0s;
 }
 
-.dot:nth-child(2) { 
-    animation-delay: 0.2s; 
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
 }
 
-.dot:nth-child(3) { 
-    animation-delay: 0.4s; 
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
 }
 
 @keyframes bounce {
-    0%, 60%, 100% { 
-        transform: translateY(0); 
+    0%, 60%, 100% {
+        transform: translateY(0);
         opacity: 0.4;
     }
-    30% { 
-        transform: translateY(-8px); 
+    30% {
+        transform: translateY(-8px);
         opacity: 1;
     }
 }
 
 @keyframes fadeIn {
-    from { 
+    from {
         opacity: 0;
         transform: translateY(10px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateY(0);
     }
@@ -1985,17 +1985,17 @@ font-size: 0.8rem;
 
 /* Additional utility animations */
 @keyframes spin {
-    to { 
-        transform: rotate(360deg); 
+    to {
+        transform: rotate(360deg);
     }
 }
 
 @keyframes slideIn {
-    from { 
-        transform: translateX(100%); 
+    from {
+        transform: translateX(100%);
     }
-    to { 
-        transform: translateX(0); 
+    to {
+        transform: translateX(0);
     }
 }
 
@@ -2119,7 +2119,7 @@ font-size: 0.8rem;
     .message-file-preview {
         max-width: 280px;
     }
-    
+
     .message-file-thumbnail {
         max-height: 150px;
     }
@@ -2129,16 +2129,16 @@ font-size: 0.8rem;
     .message-file-preview {
         max-width: 220px;
     }
-    
+
     .message-file-thumbnail {
         max-height: 120px;
     }
-    
+
     .image-modal img {
         max-width: 95%;
         max-height: 95%;
     }
-    
+
     .image-modal-close {
         top: 10px;
         right: 10px;
