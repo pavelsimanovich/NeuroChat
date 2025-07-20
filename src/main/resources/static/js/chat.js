@@ -46,6 +46,7 @@ const elements = (function() {
             elements.stopButton.addEventListener('click', () => {
                 if (state.currentRoom && state.currentRoom.id) {
                     stopStream(state.currentRoom.id);
+                    showNotification('Генерация остановлена', 'info');
                 }
             });
         }
