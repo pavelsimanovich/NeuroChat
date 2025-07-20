@@ -118,7 +118,7 @@ body {
     position: sticky;
     bottom: 0;
     background: var(--bg-secondary);
-    padding: 0.75rem 1.25rem;
+    padding: 1.45rem 1.25rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
@@ -637,7 +637,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
+    padding: 19px 20px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -747,6 +747,11 @@ body {
 .search-bar:not(.d-none) {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* Standard Bootstrap d-none class */
+.d-none {
+    display: none !important;
 }
 
 .search-bar .input-group {
@@ -1557,6 +1562,57 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     color: var(--text-primary);
 }
 
+/* Stop generation button */
+#stopGenerationBtn {
+    background: transparent;
+    border: none;
+    color: var(--danger-color);
+    padding: 8px;
+    border-radius: 50%;
+    display: none !important; /* Hide by default */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0;
+    margin-left: 8px;
+    visibility: hidden;
+    pointer-events: none; /* Prevent clicks when hidden */
+}
+
+/* Show button when active */
+#stopGenerationBtn.active {
+    display: flex !important;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto; /* Enable clicks when active */
+}
+
+/* Override any parent styles that might be hiding the button */
+.message-input-container #stopGenerationBtn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#stopGenerationBtn:hover {
+    background: rgba(220, 53, 69, 0.1);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+#stopGenerationBtn:active {
+    transform: scale(0.95);
+}
+
+#stopGenerationBtn svg {
+    transition: transform 0.2s ease;
+}
+
+#stopGenerationBtn:hover svg {
+    transform: scale(1.1);
+}
+
 /* Enhanced input container with glassmorphism */
 .message-input {
     padding: 16px 20px;
@@ -1806,7 +1862,7 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-muted);
+    /*color: var(--text-muted);*/
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 0.5rem;
     display: flex;

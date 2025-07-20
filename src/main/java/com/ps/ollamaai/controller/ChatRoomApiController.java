@@ -4,10 +4,13 @@ import com.ps.ollamaai.dto.ChatMessageDto;
 import com.ps.ollamaai.dto.ChatRoomDto;
 import com.ps.ollamaai.service.ChatMessageService;
 import com.ps.ollamaai.service.ChatRoomService;
+import com.ps.ollamaai.service.OllamaService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,7 +24,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
@@ -29,6 +34,7 @@ public class ChatRoomApiController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
+    private final OllamaService ollamaService;
 
     @GetMapping("/rooms/create")
     public ResponseEntity<ChatRoomDto> createRoom(final @RequestParam String userId, final @RequestParam String title) {
@@ -59,6 +65,21 @@ public class ChatRoomApiController {
     public ResponseEntity<Void> renameRoom(final @PathVariable String roomId, @RequestParam("title") String name) {
        chatRoomService.renameRoom(roomId, name);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/rooms/{roomId}/update")
+    public CompletableFuture<ResponseEntity<ChatRoomDto>> generateRoomName(final @PathVariable String roomId,
+                                                                         final @RequestParam("context") String context) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                final String generatedName = ollamaService.generateChatName(context);
+                ChatRoomDto updatedRoom = chatRoomService.renameRoom(roomId, generatedName);
+                return ResponseEntity.ok(updatedRoom);
+            } catch (Exception e) {
+                log.error("Error generating chat name asynchronously", e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        });
     }
 
     @GetMapping("/messages/search")

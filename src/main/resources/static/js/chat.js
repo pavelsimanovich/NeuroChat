@@ -26,12 +26,9 @@ const elements = (function() {
         chatMessages: document.getElementById('chatMessages'),
         messageInput: document.getElementById('messageInput'),
         sendButton: document.getElementById('sendMessageBtn'),
+        stopButton: document.getElementById('stopGenerationBtn'),
         createRoomBtn: document.getElementById('createRoomBtn'),
-        confirmCreateRoom: document.getElementById('confirmCreateRoom'),
         roomTitleInput: document.getElementById('roomTitleInput'),
-        createRoomModal: document.getElementById('createRoomModal')
-            ? new bootstrap.Modal('#createRoomModal')
-            : null,
         userId: document.getElementById('userId')?.value || '',
         userName: document.getElementById('userName')?.value || 'User',
         fileInput: null,
@@ -40,6 +37,16 @@ const elements = (function() {
     };
 
     function init() {
+        // Initialize stop button if it exists
+        if (elements.stopButton) {
+            elements.stopButton.addEventListener('click', () => {
+                if (state.currentRoom && state.currentRoom.id) {
+                    stopStream(state.currentRoom.id);
+                    showNotification('Генерация остановлена', 'info');
+                }
+            });
+        }
+
         // Инициализация элементов для загрузки файлов
         elements.fileInput = document.createElement('input');
         elements.fileInput.type = 'file';
@@ -80,7 +87,6 @@ const elements = (function() {
 
         return elements;
     }
-
     return init();
 })();
 
@@ -132,7 +138,7 @@ function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
     if (!state.rooms?.length) {
-        elements.roomsList.innerHTML = '<div class="no-rooms">Нет доступных чатов</div>';
+        elements.roomsList.innerHTML = '<div class="no-rooms">История чатов пуста</div>';
         hideInputs(true); // Прячем ввод и кнопку загрузки, если комнат нет
         return;
     }
@@ -381,15 +387,14 @@ function scrollToBottom() {
     }
 }
 
-async function createRoom(title) {
-    if (!title?.trim()) {
-        showNotification('Название комнаты не может быть пустым', 'error');
-        return null;
-    }
-
+/**
+ * Creates a new chat room with a default name
+ * @returns {Promise<Object|null>} The created room or null if failed
+ */
+async function createRoom() {
     try {
         const response = await fetch(
-            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent(title)}`,
+            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent('Новый чат')}`,
             {
                 method: 'GET',
                 headers: {
@@ -430,6 +435,48 @@ function getTempMessage(roomId, messageContent, idPrefix, userId) {
     };
 }
 
+/**
+ * Generates a chat name based on the message content
+ * @param {string} message - The message content to generate a name from
+ * @param {string} roomId - The ID of the room to update
+ */
+async function generateChatNameFromMessage(message, roomId) {
+    try {
+        const response = await fetch(
+            `${config.apiBaseUrl}/rooms/${roomId}/update?context=${encodeURIComponent(message)}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+        
+        if (response.ok) {
+            const updatedRoom = await response.json();
+            // Update the room in the state
+            const roomIndex = state.rooms.findIndex(r => r.id === updatedRoom.id);
+            if (roomIndex !== -1) {
+                state.rooms[roomIndex] = updatedRoom;
+            }
+            
+            // Update the UI
+            renderRoomsList();
+            
+            // If this is the current room, update the title
+            if (state.currentRoom && state.currentRoom.id === updatedRoom.id) {
+                state.currentRoom.title = updatedRoom.title;
+                if (elements.currentRoomTitle) {
+                    elements.currentRoomTitle.textContent = updatedRoom.title;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating chat name:', error);
+        // Don't show error to user as this is a background operation
+    }
+}
+
 async function sendMessage() {
     if (!elements.sendButton || elements.sendButton.disabled) return;
 
@@ -440,7 +487,14 @@ async function sendMessage() {
     elements.sendButton.disabled = true;
 
     const roomId = state.currentRoom.id;
+    const isFirstMessage = state.messages.length === 0;
     let fileData = null;
+    
+    // If this is the first message in the chat, generate a name based on the message
+    if (isFirstMessage && messageContent) {
+        // Don't await this, let it happen in the background
+        generateChatNameFromMessage(messageContent, roomId);
+    }
     
     // Upload file first if exists
     if (files.length) {
@@ -495,6 +549,15 @@ async function sendMessage() {
         eventSource = new EventSource(url.toString());
         chatConnections[roomId] = eventSource;
 
+        if (elements.stopButton) {
+            elements.stopButton.style.display = 'flex';
+            elements.stopButton.style.visibility = 'visible';
+            elements.stopButton.style.opacity = '1';
+            elements.stopButton.classList.remove('d-none');
+        }
+
+        toggleStreamingUI(true);
+
         const uuid = generateUUID();
         const messageElement = Object.assign(document.createElement('div'), {
             id: uuid,
@@ -534,6 +597,7 @@ async function sendMessage() {
                     renderMessages();
                     scrollToBottom();
                 }
+                elements.stopButton.classList.add('d-none');
             } else {
                 response += message.content;
                 const contentDiv = document.getElementById(`cm${uuid}`);
@@ -547,6 +611,7 @@ async function sendMessage() {
         eventSource.onerror = (e) => {
             isStreamActive = false;
             onErrorSendMessage(null, roomId, tempMessage);
+            toggleStreamingUI(false);
         };
     } catch (error) {
         onErrorSendMessage(error, roomId, tempMessage);
@@ -585,10 +650,52 @@ function onErrorSendMessage(error, roomId, tempMessage) {
     }
 }
 
+function toggleStreamingUI(isStreaming) {
+    if (!elements.stopButton) {
+        console.error('Stop button element not found in elements object');
+        return;
+    }
+
+    if (isStreaming) {
+        // Show stop button with smooth transition
+        elements.stopButton.classList.add('active');
+        elements.stopButton.disabled = false;
+        
+        // Disable send button and upload button during streaming
+        elements.sendButton.disabled = true;
+        if (elements.uploadButton) elements.uploadButton.disabled = true;
+        
+        // Update current room state
+        if (state.currentRoom) {
+            state.currentRoom.isStreaming = true;
+        }
+    } else {
+        // Hide stop button
+        elements.stopButton.classList.remove('active');
+        elements.stopButton.disabled = true;
+        
+        // Re-enable send button and upload button
+        elements.sendButton.disabled = false;
+        if (elements.uploadButton) elements.uploadButton.disabled = false;
+        
+        // Update current room state
+        if (state.currentRoom) {
+            state.currentRoom.isStreaming = false;
+        }
+        elements.stopButton.classList.add('d-none');
+    }
+}
+
 function stopStream(chatId) {
     if (chatConnections[chatId]) {
         chatConnections[chatId].close();
         delete chatConnections[chatId];
+        
+        if (state.currentRoom && state.currentRoom.id === chatId) {
+            state.currentRoom.isStreaming = false;
+        }
+        typingIndicator.hide();
+        toggleStreamingUI(false);
     }
 }
 
@@ -888,26 +995,58 @@ const typingIndicator = {
     container: null,
 
     init() {
-        this.container = document.getElementById('typingIndicatorContainer') ||
-            Object.assign(document.createElement('div'), {
-                id: 'typingIndicatorContainer',
-                style: 'display: none; min-height: 40px;',
-                innerHTML: `
+        try {
+            // Check if already initialized
+            if (this.container && document.body.contains(this.container)) {
+                return true;
+            }
+
+            // Try to find existing container or create a new one
+            this.container = document.getElementById('typingIndicatorContainer');
+            
+            if (!this.container) {
+                this.container = document.createElement('div');
+                this.container.id = 'typingIndicatorContainer';
+                this.container.style.cssText = 'display: none; min-height: 40px;';
+                this.container.innerHTML = `
                     <div class="typing-indicator">
                         <div class="typing-dots">
                             <div class="dot"></div>
                             <div class="dot"></div>
                             <div class="dot"></div>
                         </div>
-                        <span>AI печатает ответ...</span>
-                    </div>`
-            });
+                    </div>`;
 
-        const chatContainer = document.querySelector('.chat-messages')?.parentElement;
-        if (chatContainer && !document.getElementById('typingIndicatorContainer')) {
-            chatContainer.appendChild(this.container);
+                // Find the best place to insert the typing indicator
+                const chatContainer = document.querySelector('.chat-messages')?.parentElement || 
+                                    document.querySelector('.chat-container') || 
+                                    document.body;
+                
+                if (chatContainer) {
+                    // Insert before the chat input if possible
+                    const chatInput = chatContainer.querySelector('.message-input') || 
+                                    chatContainer.querySelector('input[type="text"]') ||
+                                    chatContainer.lastElementChild;
+                    
+                    if (chatInput) {
+                        chatContainer.insertBefore(this.container, chatInput.nextSibling);
+                    } else {
+                        chatContainer.appendChild(this.container);
+                    }
+                    
+                    console.log('Typing indicator initialized successfully');
+                    return true;
+                }
+                
+                console.warn('Could not find a suitable container for the typing indicator');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error initializing typing indicator:', error);
+            return false;
         }
-        return !!chatContainer;
     },
 
     show() {
@@ -1004,7 +1143,9 @@ async function handleDeleteRoom(roomId, title) {
 
         // Switch to another room if available
         if (state.rooms.length > 0) {
-            await switchRoom(state.rooms[0]);
+            if (wasCurrentRoom) {
+                await switchRoom(state.rooms[0]);
+            }
         } else {
             // Create a new welcome screen
             const welcomeScreen = document.createElement('div');
@@ -1020,14 +1161,15 @@ async function handleDeleteRoom(roomId, title) {
                 </div>
                 <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
                 <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
-<!--                <button id="createRoomBtn1" class="btn btn-primary">-->
-<!--                    <i class="bi bi-plus-lg me-2"></i>Новый чат-->
-<!--                </button>-->
+                <button id="createRoomBtn1" class="btn btn-primary" onclick="createRoom()">
+                    <i class="bi bi-plus-lg me-2"></i>Новый чат
+                </button>
                 <div class="mt-5 pt-4 border-top w-100">
                     <h6 class="mb-3">Попробуйте спросить:</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
+                            onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения?')">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-2">
                                         <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
@@ -1040,7 +1182,8 @@ async function handleDeleteRoom(roomId, title) {
                             </div>
                         </div>
                       <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
+                               onclick="setExampleQuestion('Как оптимизировать SQL-запрос?')"">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-2">
                                         <div class="bg-success bg-opacity-10 p-2 rounded me-2">
@@ -1058,14 +1201,6 @@ async function handleDeleteRoom(roomId, title) {
             // Clear chat messages and append new welcome screen
             elements.chatMessages.innerHTML = '';
             elements.chatMessages.appendChild(welcomeScreen);
-
-            // Add event listener for the create room button
-            const createRoomBtn = welcomeScreen.querySelector('#createRoomBtn1');
-            if (createRoomBtn) {
-                createRoomBtn.addEventListener('click', () => {
-                    createRoom('Новый чат');
-                });
-            }
 
             // Hide the typing indicator if it's visible
             const typingIndicator = document.querySelector('.typing-indicator');
@@ -1183,9 +1318,6 @@ const imageModal = {
         document.body.style.overflow = '';
     }
 };
-
-// Initialize image modal
-imageModal.init();
 
 // Show context menu for room actions
 function showContextMenu(event, roomId, roomElement, isPinned = false) {
@@ -1528,6 +1660,7 @@ function renderMessages() {
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
+        typingIndicator.init();
         setupFileUpload();
 
         // Initialize context menu event listeners
@@ -1591,7 +1724,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (elements.messageInput) {
-            elements.messageInput.addEventListener('keypress', (e) => {
+            elements.messageInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
@@ -1606,28 +1739,18 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.messageInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && e.shiftKey) {
                     e.preventDefault();
-                    const { selectionStart, selectionEnd, value } = elements.messageInput;
-                    elements.messageInput.value = value.slice(0, selectionStart) + '\n' + value.slice(selectionEnd);
-                    elements.messageInput.selectionStart = elements.messageInput.selectionEnd = selectionStart + 1;
-                    autoResize(elements.messageInput);
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + '\n' + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 1;
+                    autoResize(this);
                 }
             });
         }
 
-        if (elements.createRoomBtn && elements.createRoomModal) {
+        if (elements.createRoomBtn) {
             elements.createRoomBtn.addEventListener('click', () => {
-                elements.roomTitleInput.value = '';
-                elements.createRoomModal.show();
-            });
-        }
-
-        if (elements.confirmCreateRoom) {
-            elements.confirmCreateRoom.addEventListener('click', () => {
-                const title = elements.roomTitleInput.value.trim();
-                if (title) {
-                    createRoom(title);
-                    elements.createRoomModal.hide();
-                }
+                createRoom();
             });
         }
 
@@ -1669,6 +1792,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         imageModal.init();
+
+        window.setExampleQuestion = function(value) {
+            createRoom().then(() => {
+                const messageInput = document.getElementById('messageInput');
+                messageInput.value = value;
+                messageInput.dispatchEvent(new Event('input'));
+                elements.sendButton.click();
+            }).catch(error => {
+                console.error('Error creating room:', error);
+                showNotification('Ошибка при создании комнаты', 'error');
+            });
+        };
     } catch (error) {
         console.error('Initialization error:', error);
         showNotification('Ошибка при инициализации приложения', 'error');
