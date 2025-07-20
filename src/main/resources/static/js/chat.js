@@ -87,19 +87,6 @@ const elements = (function() {
 
         return elements;
     }
-
-    window.setExampleQuestion = function(value) {
-        createRoom().then(() => {
-            const messageInput = document.getElementById('messageInput');
-            messageInput.value = value;
-            messageInput.dispatchEvent(new Event('input'));
-            elements.sendButton.click();
-        }).catch(error => {
-            console.error('Error creating room:', error);
-            showNotification('Ошибка при создании комнаты', 'error');
-        });
-    };
-
     return init();
 })();
 
@@ -1156,7 +1143,9 @@ async function handleDeleteRoom(roomId, title) {
 
         // Switch to another room if available
         if (state.rooms.length > 0) {
-            await switchRoom(state.rooms[0]);
+            if (wasCurrentRoom) {
+                await switchRoom(state.rooms[0]);
+            }
         } else {
             // Create a new welcome screen
             const welcomeScreen = document.createElement('div');
@@ -1803,6 +1792,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         imageModal.init();
+
+        window.setExampleQuestion = function(value) {
+            createRoom().then(() => {
+                const messageInput = document.getElementById('messageInput');
+                messageInput.value = value;
+                messageInput.dispatchEvent(new Event('input'));
+                elements.sendButton.click();
+            }).catch(error => {
+                console.error('Error creating room:', error);
+                showNotification('Ошибка при создании комнаты', 'error');
+            });
+        };
     } catch (error) {
         console.error('Initialization error:', error);
         showNotification('Ошибка при инициализации приложения', 'error');
