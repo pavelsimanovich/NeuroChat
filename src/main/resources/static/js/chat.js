@@ -28,11 +28,7 @@ const elements = (function() {
         sendButton: document.getElementById('sendMessageBtn'),
         stopButton: document.getElementById('stopGenerationBtn'),
         createRoomBtn: document.getElementById('createRoomBtn'),
-        confirmCreateRoom: document.getElementById('confirmCreateRoom'),
         roomTitleInput: document.getElementById('roomTitleInput'),
-        // createRoomModal: document.getElementById('createRoomModal')
-        //     ? new bootstrap.Modal('#createRoomModal')
-        //     : null,
         userId: document.getElementById('userId')?.value || '',
         userName: document.getElementById('userName')?.value || 'User',
         fileInput: null,
