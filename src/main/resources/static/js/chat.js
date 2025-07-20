@@ -456,21 +456,28 @@ async function generateChatNameFromMessage(message, roomId) {
                 }
             }
         );
+        
         if (response.ok) {
-            const room = await response.json();
-            // Update the room title in the UI
-            const roomElement = document.querySelector(`[data-room-id="${roomId}"] .room-name`);
-            if (roomElement) {
-                roomElement.textContent = room.title;
+            const updatedRoom = await response.json();
+            // Update the room in the state
+            const roomIndex = state.rooms.findIndex(r => r.id === updatedRoom.id);
+            if (roomIndex !== -1) {
+                state.rooms[roomIndex] = updatedRoom;
             }
-            // Update the current room title if it's the active one
-            if (state.currentRoom && state.currentRoom.id === roomId) {
-                state.currentRoom.title = room.title;
-                elements.currentRoomTitle.textContent = room.title;
+            
+            // Update the UI
+            renderRoomsList();
+            
+            // If this is the current room, update the title
+            if (state.currentRoom && state.currentRoom.id === updatedRoom.id) {
+                state.currentRoom.title = updatedRoom.title;
+                if (elements.currentRoomTitle) {
+                    elements.currentRoomTitle.textContent = updatedRoom.title;
+                }
             }
         }
     } catch (error) {
-        console.error('Error generating chat name:', error);
+        console.error('Error updating chat name:', error);
         // Don't show error to user as this is a background operation
     }
 }
