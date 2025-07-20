@@ -30,9 +30,9 @@ const elements = (function() {
         createRoomBtn: document.getElementById('createRoomBtn'),
         confirmCreateRoom: document.getElementById('confirmCreateRoom'),
         roomTitleInput: document.getElementById('roomTitleInput'),
-        createRoomModal: document.getElementById('createRoomModal')
-            ? new bootstrap.Modal('#createRoomModal')
-            : null,
+        // createRoomModal: document.getElementById('createRoomModal')
+        //     ? new bootstrap.Modal('#createRoomModal')
+        //     : null,
         userId: document.getElementById('userId')?.value || '',
         userName: document.getElementById('userName')?.value || 'User',
         fileInput: null,
@@ -392,15 +392,14 @@ function scrollToBottom() {
     }
 }
 
-async function createRoom(title) {
-    if (!title?.trim()) {
-        showNotification('Название комнаты не может быть пустым', 'error');
-        return null;
-    }
-
+/**
+ * Creates a new chat room with a default name
+ * @returns {Promise<Object|null>} The created room or null if failed
+ */
+async function createRoom() {
     try {
         const response = await fetch(
-            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent(title)}`,
+            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent('Новый чат')}`,
             {
                 method: 'GET',
                 headers: {
@@ -441,6 +440,41 @@ function getTempMessage(roomId, messageContent, idPrefix, userId) {
     };
 }
 
+/**
+ * Generates a chat name based on the message content
+ * @param {string} message - The message content to generate a name from
+ * @param {string} roomId - The ID of the room to update
+ */
+async function generateChatNameFromMessage(message, roomId) {
+    try {
+        const response = await fetch(
+            `${config.apiBaseUrl}/rooms/${roomId}/update?context=${encodeURIComponent(message)}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+        if (response.ok) {
+            const room = await response.json();
+            // Update the room title in the UI
+            const roomElement = document.querySelector(`[data-room-id="${roomId}"] .room-name`);
+            if (roomElement) {
+                roomElement.textContent = room.title;
+            }
+            // Update the current room title if it's the active one
+            if (state.currentRoom && state.currentRoom.id === roomId) {
+                state.currentRoom.title = room.title;
+                elements.currentRoomTitle.textContent = room.title;
+            }
+        }
+    } catch (error) {
+        console.error('Error generating chat name:', error);
+        // Don't show error to user as this is a background operation
+    }
+}
+
 async function sendMessage() {
     if (!elements.sendButton || elements.sendButton.disabled) return;
 
@@ -451,7 +485,14 @@ async function sendMessage() {
     elements.sendButton.disabled = true;
 
     const roomId = state.currentRoom.id;
+    const isFirstMessage = state.messages.length === 0;
     let fileData = null;
+    
+    // If this is the first message in the chat, generate a name based on the message
+    if (isFirstMessage && messageContent) {
+        // Don't await this, let it happen in the background
+        generateChatNameFromMessage(messageContent, roomId);
+    }
     
     // Upload file first if exists
     if (files.length) {
@@ -1124,12 +1165,12 @@ async function handleDeleteRoom(roomId, title) {
             elements.chatMessages.appendChild(welcomeScreen);
 
             // Add event listener for the create room button
-            const createRoomBtn = welcomeScreen.querySelector('#createRoomBtn1');
-            if (createRoomBtn) {
-                createRoomBtn.addEventListener('click', () => {
-                    createRoom('Новый чат');
-                });
-            }
+            // const createRoomBtn = welcomeScreen.querySelector('#createRoomBtn1');
+            // if (createRoomBtn) {
+            //     createRoomBtn.addEventListener('click', () => {
+            //         createRoom();
+            //     });
+            // }
 
             // Hide the typing indicator if it's visible
             const typingIndicator = document.querySelector('.typing-indicator');
@@ -1652,7 +1693,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (elements.messageInput) {
-            elements.messageInput.addEventListener('keypress', (e) => {
+            elements.messageInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
@@ -1667,28 +1708,18 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.messageInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && e.shiftKey) {
                     e.preventDefault();
-                    const { selectionStart, selectionEnd, value } = elements.messageInput;
-                    elements.messageInput.value = value.slice(0, selectionStart) + '\n' + value.slice(selectionEnd);
-                    elements.messageInput.selectionStart = elements.messageInput.selectionEnd = selectionStart + 1;
-                    autoResize(elements.messageInput);
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + '\n' + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 1;
+                    autoResize(this);
                 }
             });
         }
 
-        if (elements.createRoomBtn && elements.createRoomModal) {
+        if (elements.createRoomBtn) {
             elements.createRoomBtn.addEventListener('click', () => {
-                elements.roomTitleInput.value = '';
-                elements.createRoomModal.show();
-            });
-        }
-
-        if (elements.confirmCreateRoom) {
-            elements.confirmCreateRoom.addEventListener('click', () => {
-                const title = elements.roomTitleInput.value.trim();
-                if (title) {
-                    createRoom(title);
-                    elements.createRoomModal.hide();
-                }
+                createRoom();
             });
         }
 

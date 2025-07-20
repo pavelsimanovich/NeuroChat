@@ -105,9 +105,6 @@
                     </div>
                     <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
                     <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
-<!--                    <button id="createRoomBtn1" class="btn btn-primary">-->
-<!--                        <i class="bi bi-plus-lg me-2"></i>Новый чат-->
-<!--                    </button>-->
 
                     <div class="mt-5 pt-4 border-top w-100">
                         <h6 class="mb-3">Попробуйте спросить:</h6>
@@ -241,45 +238,6 @@
     </div>
 </div>
 
-<!-- Модальное окно создания комнаты -->
-<div class="modal fade" id="createRoomModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content create-room-modal">
-            <div class="modal-header">
-                <div class="modal-icon">
-                    <i class="bi bi-chat-dots"></i>
-                </div>
-                <h3 class="modal-title">Новый чат</h3>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group mb-4">
-                    <label for="roomTitleInput" class="form-label">Название чата</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-chat-square-text"></i></span>
-                        <input type="text"
-                               class="form-control"
-                               id="roomTitleInput"
-                               placeholder="Введите название чата"
-                               maxlength="50"
-                               required>
-                    </div>
-                    <div class="form-text text-end">
-                        <span id="titleCharCount">0</span>/50 символов
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-lg me-1"></i> Отмена
-                </button>
-                <button type="button" class="btn btn-primary" id="confirmCreateRoom">
-                    <i class="bi bi-plus-lg me-1"></i> Создать чат
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!--JS libraries-->
 <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>

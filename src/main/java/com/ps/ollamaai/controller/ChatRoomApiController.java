@@ -4,6 +4,7 @@ import com.ps.ollamaai.dto.ChatMessageDto;
 import com.ps.ollamaai.dto.ChatRoomDto;
 import com.ps.ollamaai.service.ChatMessageService;
 import com.ps.ollamaai.service.ChatRoomService;
+import com.ps.ollamaai.service.OllamaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -29,6 +30,7 @@ public class ChatRoomApiController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
+    private final OllamaService ollamaService;
 
     @GetMapping("/rooms/create")
     public ResponseEntity<ChatRoomDto> createRoom(final @RequestParam String userId, final @RequestParam String title) {
@@ -59,6 +61,14 @@ public class ChatRoomApiController {
     public ResponseEntity<Void> renameRoom(final @PathVariable String roomId, @RequestParam("title") String name) {
        chatRoomService.renameRoom(roomId, name);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/rooms/{roomId}/update")
+    public ResponseEntity<ChatRoomDto> generateRoomName(final @PathVariable String roomId,
+                                                        final @RequestParam("context") String context) {
+        final String generatedName = ollamaService.generateChatName(context);
+        final ChatRoomDto room = chatRoomService.renameRoom(roomId, generatedName);
+        return ResponseEntity.ok(room);
     }
 
     @GetMapping("/messages/search")
