@@ -92,6 +92,18 @@ const elements = (function() {
         return elements;
     }
 
+    window.setExampleQuestion = function(value) {
+        createRoom().then(() => {
+            const messageInput = document.getElementById('messageInput');
+            messageInput.value = value;
+            messageInput.dispatchEvent(new Event('input'));
+            elements.sendButton.click();
+        }).catch(error => {
+            console.error('Error creating room:', error);
+            showNotification('Ошибка при создании комнаты', 'error');
+        });
+    };
+
     return init();
 })();
 
@@ -143,7 +155,7 @@ function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
     if (!state.rooms?.length) {
-        elements.roomsList.innerHTML = '<div class="no-rooms">Нет доступных чатов</div>';
+        elements.roomsList.innerHTML = '<div class="no-rooms">История чатов пуста</div>';
         hideInputs(true); // Прячем ввод и кнопку загрузки, если комнат нет
         return;
     }
@@ -1000,26 +1012,58 @@ const typingIndicator = {
     container: null,
 
     init() {
-        this.container = document.getElementById('typingIndicatorContainer') ||
-            Object.assign(document.createElement('div'), {
-                id: 'typingIndicatorContainer',
-                style: 'display: none; min-height: 40px;',
-                innerHTML: `
+        try {
+            // Check if already initialized
+            if (this.container && document.body.contains(this.container)) {
+                return true;
+            }
+
+            // Try to find existing container or create a new one
+            this.container = document.getElementById('typingIndicatorContainer');
+            
+            if (!this.container) {
+                this.container = document.createElement('div');
+                this.container.id = 'typingIndicatorContainer';
+                this.container.style.cssText = 'display: none; min-height: 40px;';
+                this.container.innerHTML = `
                     <div class="typing-indicator">
                         <div class="typing-dots">
                             <div class="dot"></div>
                             <div class="dot"></div>
                             <div class="dot"></div>
                         </div>
-                        <span>AI печатает ответ...</span>
-                    </div>`
-            });
+                    </div>`;
 
-        const chatContainer = document.querySelector('.chat-messages')?.parentElement;
-        if (chatContainer && !document.getElementById('typingIndicatorContainer')) {
-            chatContainer.appendChild(this.container);
+                // Find the best place to insert the typing indicator
+                const chatContainer = document.querySelector('.chat-messages')?.parentElement || 
+                                    document.querySelector('.chat-container') || 
+                                    document.body;
+                
+                if (chatContainer) {
+                    // Insert before the chat input if possible
+                    const chatInput = chatContainer.querySelector('.message-input') || 
+                                    chatContainer.querySelector('input[type="text"]') ||
+                                    chatContainer.lastElementChild;
+                    
+                    if (chatInput) {
+                        chatContainer.insertBefore(this.container, chatInput.nextSibling);
+                    } else {
+                        chatContainer.appendChild(this.container);
+                    }
+                    
+                    console.log('Typing indicator initialized successfully');
+                    return true;
+                }
+                
+                console.warn('Could not find a suitable container for the typing indicator');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error initializing typing indicator:', error);
+            return false;
         }
-        return !!chatContainer;
     },
 
     show() {
@@ -1132,14 +1176,15 @@ async function handleDeleteRoom(roomId, title) {
                 </div>
                 <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
                 <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
-<!--                <button id="createRoomBtn1" class="btn btn-primary">-->
-<!--                    <i class="bi bi-plus-lg me-2"></i>Новый чат-->
-<!--                </button>-->
+                <button id="createRoomBtn1" class="btn btn-primary" onclick="createRoom()">
+                    <i class="bi bi-plus-lg me-2"></i>Новый чат
+                </button>
                 <div class="mt-5 pt-4 border-top w-100">
                     <h6 class="mb-3">Попробуйте спросить:</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
+                            onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения?')">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-2">
                                         <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
@@ -1152,7 +1197,8 @@ async function handleDeleteRoom(roomId, title) {
                             </div>
                         </div>
                       <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" onclick="setExampleQuestion(this)">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
+                               onclick="setExampleQuestion('Как оптимизировать SQL-запрос?')"">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-2">
                                         <div class="bg-success bg-opacity-10 p-2 rounded me-2">
@@ -1170,14 +1216,6 @@ async function handleDeleteRoom(roomId, title) {
             // Clear chat messages and append new welcome screen
             elements.chatMessages.innerHTML = '';
             elements.chatMessages.appendChild(welcomeScreen);
-
-            // Add event listener for the create room button
-            // const createRoomBtn = welcomeScreen.querySelector('#createRoomBtn1');
-            // if (createRoomBtn) {
-            //     createRoomBtn.addEventListener('click', () => {
-            //         createRoom();
-            //     });
-            // }
 
             // Hide the typing indicator if it's visible
             const typingIndicator = document.querySelector('.typing-indicator');
@@ -1637,6 +1675,7 @@ function renderMessages() {
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
+        typingIndicator.init();
         setupFileUpload();
 
         // Initialize context menu event listeners
