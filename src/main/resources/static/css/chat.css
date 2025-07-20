@@ -126,24 +126,6 @@ body {
     margin-top: auto;
 }
 
-.model-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    background-color: var(--bg-tertiary);
-    transition: all 0.2s ease;
-}
-
-.model-status i {
-    color: var(--accent-color);
-    font-size: 1.2rem;
-    animation: pulse 2s infinite;
-}
-
 .logout form {
     margin: 0;
 }
@@ -1470,6 +1452,13 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     border: 1px solid var(--border-color);
 }
 
+/* Override Prism.js styles */
+code[class*="language-"],
+pre[class*="language-"] {
+    color: inherit !important;
+    text-shadow: none !important;
+}
+
 .message-content pre {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
@@ -1499,6 +1488,12 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     margin-right: 10px;
+}
+
+.model-status i {
+    color: var(--accent-color);
+    font-size: 1.2rem;
+    /*animation: pulse 2s infinite;*/
 }
 
 .model-status.online {
