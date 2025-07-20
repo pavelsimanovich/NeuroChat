@@ -981,15 +981,36 @@ body {
 /* Message input container */
 .message-input-container {
     display: flex;
-    align-items: flex-end;
-    gap: 8px;
+    align-items: center;
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
     border-radius: 24px;
     padding: 8px 12px;
-    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    gap: 8px;
     min-height: 56px;
     box-sizing: border-box;
+}
+
+/* Hover effect for buttons */
+.message-input-container > button:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--accent-color);
+}
+
+/* Specific styles for the voice input button */
+#voiceInputBtn {
+    opacity: 0.8;
+}
+
+#voiceInputBtn:hover {
+    opacity: 1;
+}
+
+#voiceInputBtn.recording {
+    color: #dc3545;
+    opacity: 1;
+    animation: pulse 1.5s infinite;
 }
 
 /* Search styles */
@@ -1593,6 +1614,75 @@ box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
+}
+
+/* Voice input button styles */
+#voiceInputBtn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+#voiceInputBtn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--accent-color);
+    opacity: 1;
+}
+
+#voiceInputBtn.recording {
+    color: #dc3545;
+    animation: pulse 1.5s infinite;
+    opacity: 1;
+}
+
+/* Pulse animation for recording state */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+/* Tooltip for browser compatibility warning */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 14px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
 }
 
 #stopGenerationBtn:hover {

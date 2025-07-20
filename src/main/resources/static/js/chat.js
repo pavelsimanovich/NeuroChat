@@ -1072,6 +1072,148 @@ const typingIndicator = {
     }
 };
 
+// Voice input functionality
+const voiceInput = {
+    isListening: false,
+    recognition: null,
+    finalTranscript: '',
+    
+    init() {
+        // Check for browser support
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            this.showUnsupportedMessage();
+            return;
+        }
+        
+        // Initialize speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = false;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'ru-RU';
+        
+        // Setup event handlers
+        this.recognition.onstart = this.onStart.bind(this);
+        this.recognition.onresult = this.onResult.bind(this);
+        this.recognition.onerror = this.onError.bind(this);
+        this.recognition.onend = this.onEnd.bind(this);
+        
+        // Add click handler to the voice input button
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', this.toggleListening.bind(this));
+        }
+    },
+    
+    toggleListening() {
+        if (this.isListening) {
+            this.stopListening();
+        } else {
+            this.startListening();
+        }
+    },
+    
+    startListening() {
+        if (!this.recognition) return;
+        
+        this.finalTranscript = '';
+        this.isListening = true;
+        document.getElementById('voiceInputBtn').classList.add('recording');
+        
+        try {
+            this.recognition.start();
+        } catch (error) {
+            console.error('Error starting speech recognition:', error);
+            this.showError('Ошибка при запуске распознавания речи');
+            this.stopListening();
+        }
+    },
+    
+    stopListening() {
+        if (!this.recognition) return;
+        
+        try {
+            this.recognition.stop();
+        } catch (error) {
+            console.error('Error stopping speech recognition:', error);
+        }
+        
+        this.isListening = false;
+        document.getElementById('voiceInputBtn').classList.remove('recording');
+        
+        // If we have a final transcript, update the input field
+        if (this.finalTranscript) {
+            const input = document.getElementById('messageInput');
+            input.value = this.finalTranscript.trim();
+            // Trigger input event for any listeners
+            input.dispatchEvent(new Event('input'));
+        }
+    },
+    
+    onStart() {
+        this.finalTranscript = '';
+        showNotification('Слушаю...', 'info');
+    },
+    
+    onResult(event) {
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            
+            if (event.results[i].isFinal) {
+                this.finalTranscript += transcript;
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        
+        // Update the input field with the interim results
+        const input = document.getElementById('messageInput');
+        input.value = this.finalTranscript + interimTranscript;
+        input.dispatchEvent(new Event('input'));
+    },
+    
+    onError(event) {
+        console.error('Speech recognition error', event.error);
+        
+        let errorMessage = 'Ошибка распознавания речи';
+        if (event.error === 'not-allowed') {
+            errorMessage = 'Доступ к микрофону запрещен. Пожалуйста, разрешите доступ к микрофону в настройках браузера.';
+        } else if (event.error === 'audio-capture') {
+            errorMessage = 'Не удалось получить доступ к микрофону. Убедитесь, что микрофон подключен и настроен правильно.';
+        }
+        
+        this.showError(errorMessage);
+        this.stopListening();
+    },
+    
+    onEnd() {
+        if (this.isListening) {
+            // If we're still supposed to be listening, restart recognition
+            this.recognition.start();
+        }
+    },
+    
+    showUnsupportedMessage() {
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        if (voiceBtn) {
+            voiceBtn.disabled = true;
+            voiceBtn.title = 'Голосовой ввод не поддерживается в вашем браузере';
+            voiceBtn.classList.add('tooltip');
+            
+            const tooltip = document.createElement('span');
+            tooltip.className = 'tooltiptext';
+            tooltip.textContent = 'Голосовой ввод поддерживается в последних версиях Chrome, Edge, Safari и других современных браузеров';
+            voiceBtn.appendChild(tooltip);
+        }
+    },
+    
+    showError(message) {
+        showNotification(message, 'error');
+    }
+};
+
 const uxFeatures = {
     // Copy message functionality
     copyMessage: {
@@ -1662,6 +1804,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         typingIndicator.init();
         setupFileUpload();
+        voiceInput.init();
 
         // Initialize context menu event listeners
         document.addEventListener('click', (e) => {
