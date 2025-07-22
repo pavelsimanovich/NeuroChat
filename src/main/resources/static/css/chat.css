@@ -2334,7 +2334,6 @@ border-color: rgba(255, 193, 7, 0.15);
 #userSettingsModal .modal-footer {
     border-top: 1px solid var(--border-color);
     padding: 1rem 1.5rem;
-    background-color: var(--bg-tertiary);
     gap: 0.75rem;
 }
 
