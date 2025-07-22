@@ -540,11 +540,6 @@ async function sendMessage() {
         if (fileData) {
             url.searchParams.append('fileId', fileData.id);
         }
-        
-        // Clear message input and file input
-        if (elements.messageInput) elements.messageInput.value = '';
-        if (elements.fileInput) elements.fileInput.value = '';
-
 
         eventSource = new EventSource(url.toString());
         chatConnections[roomId] = eventSource;

@@ -26,8 +26,8 @@
                 <div class="d-flex justify-content-between align-items-center w-100">
                     <h4 class="mb-0">AI Assistant</h4>
                     <div class="d-flex gap-2">
-                        <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary" title="Переключить тему">
-                            <i class="bi bi-moon-stars"></i>
+                        <button id="userSettingsBtn" class="btn btn-sm btn-outline-secondary" title="Настройки пользователя">
+                            <i class="bi bi-gear"></i>
                         </button>
                         <button id="createRoomBtn" class="btn btn-primary btn-sm">
                             <i class="bi bi-plus-lg"></i>
@@ -209,6 +209,53 @@
     </div>
 </div>
 
+<!-- User Settings Modal -->
+<div class="modal fade" id="userSettingsModal" tabindex="-1" aria-labelledby="userSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userSettingsModalLabel"><i class="bi bi-gear-wide-connected me-2"></i>Настройки пользователя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Эти настройки будут применяться ко всем новым чатам.</p>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <label class="form-label mb-0"><strong>Тема интерфейса</strong></label>
+                        <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" title="Переключить тему">
+                            <i class="bi bi-moon-stars"></i> <span>Темная тема</span>
+                        </button>
+                    </div>
+                    <div class="border-bottom mb-4"></div>
+                    <div class="mb-3">
+                        <label for="systemPrompt" class="form-label"><strong>Системный промпт</strong></label>
+                        <textarea class="form-control" id="systemPrompt" rows="5" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
+                        <div class="form-text">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям.</div>
+                    </div>
+                <!-- Placeholder for future settings -->
+                <div class="accordion" id="advancedSettingsAccordion">
+                  <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                        Дополнительные настройки (в разработке)
+                      </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#advancedSettingsAccordion">
+                      <div class="accordion-body">
+                        Здесь скоро появятся новые опции!
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" id="saveUserSettings">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Модальное окно переименования комнаты -->
 <div class="modal fade" id="renameRoomModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -250,7 +297,6 @@
     </div>
 </div>
 
-
 <!--JS libraries-->
 <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
 <script th:src="@{/js/lib/marked.min.js}" type="text/javascript"></script>
@@ -263,6 +309,7 @@
 <script type="text/javascript" th:src="@{/js/chat.js}"></script>
 <script type="text/javascript" th:src="@{/js/search.js}"></script>
 <script type="text/javascript" th:src="@{/js/theme-toggle.js}"></script>
+<script type="text/javascript" th:src="@{/js/user-settings.js}"></script>
 
 </body>
 </html>
