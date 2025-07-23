@@ -1,5 +1,6 @@
 package com.ps.ollamaai.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,5 +22,7 @@ public class UserPreferencies implements Serializable {
     private String id;
     private String userId;
     private String language;
+    @Column(length = 1000)
     private String userSystemPrompt;
+    private String model;
 }
