@@ -529,11 +529,6 @@ async function sendMessage() {
         if (fileData) {
             url.searchParams.append('fileId', fileData.id);
         }
-        
-        // Clear message input and file input
-        if (elements.messageInput) elements.messageInput.value = '';
-        if (elements.fileInput) elements.fileInput.value = '';
-
 
         eventSource = new EventSource(url.toString());
         chatConnections[roomId] = eventSource;
@@ -1077,8 +1072,9 @@ const voiceInput = {
         // Initialize speech recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
-        this.recognition.continuous = false;
+        this.recognition.continuous = true;
         this.recognition.interimResults = true;
+        this.recognition.maxAlternatives = 1;
         this.recognition.lang = 'ru-RU';
         
         // Setup event handlers
@@ -1092,6 +1088,13 @@ const voiceInput = {
         if (voiceBtn) {
             voiceBtn.addEventListener('click', this.toggleListening.bind(this));
         }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.code === 'Space') {
+                e.preventDefault();
+                this.toggleListening();
+            }
+        });
     },
     
     toggleListening() {
@@ -1121,45 +1124,72 @@ const voiceInput = {
     stopListening() {
         if (!this.recognition) return;
         
+        this.isListening = false;
+        
         try {
             this.recognition.stop();
         } catch (error) {
             console.error('Error stopping speech recognition:', error);
         }
         
-        this.isListening = false;
-        document.getElementById('voiceInputBtn').classList.remove('recording');
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        if (voiceBtn) {
+            voiceBtn.classList.remove('recording');
+        }
         
-        // If we have a final transcript, update the input field
+        // Show notification when stopping
         if (this.finalTranscript) {
-            const input = document.getElementById('messageInput');
-            input.value = this.finalTranscript.trim();
-            // Trigger input event for any listeners
-            input.dispatchEvent(new Event('input'));
+            showNotification('Диктовка завершена', 'success');
+        } else {
+            showNotification('Диктовка отменена', 'info');
         }
     },
     
     onStart() {
-        this.finalTranscript = '';
-        showNotification('Слушаю...', 'info');
+        // Only clear on first start, not on auto-restart
+        if (!this.isListening) {
+            this.finalTranscript = '';
+            showNotification('Диктуйте... (нажмите еще раз для остановки)', 'info');
+        }
+        this.isListening = true;
     },
     
     onResult(event) {
         let interimTranscript = '';
         
         for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
+            const result = event.results[i];
+            const transcript = result[0].transcript;
             
-            if (event.results[i].isFinal) {
-                this.finalTranscript += transcript;
+            if (result.isFinal) {
+                // Add space between phrases for better readability
+                this.finalTranscript = (this.finalTranscript + ' ' + transcript).trim();
+                // Reset interim transcript when we get a final result
+                interimTranscript = '';
             } else {
-                interimTranscript += transcript;
+                // Show interim results as they come in
+                interimTranscript = transcript;
             }
         }
         
-        // Update the input field with the interim results
+        // Update the input field with both final and interim results
         const input = document.getElementById('messageInput');
-        input.value = this.finalTranscript + interimTranscript;
+        const displayText = (this.finalTranscript + ' ' + interimTranscript).trim();
+        input.value = displayText;
+        
+        // Move cursor to the end of the input
+        input.focus();
+        input.setSelectionRange(displayText.length, displayText.length);
+        
+        // Trigger input event for any listeners
+        input.dispatchEvent(new Event('input'));
+    },
+    
+    // Clear the current transcription
+    clearTranscription() {
+        this.finalTranscript = '';
+        const input = document.getElementById('messageInput');
+        input.value = '';
         input.dispatchEvent(new Event('input'));
     },
     
@@ -1179,8 +1209,13 @@ const voiceInput = {
     
     onEnd() {
         if (this.isListening) {
-            // If we're still supposed to be listening, restart recognition
-            this.recognition.start();
+            try {
+                // Restart recognition if it was stopped unexpectedly
+                this.recognition.start();
+            } catch (e) {
+                console.error('Error restarting recognition:', e);
+                this.stopListening();
+            }
         }
     },
     

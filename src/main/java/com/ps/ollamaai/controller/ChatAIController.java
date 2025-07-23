@@ -8,12 +8,14 @@ import com.ps.ollamaai.service.ChatMessageService;
 import com.ps.ollamaai.service.ChatRoomService;
 import com.ps.ollamaai.service.FileStorageService;
 import com.ps.ollamaai.service.ReactiveService;
+import com.ps.ollamaai.service.UserPreferencesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
@@ -48,7 +50,7 @@ public class ChatAIController {
     private final ChatRoomService chatRoomService;
     private final ReactiveService reactiveService;
     private final FileStorageService fileStorageService;
-
+    private final UserPreferencesService userPreferencesService;
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChunkResponseDTO> streamChat(
@@ -67,7 +69,7 @@ public class ChatAIController {
         return reactiveService.processChatMessageReactive(question, chatId, principal.getName(), fileData)
                 .flatMapMany(currentHistory -> {
                     try {
-                        List<Message> messages = getMessages(question, fileData, currentHistory);
+                        List<Message> messages = getMessages(question, fileData, currentHistory, principal.getName());
 
                         Prompt prompt = new Prompt(messages);
 
@@ -103,13 +105,14 @@ public class ChatAIController {
                 });
     }
 
-    private List<Message> getMessages(String question, FileData fileData, List<Message> currentHistory) {
+    private List<Message> getMessages(String question, FileData fileData, List<Message> currentHistory, String userId) {
         List<Message> messages = new ArrayList<>(currentHistory);
+        messages.add(new SystemMessage(userPreferencesService.getUserSystemPrompt(userId)));
 
         UserMessage userMessage;
-        final FileData finalFileData = fileData;
-        if (fileData != null && fileData.getContentType() != null) {
-            ByteArrayResource resource = new ByteArrayResource(finalFileData.getData()) {
+        if (fileData != null) {
+            final FileData finalFileData = fileData;
+            ByteArrayResource resource = new ByteArrayResource(fileData.getData()) {
                 @Override
                 public String getFilename() {
                     return finalFileData.getFileName();
