@@ -22,7 +22,7 @@ public class UserPreferencies implements Serializable {
     private String id;
     private String userId;
     private String language;
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String userSystemPrompt;
     private String model;
 }
