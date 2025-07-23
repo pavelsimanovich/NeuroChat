@@ -20,8 +20,8 @@ public class UserPreferencesService {
     private final UserPreferenciesRepository userPreferenciesRepository;
 
     @Transactional(readOnly = true)
-    public Optional<UserPreferencies> findByUserId(String userId) {
-        return userPreferenciesRepository.findByUserId(userId);
+    public Optional<UserPreferencies> findByUserId(String email) {
+        return userPreferenciesRepository.findByUserId(email);
     }
 
     @Transactional
@@ -30,25 +30,25 @@ public class UserPreferencesService {
     }
 
     @Transactional
-    public UserPreferencies createOrUpdatePreferences(String userId, String systemPrompt) {
-        UserPreferencies preferences = findByUserId(userId)
+    public UserPreferencies createOrUpdatePreferences(String email, String systemPrompt) {
+        UserPreferencies preferences = findByUserId(email)
                 .orElseGet(() -> {
                     UserPreferencies newPreferences = new UserPreferencies();
-                    newPreferences.setUserId(userId);
+                    newPreferences.setUserId(email);
                     return newPreferences;
                 });
         preferences.setUserSystemPrompt(systemPrompt);
         return save(preferences);
     }
 
-    public String getUserSystemPrompt(String userId) {
+    public String getUserSystemPrompt(String email) {
         try {
-            Optional<UserPreferencies> preferences = findByUserId(userId);
+            Optional<UserPreferencies> preferences = findByUserId(email);
             if (preferences.isPresent() && StringUtils.hasText(preferences.get().getUserSystemPrompt())) {
                 return preferences.get().getUserSystemPrompt();
             }
         } catch (Exception e) {
-            log.warn("Failed to load user preferences for userId: {}, using default prompt", userId, e);
+            log.warn("Failed to load user preferences for userId: {}, using default prompt", email, e);
         }
         return PROMPT_GENERAL_INSTRUCTIONS;
     }
