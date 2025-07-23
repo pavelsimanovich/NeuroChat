@@ -11,10 +11,8 @@ public final class Prompts {
             
             """;
 
-    //   Identify the subject area addressed in `user_main_prompt` and respond as an expert in that field
-    //   providing a comprehensive answer with detailed explanations.
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
-            Give a detailed answer strictly in the same language the question was asked in.
+            Answer strictly in Russian.
             Make a greeting only if not yet.
             Identify the subject area addressed in user_main_prompt and respond as an expert in that field,
             providing a comprehensive answer with detailed explanations.

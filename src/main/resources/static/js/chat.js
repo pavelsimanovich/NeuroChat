@@ -387,10 +387,6 @@ function scrollToBottom() {
     }
 }
 
-/**
- * Creates a new chat room with a default name
- * @returns {Promise<Object|null>} The created room or null if failed
- */
 async function createRoom() {
     try {
         const response = await fetch(
@@ -435,11 +431,7 @@ function getTempMessage(roomId, messageContent, idPrefix, userId) {
     };
 }
 
-/**
- * Generates a chat name based on the message content
- * @param {string} message - The message content to generate a name from
- * @param {string} roomId - The ID of the room to update
- */
+
 async function generateChatNameFromMessage(message, roomId) {
     try {
         const response = await fetch(
@@ -524,9 +516,6 @@ async function sendMessage() {
         if (window.eventSource) {
             window.eventSource.close();
         }
-
-        if (elements.messageInput) elements.messageInput.value = '';
-        if (elements.fileInput) elements.fileInput.value = '';
 
         typingIndicator.show();
         if (elements.filePreview) {
@@ -1269,7 +1258,6 @@ async function handleDeleteRoom(roomId, title) {
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
-        // Update state
         const wasCurrentRoom = state.currentRoom?.id === roomId;
         state.rooms = state.rooms.filter(room => room.id !== roomId);
 
@@ -1280,7 +1268,6 @@ async function handleDeleteRoom(roomId, title) {
             elements.currentRoomTitle.textContent = 'Выберите или создайте чат';
         }
 
-        // Update UI
         renderRoomsList();
 
         // Switch to another room if available
