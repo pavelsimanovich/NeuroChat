@@ -530,6 +530,9 @@ async function sendMessage() {
             url.searchParams.append('fileId', fileData.id);
         }
 
+        if (elements.messageInput) elements.messageInput.value = '';
+        if (elements.fileInput) elements.fileInput.value = '';
+
         eventSource = new EventSource(url.toString());
         chatConnections[roomId] = eventSource;
 
@@ -713,15 +716,6 @@ function setupFileUpload() {
         elements.fileInput.click();
     });
 
-    // Обработчик изменения fileInput
-    const handleFileChange = () => {
-        if (elements.fileInput.files?.length) {
-            showFilePreviews(Array.from(elements.fileInput.files));
-        }
-    };
-    elements.fileInput.removeEventListener('change', handleFileChange);
-    elements.fileInput.addEventListener('change', handleFileChange);
-
     // Drag and drop
     const dragOverlay = createDragOverlay(messageInputContainer);
     if (!messageInputContainer.contains(dragOverlay)) {
@@ -798,8 +792,8 @@ function setupFileUpload() {
         updateSendButtonState();
     };
 
-    window.removeEventListener('messageSent', handleMessageSent);
-    window.addEventListener('messageSent', handleMessageSent, { once: true });
+    // window.removeEventListener('messageSent', handleMessageSent);
+    // window.addEventListener('messageSent', handleMessageSent, { once: true });
 }
 
 function removeFile(index) {

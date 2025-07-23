@@ -59,12 +59,7 @@ public class ChatAIController {
             @RequestParam(required = false) String fileId,
             Principal principal) {
 
-        FileData fileData;
-        if (StringUtils.hasText(fileId)) {
-            fileData = fileStorageService.getFile(fileId);
-        } else {
-            fileData = null;
-        }
+        FileData fileData = getFileData(fileId);
 
         return reactiveService.processChatMessageReactive(question, chatId, principal.getName(), fileData)
                 .flatMapMany(currentHistory -> {
@@ -103,6 +98,16 @@ public class ChatAIController {
                     log.error("Error processing chat message", e);
                     return Mono.just(new ChunkResponseDTO(e.getLocalizedMessage(), true, SERVER_ERROR.name()));
                 });
+    }
+
+    private FileData getFileData(String fileId) {
+        FileData fileData;
+        if (StringUtils.hasText(fileId)) {
+            fileData = fileStorageService.getFile(fileId);
+        } else {
+            fileData = null;
+        }
+        return fileData;
     }
 
     private List<Message> getMessages(String question, FileData fileData, List<Message> currentHistory, String userId) {
