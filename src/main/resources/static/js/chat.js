@@ -1633,7 +1633,7 @@ function showRenameRoomModal(roomId, currentTitle) {
     modal.show();
 }
 
-// Simple loading state management
+//todo для всего приложения
 const loadingState = {
     show: function() {
         // Create the loading element if it doesn't exist
@@ -1646,7 +1646,7 @@ const loadingState = {
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p>Экспорт истории чата...</p>
+                    <p>Загрузка...</p>
                     <button class="btn btn-sm btn-outline-light mt-2" id="cancel-export">Отмена</button>
                 </div>
             `;
