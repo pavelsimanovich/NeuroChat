@@ -1590,11 +1590,22 @@ pre[class*="language-"] {
     pointer-events: none; /* Prevent clicks when hidden */
 }
 
+/* Stop button styles */
+#stopGenerationBtn {
+    display: flex !important;
+    opacity: 0.5;
+    background-color: var(--text-muted) !important;
+    border-color: var(--text-muted) !important;
+    cursor: not-allowed;
+    transition: all 0.3s ease;
+}
+
 /* Show button when active */
 #stopGenerationBtn.active {
-    display: flex !important;
     opacity: 1;
-    visibility: visible;
+    background-color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+    cursor: pointer;
     pointer-events: auto; /* Enable clicks when active */
 }
 

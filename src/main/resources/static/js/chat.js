@@ -647,9 +647,11 @@ function toggleStreamingUI(isStreaming) {
     }
 
     if (isStreaming) {
-        // Show stop button with smooth transition
+        // Show and activate stop button
         elements.stopButton.classList.add('active');
         elements.stopButton.disabled = false;
+        elements.stopButton.style.display = 'flex';
+        elements.stopButton.style.visibility = 'visible';
         
         // Disable send button and upload button during streaming
         elements.sendButton.disabled = true;
@@ -660,7 +662,7 @@ function toggleStreamingUI(isStreaming) {
             state.currentRoom.isStreaming = true;
         }
     } else {
-        // Hide stop button
+        // Deactivate stop button but keep it in the layout
         elements.stopButton.classList.remove('active');
         elements.stopButton.disabled = true;
         
@@ -672,7 +674,6 @@ function toggleStreamingUI(isStreaming) {
         if (state.currentRoom) {
             state.currentRoom.isStreaming = false;
         }
-        elements.stopButton.classList.add('d-none');
     }
 }
 
