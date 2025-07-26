@@ -573,20 +573,10 @@ body {
     padding-right: 8px;
 }
 
-.room-item:hover {
-    background-color: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
 .room-item .room-actions {
     display: flex;
     gap: 4px;
     align-items: center;
-}
-
-.room-item.active {
-    background-color: var(--accent-color);
 }
 
 .chat-area {
@@ -908,18 +898,6 @@ body {
 
 .file-link:hover {
     text-decoration: none;
-}
-
-/* Message input container */
-.message-input {
-    padding: 16px 20px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--glass-border);
-    position: relative;
-    z-index: 10;
-    box-shadow: 0 -1px 4px var(--shadow-light);
 }
 
 .message-input-wrapper {
@@ -1508,23 +1486,6 @@ pre[class*="language-"] {
     box-shadow: 0 -4px 30px var(--shadow-medium), 0 0 0 2px rgba(13, 110, 253, 0.2);
 }
 
-.message-input-container {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    transition: all 0.3s ease;
-}
-
-.message-input-container:focus-within {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-    background: var(--bg-secondary);
-}
-
 .search-result-item {
     cursor: pointer;
     transition: background-color 0.2s;
@@ -1620,10 +1581,6 @@ pre[class*="language-"] {
 .message {
     animation: fadeInUp 0.3s ease;
     position: relative;
-}
-
-.room-item {
-    animation: slideInFromLeft 0.3s ease;
 }
 
 /* Smart scroll indicator */
@@ -1760,12 +1717,6 @@ border-color: rgba(255, 193, 7, 0.15);
     opacity: 1;
 }
 
-
-.room-item:hover .btn-delete {
-    right: 8px;
-}
-
-/* Empty state for chat groups */
 .chat-group-empty {
     padding: 1rem;
     text-align: center;
