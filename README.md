@@ -86,7 +86,10 @@ https://huggingface.co/
     - Configurable rate limiting
 - **Image Analysis**
 - **Chat Export**
-- **Lite and Dark Mode**
+- **Voice input**
+- **User Settings**
+  - Lite and Dark Mode
+  - User can add a System Prompt
 
 ### P.S.
 - Project in development and can contain errors, some part of code should be rewritten.
