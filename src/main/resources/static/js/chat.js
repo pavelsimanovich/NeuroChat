@@ -1,5 +1,10 @@
 // Конфигурация
 const config = {
+    // Auto-scroll configuration
+    autoScroll: {
+        enabled: true,
+        threshold: 100 // pixels from bottom to consider user at the bottom
+    },
     apiBaseUrl: 'http://localhost:8080/api/chat',
     theme: {
         LIGHT: 'light',
@@ -31,6 +36,7 @@ const elements = (function() {
         roomTitleInput: document.getElementById('roomTitleInput'),
         userId: document.getElementById('userId')?.value || '',
         userName: document.getElementById('userName')?.value || 'User',
+        limitMessages: document.getElementById('limitMessages'),
         fileInput: null,
         filePreview: null,
         uploadButton: null
@@ -84,7 +90,6 @@ const elements = (function() {
                 });
             }
         }
-
         return elements;
     }
     return init();
@@ -381,10 +386,33 @@ function formatTime(timestamp) {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-function scrollToBottom() {
-    if (elements.chatMessages) {
+// Track if user has scrolled up
+let userScrolledUp = false;
+
+// Check if user is near the bottom of the chat
+function isNearBottom() {
+    if (!elements || !elements.chatMessages) return true;
+    const { scrollTop, scrollHeight, clientHeight } = elements.chatMessages;
+    return scrollHeight - scrollTop - clientHeight <= config.autoScroll.threshold;
+}
+
+// Scroll to bottom only if user is already at the bottom or auto-scroll is forced
+function scrollToBottom(force = false) {
+    if (!elements || !elements.chatMessages) return;
+    
+    if (force || !userScrolledUp || isNearBottom()) {
         elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+        userScrolledUp = false;
     }
+}
+
+// Handle scroll events to detect user scroll up
+function setupScrollHandlers() {
+    if (!elements || !elements.chatMessages) return;
+    
+    elements.chatMessages.addEventListener('scroll', () => {
+        userScrolledUp = !isNearBottom();
+    });
 }
 
 async function createRoom() {
@@ -511,7 +539,7 @@ async function sendMessage() {
     
     state.messages.push(tempMessage);
     renderMessages();
-    scrollToBottom();
+    debounce(scrollToBottom, 1000);
 
     try {
         if (!state.currentRoom) throw new Error('No current room selected');
@@ -576,10 +604,9 @@ async function sendMessage() {
                 isStreamActive = false;
                 stopStream(roomId);
 
-                //todo
                 if (message.error === 'LIMIT_EXCEEDED') {
                     handleLimitExceeded(uuid);
-                } if (message.error === 'SERVER_ERROR') {
+                } else if (message.error === 'SERVER_ERROR') {
                     onErrorSendMessage(message.content, roomId, tempMessage);
                 } else {
                     state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
@@ -594,6 +621,7 @@ async function sendMessage() {
                 if (contentDiv) {
                     contentDiv.innerHTML = marked.parse(response);
                     Prism.highlightAllUnder(contentDiv);
+                    scrollToBottom();
                 }
             }
         };
@@ -788,16 +816,6 @@ function setupFileUpload() {
         document.removeEventListener(event, handler);
         document.addEventListener(event, handler);
     });
-
-    const handleMessageSent = () => {
-        elements.fileInput.value = '';
-        elements.filePreview.innerHTML = '';
-        elements.filePreview.style.display = 'none';
-        updateSendButtonState();
-    };
-
-    // window.removeEventListener('messageSent', handleMessageSent);
-    // window.addEventListener('messageSent', handleMessageSent, { once: true });
 }
 
 function removeFile(index) {
@@ -1967,6 +1985,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification('Ошибка при создании комнаты', 'error');
             });
         };
+
+        setupScrollHandlers();
     } catch (error) {
         console.error('Initialization error:', error);
         showNotification('Ошибка при инициализации приложения', 'error');
