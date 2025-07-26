@@ -477,7 +477,9 @@ async function sendMessage() {
     if (!messageContent && !files.length) return;
 
     elements.sendButton.disabled = true;
-    voiceInput.stopListening();
+    if (voiceInput.isListening) {
+        voiceInput.stopListening();
+    }
 
     const roomId = state.currentRoom.id;
     const isFirstMessage = state.messages.length === 0;
