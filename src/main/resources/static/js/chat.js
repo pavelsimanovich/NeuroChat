@@ -33,7 +33,6 @@ const elements = (function() {
         sendButton: document.getElementById('sendMessageBtn'),
         stopButton: document.getElementById('stopGenerationBtn'),
         createRoomBtn: document.getElementById('createRoomBtn'),
-        roomTitleInput: document.getElementById('roomTitleInput'),
         userId: document.getElementById('userId')?.value || '',
         userName: document.getElementById('userName')?.value || 'User',
         limitMessages: document.getElementById('limitMessages'),
@@ -342,7 +341,7 @@ async function switchRoom(room) {
             elements.limitMessages.innerHTML = '';
         }
 
-        scrollToBottom();
+        scrollToBottom(true);
     } catch (error) {
         console.error('Error switching room:', error);
         showNotification('Ошибка загрузки', 'error');
@@ -539,7 +538,7 @@ async function sendMessage() {
     
     state.messages.push(tempMessage);
     renderMessages();
-    debounce(scrollToBottom, 1000);
+    debounce(scrollToBottom(true), 1000);
 
     try {
         if (!state.currentRoom) throw new Error('No current room selected');
@@ -612,7 +611,7 @@ async function sendMessage() {
                     state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
                     window.dispatchEvent(new CustomEvent('messageSent'));
                     renderMessages();
-                    scrollToBottom();
+                    scrollToBottom(true);
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
@@ -732,15 +731,15 @@ function setupFileUpload() {
     const messageInputContainer = elements.messageInput.closest('.message-input');
     if (!messageInputContainer) return;
 
-    // Клонируем элементы для предотвращения дублирования обработчиков
-    const newUploadButton = elements.uploadButton.cloneNode(true);
-    const newFileInput = elements.fileInput.cloneNode(true);
-
-    elements.uploadButton.parentNode?.replaceChild(newUploadButton, elements.uploadButton);
-    elements.fileInput.parentNode?.replaceChild(newFileInput, elements.fileInput);
-
-    elements.uploadButton = newUploadButton;
-    elements.fileInput = newFileInput;
+    // // Клонируем элементы для предотвращения дублирования обработчиков
+    // const newUploadButton = elements.uploadButton.cloneNode(true);
+    // const newFileInput = elements.fileInput.cloneNode(true);
+    //
+    // elements.uploadButton.parentNode?.replaceChild(newUploadButton, elements.uploadButton);
+    // elements.fileInput.parentNode?.replaceChild(newFileInput, elements.fileInput);
+    //
+    // elements.uploadButton = newUploadButton;
+    // elements.fileInput = newFileInput;
 
     // Обработчик клика по кнопке загрузки
     elements.uploadButton.addEventListener('click', (e) => {
@@ -1835,7 +1834,7 @@ function renderMessages() {
     });
 
     Prism.highlightAll();
-    scrollToBottom();
+    scrollToBottom(true);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
