@@ -1525,19 +1525,34 @@ const imageModal = {
     }
 };
 
+// Track last clicked room and menu state
+let lastClickedRoom = null;
+let isContextMenuOpen = false;
+
 // Show context menu for room actions
 function showContextMenu(event, roomId, roomElement, isPinned = false) {
     // Prevent default context menu
     event.preventDefault();
     event.stopPropagation();
 
-    // Update state
-    contextMenuState.roomId = roomId;
-    contextMenuState.roomElement = roomElement;
-
     // Get context menu element
     const contextMenu = document.getElementById('roomContextMenu');
     if (!contextMenu) return;
+    
+    // Check if clicking the same room with an open menu
+    const isSameRoom = lastClickedRoom === roomId;
+    const menuIsVisible = contextMenu.classList.contains('visible');
+    
+    if (isSameRoom && menuIsVisible) {
+        hideContextMenu();
+        return;
+    }
+
+    // Update state
+    contextMenuState.roomId = roomId;
+    contextMenuState.roomElement = roomElement;
+    lastClickedRoom = roomId;
+    isContextMenuOpen = true;
 
     // Update pin menu item text and icon based on current pin state
     const pinItem = contextMenu.querySelector('[data-action="pin"]');
