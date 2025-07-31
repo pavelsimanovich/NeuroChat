@@ -235,21 +235,29 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         groupElement.classList.add('collapsed');
     }
 
-    // Заголовок группы с индикатором коллапса
+    // Заголовок группы
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
     headerElement.innerHTML = `
-        <div class="chat-group-title">
-            <i class="bi ${iconClass}"></i>
-            <span>${title}</span>
-        </div>
-        <i class="bi bi-chevron-down collapse-indicator"></i>
+        <i class="bi ${iconClass}"></i>
+        <span>${title}</span>
     `;
 
+    // // Заголовок группы с индикатором коллапса
+    // const headerElement = document.createElement('div');
+    // headerElement.className = 'chat-group-header';
+    // headerElement.innerHTML = `
+    //     <div class="chat-group-title">
+    //         <i class="bi ${iconClass}"></i>
+    //         <span>${title}</span>
+    //     </div>
+    //     <i class="bi bi-chevron-down collapse-indicator"></i>
+    // `;
+
     // Добавляем обработчик клика для сворачивания/разворачивания группы
-    headerElement.addEventListener('click', () => {
-        toggleGroupCollapse(groupElement, groupId);
-    });
+    // headerElement.addEventListener('click', () => {
+    //     toggleGroupCollapse(groupElement, groupId);
+    // });
 
     // Контент группы
     const contentElement = document.createElement('div');
