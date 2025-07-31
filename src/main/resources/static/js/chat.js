@@ -1840,14 +1840,12 @@ function renderMessages() {
 // Функция поиска чатов
 function setupChatSearch() {
     const searchContainer = document.createElement('div');
-    searchContainer.className = 'chat-search-container';
+    searchContainer.className = 'chat-search-container mb-2';
     searchContainer.innerHTML = `
-    <div class="input-group">
-        <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input type="text" id="chatSearchInput" class="form-control" placeholder="Поиск чатов...">
-        <button id="clearSearchBtn" class="btn btn-outline-secondary d-none" type="button">
-            <i class="bi bi-x"></i>
-        </button>
+    <div class="search-box position-relative">
+        <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
+        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" placeholder="Поиск чатов...">
+        <i id="clearSearchBtn" class="bi bi-x-circle position-absolute end-0 top-50 translate-middle-y me-3 text-muted d-none" style="cursor: pointer;"></i>
     </div>
 `;
 
@@ -1905,24 +1903,25 @@ function setupChatSearch() {
     });
 
 // Обработчик кнопки очистки
-    clearButton.addEventListener('click', () => {
+    clearButton.addEventListener('click', clearSearch);
+
+    // Функция очистки поиска
+    function clearSearch() {
         searchInput.value = '';
         performSearch('');
         searchInput.focus();
-    });
+    }
 
 // Обработчик горячих клавиш (Ctrl+F для поиска)
     document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-            // Проверяем, не находимся ли мы в поле ввода сообщения
-            const activeElement = document.activeElement;
-            if (activeElement !== elements.messageInput) {
-                e.preventDefault();
-                searchInput.focus();
-            }
-        } else if (e.key === 'Escape' && document.activeElement === searchInput) {
-            searchInput.value = '';
-            performSearch('');
+        // Ctrl+F для фокуса на поиске
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.activeElement !== elements.messageInput) {
+            e.preventDefault();
+            searchInput.focus();
+        } 
+        // Escape для очистки и выхода из поиска
+        else if (e.key === 'Escape' && document.activeElement === searchInput) {
+            clearSearch();
             searchInput.blur();
         }
     });

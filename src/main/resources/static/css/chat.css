@@ -513,6 +513,12 @@ body {
     color:  var(--text-primary);
 }
 
+.chat-search-container .bi-search {
+    font-size: 14px;
+    z-index: 5;
+    color: #6c757d;
+}
+
 .room-item .room-name {
     flex: 1;
     white-space: nowrap;
