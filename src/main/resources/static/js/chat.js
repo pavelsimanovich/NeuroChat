@@ -1837,11 +1837,104 @@ function renderMessages() {
     scrollToBottom(true);
 }
 
+// Функция поиска чатов
+function setupChatSearch() {
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'chat-search-container';
+    searchContainer.innerHTML = `
+    <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="chatSearchInput" class="form-control" placeholder="Поиск чатов...">
+        <button id="clearSearchBtn" class="btn btn-outline-secondary d-none" type="button">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+`;
+
+// Вставляем контейнер поиска перед списком чатов
+    const roomsList = document.getElementById('roomsList');
+    if (roomsList && roomsList.parentNode) {
+        roomsList.parentNode.insertBefore(searchContainer, roomsList);
+    }
+
+    const searchInput = document.getElementById('chatSearchInput');
+    const clearButton = document.getElementById('clearSearchBtn');
+
+    if (!searchInput || !clearButton) return;
+
+// Функция поиска
+    const performSearch = (query) => {
+        query = query.toLowerCase().trim();
+        clearButton.classList.toggle('d-none', !query);
+
+        if (!query) {
+            // Если поиск пустой, восстанавливаем исходное отображение
+            document.querySelectorAll('.chat-group').forEach(group => {
+                group.style.display = '';
+            });
+            document.querySelectorAll('.room-item').forEach(room => {
+                room.style.display = '';
+            });
+            return;
+        }
+
+        // Ищем комнаты, соответствующие запросу
+        document.querySelectorAll('.room-item').forEach(room => {
+            const roomTitle = room.getAttribute('data-room-title').toLowerCase();
+            const matches = roomTitle.includes(query);
+            room.style.display = matches ? '' : 'none';
+        });
+
+        // Показываем только группы, в которых есть видимые комнаты
+        document.querySelectorAll('.chat-group').forEach(group => {
+            const hasVisibleRooms = Array.from(group.querySelectorAll('.room-item')).some(room =>
+                room.style.display !== 'none'
+            );
+            group.style.display = hasVisibleRooms ? '' : 'none';
+
+            // Разворачиваем группы с результатами поиска
+            if (hasVisibleRooms) {
+                group.classList.remove('collapsed');
+            }
+        });
+    };
+
+// Обработчик ввода в поле поиска
+    searchInput.addEventListener('input', () => {
+        performSearch(searchInput.value);
+    });
+
+// Обработчик кнопки очистки
+    clearButton.addEventListener('click', () => {
+        searchInput.value = '';
+        performSearch('');
+        searchInput.focus();
+    });
+
+// Обработчик горячих клавиш (Ctrl+F для поиска)
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            // Проверяем, не находимся ли мы в поле ввода сообщения
+            const activeElement = document.activeElement;
+            if (activeElement !== elements.messageInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        } else if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            performSearch('');
+            searchInput.blur();
+        }
+    });
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     try {
         typingIndicator.init();
         setupFileUpload();
         voiceInput.init();
+        setupChatSearch(); // Инициализация поиска чатов
 
         // Initialize context menu event listeners
         document.addEventListener('click', (e) => {
