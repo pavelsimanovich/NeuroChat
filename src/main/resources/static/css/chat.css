@@ -201,6 +201,20 @@ body {
     min-width: 0;
     display: flex;
     flex-direction: column;
+    transition: transform 0.3s ease;
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: fixed;
+        width: 85%;
+        z-index: 1040;
+        transform: translateX(-100%);
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
 }
 
 .file-name {
@@ -253,6 +267,31 @@ body {
     border-right: 1px solid var(--border-color);
     box-shadow: 2px 0 8px var(--shadow-light);
     transition: all 0.3s ease;
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        width: 85%;
+        height: 100%;
+        z-index: 1040;
+        box-shadow: 2px 0 15px var(--shadow-medium);
+        transition: left 0.3s ease-in-out;
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    .sidebar-toggle-container {
+        transition: left 0.3s ease;
+    }
+
+    .sidebar.show + .sidebar-toggle-container {
+        left: calc(85% + 10px);
+    }
 }
 
 .sidebar-header {
@@ -511,6 +550,12 @@ body {
     background-color: var(--accent-color);
     border-color: var(--accent-hover);
     color:  var(--text-primary);
+}
+
+.chat-search-container .bi-search {
+    font-size: 14px;
+    z-index: 5;
+    color: #6c757d;
 }
 
 .room-item .room-name {
@@ -1457,6 +1502,33 @@ pre[class*="language-"] {
 .tooltip:hover .tooltiptext {
     visibility: visible;
     opacity: 1;
+}
+
+@media (max-width: 767.98px) {
+    .chat-header {
+        padding: 15px;
+    }
+
+    .chat-header h4 {
+        font-size: 1.1rem;
+    }
+
+    #sidebarToggleBtn {
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        padding: 0;
+        margin-right: 10px;
+        box-shadow: none !important;
+    }
+
+    #sidebarToggleBtn:hover, 
+    #sidebarToggleBtn:focus, 
+    #sidebarToggleBtn:active {
+        background: transparent;
+        color: var(--primary);
+        box-shadow: none !important;
+    }
 }
 
 #stopGenerationBtn svg {

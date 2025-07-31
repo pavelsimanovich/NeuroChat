@@ -229,6 +229,12 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
     groupElement.className = 'chat-group';
     groupElement.setAttribute('data-group', groupId);
 
+    // Проверяем, должна ли группа быть свернута из localStorage
+    const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+    if (collapsedGroups.includes(groupId)) {
+        groupElement.classList.add('collapsed');
+    }
+
     // Заголовок группы
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
@@ -316,6 +322,27 @@ function togglePin(roomId) {
     
     localStorage.setItem('pinnedRooms', JSON.stringify(pinnedRooms));
     renderRoomsList(); // Перерисовываем список
+}
+
+// Функция для сворачивания/разворачивания групп чатов
+function toggleGroupCollapse(groupElement, groupId) {
+    // Переключаем класс collapsed для анимации
+    groupElement.classList.toggle('collapsed');
+
+    // Сохраняем состояние свернутых групп в localStorage
+    const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+    const isCollapsed = groupElement.classList.contains('collapsed');
+
+    if (isCollapsed && !collapsedGroups.includes(groupId)) {
+        collapsedGroups.push(groupId);
+    } else if (!isCollapsed && collapsedGroups.includes(groupId)) {
+        const index = collapsedGroups.indexOf(groupId);
+        if (index > -1) {
+            collapsedGroups.splice(index, 1);
+        }
+    }
+
+    localStorage.setItem('collapsedGroups', JSON.stringify(collapsedGroups));
 }
 
 async function switchRoom(room) {
@@ -1498,19 +1525,34 @@ const imageModal = {
     }
 };
 
+// Track last clicked room and menu state
+let lastClickedRoom = null;
+let isContextMenuOpen = false;
+
 // Show context menu for room actions
 function showContextMenu(event, roomId, roomElement, isPinned = false) {
     // Prevent default context menu
     event.preventDefault();
     event.stopPropagation();
 
-    // Update state
-    contextMenuState.roomId = roomId;
-    contextMenuState.roomElement = roomElement;
-
     // Get context menu element
     const contextMenu = document.getElementById('roomContextMenu');
     if (!contextMenu) return;
+    
+    // Check if clicking the same room with an open menu
+    const isSameRoom = lastClickedRoom === roomId;
+    const menuIsVisible = contextMenu.classList.contains('visible');
+    
+    if (isSameRoom && menuIsVisible) {
+        hideContextMenu();
+        return;
+    }
+
+    // Update state
+    contextMenuState.roomId = roomId;
+    contextMenuState.roomElement = roomElement;
+    lastClickedRoom = roomId;
+    isContextMenuOpen = true;
 
     // Update pin menu item text and icon based on current pin state
     const pinItem = contextMenu.querySelector('[data-action="pin"]');
@@ -1837,11 +1879,113 @@ function renderMessages() {
     scrollToBottom(true);
 }
 
+// Функция поиска чатов
+function setupChatSearch() {
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'chat-search-container mb-2';
+    searchContainer.innerHTML = `
+    <div class="search-box position-relative">
+        <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
+        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" placeholder="Поиск чатов...">
+        <i id="clearSearchBtn" class="bi bi-x-circle position-absolute end-0 top-50 translate-middle-y me-3 text-muted d-none" style="cursor: pointer;"></i>
+    </div>
+`;
+
+// Вставляем контейнер поиска перед списком чатов
+    const roomsList = document.getElementById('roomsList');
+    if (roomsList && roomsList.parentNode) {
+        roomsList.parentNode.insertBefore(searchContainer, roomsList);
+    }
+
+    const searchInput = document.getElementById('chatSearchInput');
+    const clearButton = document.getElementById('clearSearchBtn');
+
+    if (!searchInput || !clearButton) return;
+
+// Функция поиска
+    const performSearch = (query) => {
+        query = query.toLowerCase().trim();
+        clearButton.classList.toggle('d-none', !query);
+
+        if (!query) {
+            // Если поиск пустой, восстанавливаем исходное отображение и состояние свернутых групп
+            document.querySelectorAll('.chat-group').forEach(group => {
+                group.style.display = '';
+
+                // Восстанавливаем состояние групп из localStorage
+                const groupId = group.getAttribute('data-group');
+                const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+                if (collapsedGroups.includes(groupId)) {
+                    group.classList.add('collapsed');
+                } else {
+                    group.classList.remove('collapsed');
+                }
+            });
+
+            document.querySelectorAll('.room-item').forEach(room => {
+                room.style.display = '';
+            });
+            return;
+        }
+
+        // Ищем комнаты, соответствующие запросу
+        document.querySelectorAll('.room-item').forEach(room => {
+            const roomTitle = room.getAttribute('data-room-title').toLowerCase();
+            const matches = roomTitle.includes(query);
+            room.style.display = matches ? '' : 'none';
+        });
+
+        // Показываем только группы, в которых есть видимые комнаты
+        document.querySelectorAll('.chat-group').forEach(group => {
+            const hasVisibleRooms = Array.from(group.querySelectorAll('.room-item')).some(room =>
+                room.style.display !== 'none'
+            );
+            group.style.display = hasVisibleRooms ? '' : 'none';
+
+            // Разворачиваем группы с результатами поиска
+            if (hasVisibleRooms) {
+                group.classList.remove('collapsed');
+            }
+        });
+    };
+
+// Обработчик ввода в поле поиска
+    searchInput.addEventListener('input', () => {
+        performSearch(searchInput.value);
+    });
+
+// Обработчик кнопки очистки
+    clearButton.addEventListener('click', clearSearch);
+
+    // Функция очистки поиска
+    function clearSearch() {
+        searchInput.value = '';
+        performSearch('');
+        searchInput.focus();
+    }
+
+// Обработчик горячих клавиш (Ctrl+F для поиска)
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+F для фокуса на поиске
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.activeElement !== elements.messageInput) {
+            e.preventDefault();
+            searchInput.focus();
+        } 
+        // Escape для очистки и выхода из поиска
+        else if (e.key === 'Escape' && document.activeElement === searchInput) {
+            clearSearch();
+            searchInput.blur();
+        }
+    });
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     try {
         typingIndicator.init();
         setupFileUpload();
         voiceInput.init();
+        setupChatSearch(); // Инициализация поиска чатов
 
         // Initialize context menu event listeners
         document.addEventListener('click', (e) => {
