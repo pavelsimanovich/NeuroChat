@@ -134,6 +134,13 @@ async function loadRooms() {
         console.error('Error loading rooms:', error);
         showNotification('Не удалось загрузить комнаты. Пожалуйста, обновите страницу.', 'error');
     }
+
+    // Создаем событие изменения комнаты для других модулей
+    if (isFirstMessage) {
+        document.dispatchEvent(new CustomEvent('roomChanged', {
+            detail: { roomId: state.currentRoom?.id }
+        }));
+    }
 }
 
 function renderRoomsList() {
