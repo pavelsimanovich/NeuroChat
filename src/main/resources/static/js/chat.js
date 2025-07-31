@@ -229,13 +229,27 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
     groupElement.className = 'chat-group';
     groupElement.setAttribute('data-group', groupId);
 
-    // Заголовок группы
+    // Проверяем, должна ли группа быть свернута из localStorage
+    const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+    if (collapsedGroups.includes(groupId)) {
+        groupElement.classList.add('collapsed');
+    }
+
+    // Заголовок группы с индикатором коллапса
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
     headerElement.innerHTML = `
-        <i class="bi ${iconClass}"></i>
-        <span>${title}</span>
+        <div class="chat-group-title">
+            <i class="bi ${iconClass}"></i>
+            <span>${title}</span>
+        </div>
+        <i class="bi bi-chevron-down collapse-indicator"></i>
     `;
+
+    // Добавляем обработчик клика для сворачивания/разворачивания группы
+    headerElement.addEventListener('click', () => {
+        toggleGroupCollapse(groupElement, groupId);
+    });
 
     // Контент группы
     const contentElement = document.createElement('div');
@@ -316,6 +330,27 @@ function togglePin(roomId) {
     
     localStorage.setItem('pinnedRooms', JSON.stringify(pinnedRooms));
     renderRoomsList(); // Перерисовываем список
+}
+
+// Функция для сворачивания/разворачивания групп чатов
+function toggleGroupCollapse(groupElement, groupId) {
+    // Переключаем класс collapsed для анимации
+    groupElement.classList.toggle('collapsed');
+
+    // Сохраняем состояние свернутых групп в localStorage
+    const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+    const isCollapsed = groupElement.classList.contains('collapsed');
+
+    if (isCollapsed && !collapsedGroups.includes(groupId)) {
+        collapsedGroups.push(groupId);
+    } else if (!isCollapsed && collapsedGroups.includes(groupId)) {
+        const index = collapsedGroups.indexOf(groupId);
+        if (index > -1) {
+            collapsedGroups.splice(index, 1);
+        }
+    }
+
+    localStorage.setItem('collapsedGroups', JSON.stringify(collapsedGroups));
 }
 
 async function switchRoom(room) {
@@ -1866,10 +1901,20 @@ function setupChatSearch() {
         clearButton.classList.toggle('d-none', !query);
 
         if (!query) {
-            // Если поиск пустой, восстанавливаем исходное отображение
+            // Если поиск пустой, восстанавливаем исходное отображение и состояние свернутых групп
             document.querySelectorAll('.chat-group').forEach(group => {
                 group.style.display = '';
+
+                // Восстанавливаем состояние групп из localStorage
+                const groupId = group.getAttribute('data-group');
+                const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+                if (collapsedGroups.includes(groupId)) {
+                    group.classList.add('collapsed');
+                } else {
+                    group.classList.remove('collapsed');
+                }
             });
+
             document.querySelectorAll('.room-item').forEach(room => {
                 room.style.display = '';
             });
