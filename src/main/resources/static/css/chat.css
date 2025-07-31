@@ -401,56 +401,6 @@ body {
     color: var(--text-primary);
 }
 
-/*!* Стили для групп чатов с коллапсом *!*/
-/*.chat-group {*/
-/*    margin-bottom: 0.5rem;*/
-/*    border-radius: 8px;*/
-/*    overflow: hidden;*/
-/*    transition: all 0.3s ease;*/
-/*}*/
-
-/*.chat-group-header {*/
-/*    display: flex;*/
-/*    justify-content: space-between;*/
-/*    align-items: center;*/
-/*    padding: 0.75rem 1.25rem;*/
-/*    background-color: var(--bg-tertiary);*/
-/*    color: var(--text-secondary);*/
-/*    cursor: pointer;*/
-/*    font-weight: 500;*/
-/*    font-size: 0.9rem;*/
-/*    transition: all 0.2s ease;*/
-/*    user-select: none;*/
-/*}*/
-
-/*.chat-group-header:hover {*/
-/*    background-color: var(--bg-primary);*/
-/*}*/
-
-/*.chat-group-title {*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*    gap: 0.5rem;*/
-/*}*/
-
-/*.collapse-indicator {*/
-/*    transition: transform 0.3s ease;*/
-/*}*/
-
-/*.chat-group.collapsed .collapse-indicator {*/
-/*    transform: rotate(-90deg);*/
-/*}*/
-
-/*.chat-group-content {*/
-/*    max-height: 1000px; !* Достаточно большое значение *!*/
-/*    overflow: hidden;*/
-/*    transition: max-height 0.3s ease;*/
-/*}*/
-
-/*.chat-group.collapsed .chat-group-content {*/
-/*    max-height: 0;*/
-/*}*/
-
 /* Context Menu Styles */
 #roomContextMenu {
     position: fixed;

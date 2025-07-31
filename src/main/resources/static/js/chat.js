@@ -243,22 +243,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         <span>${title}</span>
     `;
 
-    // // Заголовок группы с индикатором коллапса
-    // const headerElement = document.createElement('div');
-    // headerElement.className = 'chat-group-header';
-    // headerElement.innerHTML = `
-    //     <div class="chat-group-title">
-    //         <i class="bi ${iconClass}"></i>
-    //         <span>${title}</span>
-    //     </div>
-    //     <i class="bi bi-chevron-down collapse-indicator"></i>
-    // `;
-
-    // Добавляем обработчик клика для сворачивания/разворачивания группы
-    // headerElement.addEventListener('click', () => {
-    //     toggleGroupCollapse(groupElement, groupId);
-    // });
-
     // Контент группы
     const contentElement = document.createElement('div');
     contentElement.className = 'chat-group-content';
