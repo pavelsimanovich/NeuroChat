@@ -283,6 +283,7 @@ function createRoomElement(room) {
     menuButton.title = 'Действия';
     menuButton.addEventListener('click', (e) => {
         e.stopPropagation();
+        e.preventDefault(); // Предотвращаем любую стандартную обработку клика
         showContextMenu(e, room.id, roomElement, pinned);
     });
 
@@ -293,10 +294,23 @@ function createRoomElement(room) {
     roomElement.appendChild(nameElement);
     roomElement.appendChild(actionsContainer);
 
+    // Обработчик клика на комнату для переключения
+    roomElement.addEventListener('click', (e) => {
+        // Проверяем, не является ли клик на кнопке меню
+        if (e.target.closest('.btn-menu')) {
+            return; // Пропускаем клик на кнопке меню
+        }
+
+        const room = state.rooms.find(r => r.id === roomElement.getAttribute('data-room-id'));
+        if (room) {
+            switchRoom(room);
+        }
+    });
+
     // Обработчик контекстного меню
     roomElement.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        showContextMenu(e, room.id, roomElement);
+        showContextMenu(e, room.id, roomElement, pinned);
     });
 
     return roomElement;
@@ -369,6 +383,10 @@ async function switchRoom(room) {
         }
 
         scrollToBottom(true);
+            // Закрываем сайдбар в мобильной версии после выбора чата
+            if (window.innerWidth < 768 && window.sidebarManager) {
+                setTimeout(() => window.sidebarManager.close(), 150);
+            }
     } catch (error) {
         console.error('Error switching room:', error);
         showNotification('Ошибка загрузки', 'error');
@@ -1788,6 +1806,11 @@ async function exportChatHistory(roomId) {
     } finally {
         loadingState.hide();
         exportController = null;
+    }
+
+    // Закрываем сайдбар в мобильной версии
+    if (window.innerWidth < 768 && window.sidebarManager) {
+        setTimeout(() => window.sidebarManager.close(), 150);
     }
 }
 
