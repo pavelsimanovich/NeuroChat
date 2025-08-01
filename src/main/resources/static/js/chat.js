@@ -1920,7 +1920,19 @@ function renderMessages() {
     elements.chatMessages.innerHTML = '';
 
     if (!state.messages.length && state.currentRoom) {
-        elements.chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
+        elements.chatMessages.innerHTML = `
+            <div class="empty-chat-container">
+                <div class="empty-chat-illustration">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <h4>Начните общение</h4>
+                <p class="text-muted">Это начало вашего разговора с AI ассистентом.<br>Чем я могу вам помочь?</p>
+                <div class="empty-chat-suggestions">
+                    <button class="suggestion-btn" onclick="setExampleQuestion('Расскажи о себе')">Расскажи о себе</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('Помоги мне с Java')">Помоги мне с Java</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('Что такое Spring Data JPA?')">Что такое Spring Data JPA?</button>
+                </div>
+            </div>`;
         return;
     }
 

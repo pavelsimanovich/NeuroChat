@@ -1224,6 +1224,97 @@ body {
     font-style: italic;
 }
 
+/* Стили для пустого чата */
+.empty-chat-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 1rem;
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.empty-chat-illustration {
+    width: 80px;
+    height: 80px;
+    background-color: var(--light-bg-color, #f5f7fb);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+.empty-chat-illustration i {
+    font-size: 2.5rem;
+    color: var(--primary-color, #4f46e5);
+}
+
+.empty-chat-container h4 {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: var(--text-color, #333);
+}
+
+.empty-chat-container p {
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.empty-chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.suggestion-btn {
+    padding: 0.5rem 1rem;
+    background-color: var(--light-bg-color, #f5f7fb);
+    border: 1px solid var(--border-color, #e0e4e8);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--text-color, #333);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestion-btn:hover {
+    background-color: var(--hover-bg-color, #e9ecef);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .empty-chat-illustration {
+    background-color: var(--dark-bg-accent, #2d3748);
+}
+
+.dark-mode .suggestion-btn {
+    background-color: var(--dark-bg-accent, #2d3748);
+    color: var(--dark-text-color, #e2e8f0);
+    border-color: var(--dark-border-color, #4a5568);
+}
+
+.dark-mode .suggestion-btn:hover {
+    background-color: var(--dark-hover-bg, #3a4a5f);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    }
+}
+
 .message-content {
     word-break: break-word;
     line-height: 1.5;
