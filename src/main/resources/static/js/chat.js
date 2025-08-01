@@ -1382,47 +1382,75 @@ async function handleDeleteRoom(roomId, title) {
             const welcomeScreen = document.createElement('div');
             welcomeScreen.id = 'welcomeScreen';
             welcomeScreen.className = 'h-100 d-flex flex-column align-items-center justify-content-center text-center p-4';
-            welcomeScreen.style.maxWidth = '700px';
+            welcomeScreen.style.maxWidth = '800px';
             welcomeScreen.style.margin = '0 auto';
             welcomeScreen.style.display = 'flex';
 
             welcomeScreen.innerHTML = `
-                <div class="mb-4" style="width: 120px; height: 120px; background-color: #f0f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #4f46e5;"></i>
+                <div class="mb-4" style="width: 130px; height: 130px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);">
+                    <i class="bi bi-robot" style="font-size: 3.5rem; color: white;"></i>
                 </div>
-                <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
-                <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
-                <button id="createRoomBtn1" class="btn btn-primary" onclick="createRoom()">
-                    <i class="bi bi-plus-lg me-2"></i>Новый чат
+                <h3 class="mb-3 fw-bold">Добро пожаловать в AI Чат-ассистент</h3>
+                <p class="text-muted mb-4 fs-5">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
+                <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm" onclick="createRoom()">
+                    <i class="bi bi-plus-lg me-2"></i>Начать новый диалог
                 </button>
                 <div class="mt-5 pt-4 border-top w-100">
-                    <h6 class="mb-3">Попробуйте спросить:</h6>
-                    <div class="row g-3">
+                    <h5 class="mb-4">Что я могу для вас сделать:</h5>
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
-                            onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения?')">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?')">
                                 <div class="card-body">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
-                                            <i class="bi bi-lightbulb text-primary"></i>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-lightbulb-fill text-primary"></i>
                                         </div>
-                                        <h6 class="mb-0">Идеи для проекта</h6>
+                                        <h6 class="mb-0 fw-bold">Идеи для разработки</h6>
                                     </div>
-                                    <p class="text-muted small mb-0">Какие есть интересные идеи для веб-приложения?</p>
+                                    <p class="text-muted mb-0">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
                                 </div>
                             </div>
                         </div>
-                      <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
-                               onclick="setExampleQuestion('Как оптимизировать SQL-запрос?')"">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?')">
                                 <div class="card-body">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="bg-success bg-opacity-10 p-2 rounded me-2">
-                                            <i class="bi bi-code-slash text-success"></i>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-code-square text-success"></i>
                                         </div>
-                                        <h6 class="mb-0">Помощь с кодом</h6>
+                                        <h6 class="mb-0 fw-bold">Оптимизация кода</h6>
                                     </div>
-                                    <p class="text-muted small mb-0">Как оптимизировать SQL-запрос?</p>
+                                    <p class="text-muted mb-0">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?')">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-gear-fill text-info"></i>
+                                        </div>
+                                        <h6 class="mb-0 fw-bold">Архитектура приложений</h6>
+                                    </div>
+                                    <p class="text-muted mb-0">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория')">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-file-earmark-code-fill text-warning"></i>
+                                        </div>
+                                        <h6 class="mb-0 fw-bold">Примеры кода</h6>
+                                    </div>
+                                    <p class="text-muted mb-0">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
                                 </div>
                             </div>
                         </div>
