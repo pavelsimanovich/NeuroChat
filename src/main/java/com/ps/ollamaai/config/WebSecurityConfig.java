@@ -54,9 +54,7 @@ public class WebSecurityConfig {
                         .deleteCookies("JSESSIONID", "remember-me")
                         .permitAll()
                 )
-                .sessionManagement(
-                        session -> session.invalidSessionUrl("/index")
-        );
+                .sessionManagement(session -> session.invalidSessionUrl("/index"));
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
@@ -71,6 +69,7 @@ public class WebSecurityConfig {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
 
+        //todo добавить миграцию
         // Проверка существования таблицы persistent_logins
         try (var connection = dataSource.getConnection()) {
             var metaData = connection.getMetaData();

@@ -70,7 +70,6 @@ public class CustomUserDetailsService implements UserDetailsService {
             return user.isEnabled();
         }
 
-        // Метод для получения информации о пользователе
         public User getUser() {
             return user;
         }

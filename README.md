@@ -73,7 +73,7 @@ https://huggingface.co/
 ### 🌐 REST API
 - **Flexible Endpoints**: Comprehensive API for seamless interaction with the chat system
 - **Stream Support**: Real-time communication using streaming technology
-- **Room Management**: Create, join and manage chat rooms programmatically
+- **Room Management**: Create and manage chat rooms programmatically
 - **User System**: Secure login/registration flows
 
 ### 🤖 AI Chat Functionality
@@ -93,4 +93,3 @@ https://huggingface.co/
 
 ### P.S.
 - Project in development and can contain errors, some part of code should be rewritten.
-- Any help would be appreciated

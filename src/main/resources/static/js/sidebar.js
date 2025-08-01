@@ -1,8 +1,3 @@
-/**
- * Объединенный JavaScript файл для управления сайдбаром
- * Включает функциональность из sidebar-mobile.js, sidebar-overlay.js и direct-sidebar.js
- */
-
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Sidebar manager loaded');
 
