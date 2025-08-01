@@ -1485,20 +1485,135 @@ async function handleDeleteRoom(roomId, title) {
 
 async function confirmDeleteChat(title) {
     const result = await Swal.fire({
-        title: 'Подтверждение удаления',
-        html: `Вы уверены, что хотите удалить чат <b>"${title}"</b>?`,
-        icon: 'warning',
+        title: '<span class="delete-title">Подтверждение удаления</span>',
+        html: `<div class="delete-message">
+                <div class="delete-icon-container">
+                    <i class="bi bi-trash-fill delete-icon-animated"></i>
+                </div>
+                <p>Вы уверены, что хотите удалить чат</p>
+                <p class="chat-title">«${title}»</p>
+                <p class="delete-warning">Это действие нельзя будет отменить</p>
+              </div>`,
+        icon: null,
         showCancelButton: true,
-        confirmButtonText: 'Да, удалить',
-        cancelButtonText: 'Отмена',
+        confirmButtonText: '<i class="bi bi-trash me-1"></i> Удалить',
+        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
+        cancelButtonColor: '#6c757d',
         reverseButtons: true,
         backdrop: true,
+        customClass: {
+            container: 'delete-dialog-container',
+            popup: 'delete-dialog-popup',
+            title: 'delete-dialog-title',
+            confirmButton: 'btn-delete-confirm',
+            cancelButton: 'btn-delete-cancel',
+            actions: 'delete-dialog-actions'
+        },
+        buttonsStyling: true,
         allowOutsideClick: false,
-        showClass: { popup: 'animate__animated animate__fadeInDown' },
-        hideClass: { popup: 'animate__animated animate__fadeOutUp' }
+        showClass: { 
+            popup: 'animate__animated animate__fadeInDown animate__faster' 
+        },
+        hideClass: { 
+            popup: 'animate__animated animate__fadeOutUp animate__faster' 
+        },
+        didOpen: (modal) => {
+            // Добавляем стили для красивого отображения диалога
+            const style = document.createElement('style');
+            style.textContent = `
+                .delete-dialog-container {
+                    z-index: 1060;
+                }
+                .delete-dialog-popup {
+                    border-radius: 16px;
+                    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-color);
+                    padding: 24px;
+                    max-width: 400px;
+                }
+                .delete-title {
+                    font-weight: 600;
+                    font-size: 1.25rem;
+                    margin-bottom: 0;
+                    color: var(--danger-color);
+                }
+                .delete-message {
+                    margin: 20px 0;
+                    text-align: center;
+                }
+                .delete-icon-container {
+                    margin-bottom: 16px;
+                }
+                .delete-icon-animated {
+                    font-size: 3rem;
+                    color: var(--danger-color);
+                    animation: shake 0.5s ease-in-out 0.2s;
+                    display: inline-block;
+                }
+                .chat-title {
+                    font-weight: 600;
+                    font-size: 1.1rem;
+                    margin: 8px 0;
+                    color: var(--text-primary);
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .delete-warning {
+                    margin-top: 16px;
+                    font-size: 0.85rem;
+                    color: var(--text-muted);
+                }
+                .delete-dialog-actions {
+                    margin-top: 16px;
+                    gap: 12px;
+                }
+                .btn-delete-confirm {
+                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+                    transition: all 0.2s ease;
+                    border-radius: 8px;
+                    font-weight: 500;
+                }
+                .btn-delete-confirm:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.5);
+                }
+                .btn-delete-confirm:active {
+                    transform: translateY(0);
+                }
+                .btn-delete-cancel {
+                    border-radius: 8px;
+                    transition: all 0.2s ease;
+                    font-weight: 500;
+                }
+                .btn-delete-cancel:hover {
+                    transform: translateY(-2px);
+                }
+                @keyframes shake {
+                    0%, 100% { transform: rotate(0); }
+                    20% { transform: rotate(-10deg); }
+                    40% { transform: rotate(10deg); }
+                    60% { transform: rotate(-10deg); }
+                    80% { transform: rotate(10deg); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Добавляем эффект при открытии
+            setTimeout(() => {
+                const icon = modal.querySelector('.delete-icon-animated');
+                if (icon) icon.style.animation = 'shake 0.5s ease-in-out';
+            }, 200);
+
+            // Убираем стили при закрытии
+            modal.addEventListener('close', () => {
+                document.head.removeChild(style);
+            });
+        }
     });
+
     return result.isConfirmed;
 }
 
