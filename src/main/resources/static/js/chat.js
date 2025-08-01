@@ -1721,46 +1721,109 @@ function showRenameRoomModal(roomId, currentTitle) {
     modal.show();
 }
 
-//todo для всего приложения
+/**
+ * Универсальный компонент для отображения состояния загрузки
+ */
 const loadingState = {
-    show: function() {
-        // Create the loading element if it doesn't exist
-        let loadingElement = document.getElementById('export-loading');
+    /**
+     * Показывает индикатор загрузки с возможностью отмены
+     * @param {Object} options - Опции для настройки индикатора загрузки
+     * @param {string} [options.message='Загрузка...'] - Сообщение для отображения
+     * @param {Function} [options.onCancel=null] - Функция, вызываемая при отмене
+     * @param {string} [options.buttonText='Отмена'] - Текст кнопки отмены
+     */
+    show: function(options = {}) {
+        const {
+            message = 'Загрузка...',
+            onCancel = null,
+            buttonText = 'Отмена'
+        } = options;
+
+        // Создаем элемент индикатора загрузки, если он не существует
+        let loadingElement = document.getElementById('loading-overlay-component');
+
         if (!loadingElement) {
             loadingElement = document.createElement('div');
-            loadingElement.id = 'export-loading';
+            loadingElement.id = 'loading-overlay-component';
             loadingElement.innerHTML = `
                 <div class="loading-overlay">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                        <span class="visually-hidden">Загрузка</span>
                     </div>
-                    <p>Загрузка...</p>
-                    <button class="btn btn-sm btn-outline-light mt-2" id="cancel-export">Отмена</button>
+                    <p id="loading-message">${message}</p>
+                    ${onCancel ? `<button class="btn btn-sm btn-outline-light mt-2" id="cancel-loading-btn">${buttonText}</button>` : ''}
                 </div>
             `;
             document.body.appendChild(loadingElement);
-            
-            // Add cancel button handler
-            document.getElementById('cancel-export')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                loadingState.hide();
-                if (exportController) {
-                    exportController.abort();
-                    exportController = null;
+        } else {
+            // Обновляем сообщение и кнопку, если элемент уже существует
+            const messageEl = loadingElement.querySelector('#loading-message');
+            if (messageEl) messageEl.textContent = message;
+
+            const cancelBtn = loadingElement.querySelector('#cancel-loading-btn');
+
+            if (onCancel) {
+                if (!cancelBtn) {
+                    const cancelBtnNew = document.createElement('button');
+                    cancelBtnNew.id = 'cancel-loading-btn';
+                    cancelBtnNew.className = 'btn btn-sm btn-outline-light mt-2';
+                    cancelBtnNew.textContent = buttonText;
+                    loadingElement.querySelector('.loading-overlay').appendChild(cancelBtnNew);
+                } else {
+                    cancelBtn.textContent = buttonText;
+                    cancelBtn.style.display = '';
                 }
-            });
+            } else if (cancelBtn) {
+                cancelBtn.style.display = 'none';
+            }
         }
-        
-        // Show the loading element
+
+        // Добавляем обработчик для кнопки отмены
+        const cancelBtn = loadingElement.querySelector('#cancel-loading-btn');
+
+        if (cancelBtn) {
+            // Удаляем все существующие обработчики
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            if (cancelBtn.parentNode) {
+                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            }
+
+            if (onCancel) {
+                newCancelBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    onCancel();
+                    this.hide();
+                });
+            }
+        }
+
+        // Показываем индикатор загрузки
         loadingElement.style.display = 'block';
         document.body.style.overflow = 'hidden';
     },
-    
+
+    /**
+     * Скрывает индикатор загрузки
+     */
     hide: function() {
-        const loadingElement = document.getElementById('export-loading');
+        const loadingElement = document.getElementById('loading-overlay-component');
         if (loadingElement) {
             loadingElement.style.display = 'none';
             document.body.style.overflow = '';
+        }
+    },
+
+    /**
+     * Обновляет сообщение в индикаторе загрузки
+     * @param {string} message - Новое сообщение
+     */
+    updateMessage: function(message) {
+        const loadingElement = document.getElementById('loading-overlay-component');
+        if (loadingElement) {
+            const messageEl = loadingElement.querySelector('#loading-message');
+            if (messageEl) {
+                messageEl.textContent = message;
+            }
         }
     }
 };
@@ -1769,14 +1832,29 @@ const loadingState = {
 let exportController = null;
 
 async function exportChatHistory(roomId) {
-    // Show loading state
-    loadingState.show();
-    
+    if (!roomId) {
+        showNotification('Ошибка: ID комнаты не указан', 'error');
+        return;
+    }
+
+    // Показываем индикатор загрузки с возможностью отмены
+    loadingState.show({
+        message: 'Экспорт истории чата...',
+        buttonText: 'Отменить',
+        onCancel: () => {
+            if (exportController) {
+                exportController.abort();
+                exportController = null;
+                showNotification('Экспорт отменен', 'info');
+            }
+        }
+    });
+
     try {
-        // Create a new AbortController for this request
+        // Создаем новый AbortController для этого запроса
         exportController = new AbortController();
         const signal = exportController.signal;
-        
+
         const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/export`, {
             headers: {
                 'X-User-Id': elements.userId
@@ -1789,35 +1867,49 @@ async function exportChatHistory(roomId) {
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
+        // Обрабатываем ответ
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+
+        // Получаем имя файла из заголовков или используем стандартное
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `chat_history_${roomId}.txt`;
+
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename=\"(.+)\"/i);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        // Создаем URL и ссылку для скачивания
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `chat_history_${roomId}.txt`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
-        
-        // Cleanup
+
+        // Очищаем ресурсы
         setTimeout(() => {
-            window.URL.revokeObjectURL(url);
+            URL.revokeObjectURL(url);
             a.remove();
         }, 100);
 
         showNotification('История чата успешно экспортирована', 'success');
     } catch (error) {
-        // Don't show error if the request was aborted
+        // Не показываем ошибку, если запрос был отменен
         if (error.name !== 'AbortError') {
-            console.error('Export error:', error);
+            console.error('Ошибка экспорта:', error);
             showNotification('Ошибка при экспорте истории: ' + (error.message || 'Неизвестная ошибка'), 'error');
         }
     } finally {
         loadingState.hide();
         exportController = null;
-    }
 
-    // Закрываем сайдбар в мобильной версии
-    if (window.innerWidth < 768 && window.sidebarManager) {
-        setTimeout(() => window.sidebarManager.close(), 150);
+        // Закрываем сайдбар в мобильной версии
+        if (window.innerWidth < 768 && window.sidebarManager) {
+            setTimeout(() => window.sidebarManager.close(), 150);
+        }
     }
 }
 
