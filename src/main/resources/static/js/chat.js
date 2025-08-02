@@ -236,12 +236,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
     groupElement.className = 'chat-group';
     groupElement.setAttribute('data-group', groupId);
 
-    // Проверяем, должна ли группа быть свернута из localStorage
-    const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
-    if (collapsedGroups.includes(groupId)) {
-        groupElement.classList.add('collapsed');
-    }
-
     // Заголовок группы
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
@@ -343,27 +337,6 @@ function togglePin(roomId) {
     
     localStorage.setItem('pinnedRooms', JSON.stringify(pinnedRooms));
     renderRoomsList(); // Перерисовываем список
-}
-
-// Функция для сворачивания/разворачивания групп чатов
-function toggleGroupCollapse(groupElement, groupId) {
-    // Переключаем класс collapsed для анимации
-    groupElement.classList.toggle('collapsed');
-
-    // Сохраняем состояние свернутых групп в localStorage
-    const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
-    const isCollapsed = groupElement.classList.contains('collapsed');
-
-    if (isCollapsed && !collapsedGroups.includes(groupId)) {
-        collapsedGroups.push(groupId);
-    } else if (!isCollapsed && collapsedGroups.includes(groupId)) {
-        const index = collapsedGroups.indexOf(groupId);
-        if (index > -1) {
-            collapsedGroups.splice(index, 1);
-        }
-    }
-
-    localStorage.setItem('collapsedGroups', JSON.stringify(collapsedGroups));
 }
 
 async function switchRoom(room) {
@@ -590,7 +563,7 @@ async function sendMessage() {
     
     state.messages.push(tempMessage);
     renderMessages();
-    debounce(scrollToBottom(true), 1000);
+    scrollToBottom(true);
 
     try {
         if (!state.currentRoom) throw new Error('No current room selected');
@@ -662,7 +635,7 @@ async function sendMessage() {
                 } else {
                     state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
                     window.dispatchEvent(new CustomEvent('messageSent'));
-                    renderMessages();
+                    //renderMessages();
                     scrollToBottom(true);
                 }
                 elements.stopButton.classList.add('d-none');
@@ -893,7 +866,6 @@ function debounce(func, wait) {
     };
 }
 
-// Модифицированная функция showFilePreviews
 const showFilePreviews = debounce((files) => {
     if (!elements.filePreview) return;
 
@@ -1084,11 +1056,8 @@ const typingIndicator = {
                     } else {
                         chatContainer.appendChild(this.container);
                     }
-                    
-                    console.log('Typing indicator initialized successfully');
                     return true;
                 }
-                
                 console.warn('Could not find a suitable container for the typing indicator');
                 return false;
             }
@@ -1202,13 +1171,6 @@ const voiceInput = {
         const voiceBtn = document.getElementById('voiceInputBtn');
         if (voiceBtn) {
             voiceBtn.classList.remove('recording');
-        }
-        
-        // Show notification when stopping
-        if (this.finalTranscript) {
-            showNotification('Диктовка завершена', 'success');
-        } else {
-            showNotification('Диктовка отменена', 'info');
         }
     },
     
@@ -2056,7 +2018,6 @@ async function exportChatHistory(roomId) {
     }
 }
 
-// Enhanced renderMessages function with image click handlers
 function renderMessages() {
     if (!elements.chatMessages) return;
 

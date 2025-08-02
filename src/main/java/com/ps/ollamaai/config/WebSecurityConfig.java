@@ -68,21 +68,6 @@ public class WebSecurityConfig {
     public PersistentTokenRepository persistentTokenRepository() {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
-
-        //todo добавить миграцию
-        // Проверка существования таблицы persistent_logins
-        try (var connection = dataSource.getConnection()) {
-            var metaData = connection.getMetaData();
-            try (var resultSet = metaData.getTables(null, null,
-                    "persistent_logins", new String[] {"TABLE"})) {
-                if (!resultSet.next()) {
-                    tokenRepository.setCreateTableOnStartup(true);
-                }
-            }
-        } catch (Exception e) {
-            tokenRepository.setCreateTableOnStartup(true);
-        }
-
         return tokenRepository;
     }
 

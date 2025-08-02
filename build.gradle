@@ -37,7 +37,9 @@ dependencies {
     implementation 'org.webjars:webjars-locator-core:0.59'
 
     //DB
-    implementation("com.mysql:mysql-connector-j:9.3.0")
+    implementation 'com.mysql:mysql-connector-j:9.3.0'
+    implementation 'org.flywaydb:flyway-mysql'
+    implementation 'org.flywaydb:flyway-core'
     //implementation 'io.asyncer:r2dbc-mysql:1.4.1'
 
     //Utils
