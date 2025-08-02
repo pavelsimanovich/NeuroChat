@@ -8,9 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
         roomsList: document.getElementById('roomsList')
     };
 
-    console.log('Toggle button:', sidebarToggleBtn);
-    console.log('Mobile sidebar:', mobileSidebar);
-
     if (!sidebarToggleBtn || !mobileSidebar) {
         console.error('Sidebar elements not found');
         return;
@@ -33,14 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function openSidebar() {
         mobileSidebar.classList.add('show');
         overlay.style.display = 'block';
-        console.log('Sidebar opened');
     }
 
     // Функция закрытия сайдбара
     function closeSidebar() {
         mobileSidebar.classList.remove('show');
         overlay.style.display = 'none';
-        console.log('Sidebar closed');
     }
 
     // Функция переключения сайдбара
@@ -91,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 if (window.innerWidth < 768) {
-                    console.log('Room item clicked, closing sidebar');
                     setTimeout(() => closeSidebar(), 150);
                 }
             };
@@ -110,7 +104,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const isMenuButton = event.target.closest('.btn-menu') || event.target.closest('.room-context-menu-button');
 
         if (roomItem && !isMenuButton && window.innerWidth < 768) {
-            console.log('Room item clicked through delegation');
             setTimeout(() => closeSidebar(), 150);
         }
     });
@@ -120,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Обновление обработчиков при обновлении списка комнат
     document.addEventListener('roomsUpdated', function() {
-        console.log('Rooms updated, refreshing click handlers');
         setupRoomItemsListeners();
     });
 
@@ -182,7 +174,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (hasRoomItems) {
-                    console.log('Detected new room items, setting up listeners');
                     setupRoomItemsListeners();
                 }
             }
@@ -193,6 +184,4 @@ document.addEventListener('DOMContentLoaded', function() {
     if (elements.roomsList) {
         observer.observe(elements.roomsList, { childList: true, subtree: true });
     }
-
-    console.log('Sidebar manager initialized');
 });

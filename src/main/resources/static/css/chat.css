@@ -134,6 +134,15 @@ body {
     cursor: pointer;
 }
 
+.model-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+}
+
 .logout .btn-link:hover {
     color: var(--danger-color);
     background-color: rgba(220, 53, 69, 0.1);
@@ -1355,7 +1364,6 @@ pre[class*="language-"] {
 .model-status {
     display: flex;
     align-items: center;
-    gap: 8px;
     padding: 8px 12px;
     font-size: 14px;
     font-weight: 500;

@@ -26,7 +26,7 @@ public class IndexController {
         final var user = userService.findByEmail(currentUser.getUsername());
         model.addAttribute("modelName", ollamaService.getCurrentModelName());
         model.addAttribute("userId", user.getId());
-        model.addAttribute("userName", user.getFirstName());
+        model.addAttribute("userName", "%s %s".formatted(user.getFirstName(), user.getLastName()));
         return "home";
     }
 }
