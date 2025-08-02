@@ -46,9 +46,11 @@
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <label for="password" class="form-label">Пароль</label>
+                    <a th:href="@{/forgot-password}" class="forgot-password text-decoration-none">
+                        <i class="bi bi-question-circle me-1 small"></i>Забыли пароль?
+                    </a>
                 </div>
                 <input type="password" class="form-control" id="password" name="password" required>
-                <!--                    <a href="#" class="forgot-password">Забыли пароль?</a>-->
             </div>
 
             <div class="form-check mb-4">
