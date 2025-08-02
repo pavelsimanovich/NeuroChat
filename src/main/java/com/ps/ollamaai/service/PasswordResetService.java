@@ -1,0 +1,152 @@
+package com.ps.ollamaai.service;
+
+import com.ps.ollamaai.domain.PasswordResetToken;
+import com.ps.ollamaai.domain.User;
+import com.ps.ollamaai.repository.PasswordResetTokenRepository;
+import com.ps.ollamaai.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PasswordResetService {
+
+    private final UserRepository userRepository;
+    private final PasswordResetTokenRepository tokenRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public boolean createPasswordResetTokenForUser(String email) {
+        try {
+            Optional<User> userOptional = userRepository.findByEmail(email);
+            if (userOptional.isEmpty()) {
+                log.warn("Попытка восстановить пароль для несуществующего email: {}", email);
+                return false;
+            }
+
+            User user = userOptional.get();
+            
+            // Используем upsert подход вместо delete + insert
+            return createOrUpdatePasswordToken(user);
+            
+        } catch (Exception e) {
+            log.error("Ошибка при создании токена восстановления пароля для email: {}", email, e);
+            throw e;
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
+    protected boolean createOrUpdatePasswordToken(User user) {
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiryDate = LocalDateTime.now().plusHours(24);
+        
+        // Попытка найти существующий токен
+        Optional<PasswordResetToken> existingToken = tokenRepository.findByUser(user);
+        
+        PasswordResetToken resetToken;
+        if (existingToken.isPresent()) {
+            // Обновляем существующий токен
+            resetToken = existingToken.get();
+            resetToken.setToken(token);
+            resetToken.setExpiryDate(expiryDate);
+        } else {
+            // Создаем новый токен
+            resetToken = new PasswordResetToken(token, user, expiryDate);
+        }
+        
+        tokenRepository.save(resetToken);
+
+        // Отправляем email
+        String name = user.getFirstName() != null ? user.getFirstName() : "Пользователь";
+        emailService.sendPasswordResetEmail(user.getEmail(), token, name);
+
+        log.info("Токен восстановления пароля создан для пользователя: {}", user.getEmail());
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean validatePasswordResetToken(String token) {
+        try {
+            Optional<PasswordResetToken> tokenOptional = tokenRepository.findByToken(token);
+            if (tokenOptional.isEmpty()) {
+                log.warn("Попытка использовать несуществующий токен восстановления: {}", token);
+                return false;
+            }
+
+            PasswordResetToken resetToken = tokenOptional.get();
+            if (resetToken.isExpired()) {
+                // Удаление просроченного токена в отдельной транзакции
+                deleteExpiredTokenAsync(resetToken);
+                log.warn("Попытка использовать просроченный токен восстановления: {}", token);
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.error("Ошибка при валидации токена: {}", token, e);
+            return false;
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void deleteExpiredTokenAsync(PasswordResetToken token) {
+        try {
+            tokenRepository.delete(token);
+        } catch (Exception e) {
+            log.warn("Не удалось удалить просроченный токен: {}", token.getToken(), e);
+        }
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public boolean resetPassword(String token, String newPassword) {
+        try {
+            Optional<PasswordResetToken> tokenOptional = tokenRepository.findByToken(token);
+            if (tokenOptional.isEmpty()) {
+                return false;
+            }
+
+            PasswordResetToken resetToken = tokenOptional.get();
+            if (resetToken.isExpired()) {
+                deleteExpiredTokenAsync(resetToken);
+                return false;
+            }
+
+            User user = resetToken.getUser();
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+
+            // Удаляем использованный токен
+            tokenRepository.delete(resetToken);
+
+            log.info("Пароль успешно изменен для пользователя: {}", user.getEmail());
+            return true;
+        } catch (Exception e) {
+            log.error("Ошибка при сбросе пароля для токена: {}", token, e);
+            throw e;
+        }
+    }
+
+    // Удаляем просроченные токены каждые 6 часов
+    @Scheduled(fixedRate = 6 * 60 * 60 * 1000)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void cleanupExpiredTokens() {
+        try {
+            log.info("Запуск плановой очистки просроченных токенов восстановления пароля");
+            tokenRepository.deleteExpiredTokens(LocalDateTime.now());
+        } catch (Exception e) {
+            log.error("Ошибка при очистке просроченных токенов", e);
+        }
+    }
+}

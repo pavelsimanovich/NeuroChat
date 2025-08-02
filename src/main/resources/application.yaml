@@ -36,16 +36,24 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username:
+    password:
+    properties:
+      "mail.smtp.auth": true
+      "mail.smtp.ssl.enable": true
 
+app:
+  chat-limit: 100
+  url: http://localhost:8080
+
+server:
+  http2:
+    enabled: true
 
 logging:
   level:
     org.springframework.web: debug
     org.hibernate: error
-
-app:
-  chat-limit: 100
-
-server:
-  http2:
-    enabled: true
