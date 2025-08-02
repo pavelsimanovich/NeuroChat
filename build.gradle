@@ -9,7 +9,7 @@ version = '0.0.1-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(24)
     }
 }
 
@@ -38,12 +38,12 @@ dependencies {
 
     //DB
     implementation 'com.mysql:mysql-connector-j:9.3.0'
-    implementation 'org.flywaydb:flyway-mysql'
-    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql:11.10.5'
+    implementation 'org.flywaydb:flyway-core:11.10.5'
     //implementation 'io.asyncer:r2dbc-mysql:1.4.1'
 
     //Utils
-    implementation 'org.apache.commons:commons-lang3:3.17.0'
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
