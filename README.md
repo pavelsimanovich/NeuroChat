@@ -30,7 +30,7 @@ https://huggingface.co/
 - Spring Security: Provides authentication and authorization.
 - Spring AI: Ollama API integration layer, AI response processing. https://spring.io/projects/spring-ai
 
-## ☕ Java 21
+## ☕ Java 24
 
 -  Programming language for the application.
 

@@ -624,4 +624,3 @@ document.head.appendChild(searchStyles);
 
 // Настраиваем обработчики событий
 setupEventListeners();
-document.head.appendChild(style);
