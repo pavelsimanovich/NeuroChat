@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
     <link th:href="@{/css/lib/prism.css}" rel="stylesheet"/>
     <link th:href="@{/css/chat.css}" rel="stylesheet"/>
+    <link th:href="@{/css/sidebar-resize.css}" rel="stylesheet"/>
         <style>
             .transition-all {
                 transition: all 0.2s ease-in-out;
@@ -33,10 +34,10 @@
 <input type="hidden" id="modelName" th:value="${modelName}">
 
 <div class="container-fluid">
-    <div class="row">
+    <div class="row position-relative">
         <!-- Кнопка переключения сайдбара перенесена в заголовок чата -->
         <!-- Modern Sidebar -->
-        <div class="col-md-3 sidebar" id="mobileSidebar">
+        <div class="sidebar" id="mobileSidebar">
             <div class="sidebar-header">
                 <div class="d-flex justify-content-between align-items-center w-100">
                     <h4 class="mb-0">AI Assistant</h4>
@@ -88,8 +89,13 @@
 
         </div>
 
+        <!-- Разделитель для изменения размера (ресайзер) -->
+        <div id="sidebarResizer" class="sidebar-resizer" title="Изменить размер панели">
+            <div class="resizer-handle"></div>
+        </div>
+
         <!-- Основная область чата -->
-        <div class="col-md-9 chat-area">
+        <div class="chat-area">
             <div class="chat-header d-flex justify-content-between align-items-center">
                 <div class="w-100 d-flex align-items-center">
                     <button id="sidebarToggleBtn" class="btn d-md-none">
@@ -384,6 +390,7 @@
 <script type="text/javascript" th:src="@{/js/search.js}"></script>
 <script type="text/javascript" th:src="@{/js/theme-toggle.js}"></script>
 <script type="text/javascript" th:src="@{/js/user-settings.js}"></script>
+<script type="text/javascript" th:src="@{/js/sidebar-resize.js}"></script>
 <script type="text/javascript" th:src="@{/js/sidebar.js}"></script>
 </body>
 </html>

@@ -36,6 +36,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeSidebar() {
         mobileSidebar.classList.remove('show');
         overlay.style.display = 'none';
+
+        // Сбрасываем стили ширины на мобильных устройствах
+        if (window.innerWidth < 768) {
+            mobileSidebar.style.width = '';
+            // Безопасное обращение к элементам перед установкой свойств
+            const chatArea = document.querySelector('.chat-area');
+            if (chatArea) {
+                chatArea.style.marginLeft = '';
+                chatArea.style.width = '';
+            }
+        }
     }
 
     // Функция переключения сайдбара
@@ -156,7 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
         open: openSidebar,
         close: closeSidebar,
         toggle: toggleSidebar,
-        setupRoomItemsListeners: setupRoomItemsListeners
+        setupRoomItemsListeners: setupRoomItemsListeners,
+        // Интеграция с менеджером изменения размера
+        resetSize: function() {
+            if (window.sidebarResizeManager) {
+                window.sidebarResizeManager.resetToDefault();
+            }
+        }
     };
 
     // Настраиваем наблюдатель за изменениями в DOM для автоматического добавления обработчиков

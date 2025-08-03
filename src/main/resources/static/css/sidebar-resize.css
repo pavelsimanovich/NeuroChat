@@ -1,0 +1,104 @@
+/* Стили для изменения размера сайдбара */
+
+/* Основные стили сайдбара для поддержки изменения размера */
+.sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 25%; /* Начальная ширина */
+    z-index: 1020;
+    transition: transform 0.3s ease, width 0.1s ease;
+    min-width: 250px;
+}
+
+/* Стили для режима изменения размера */
+.sidebar-resizing {
+    cursor: col-resize !important; /* Принудительно меняем курсор на всей странице */
+    user-select: none; /* Предотвращаем выделение текста при изменении размера */
+}
+
+.sidebar-resizing * {
+    user-select: none !important; /* Предотвращаем выделение всех элементов */
+}
+
+/* Элемент для изменения размера */
+.sidebar-resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px; /* Ширина области захвата */
+    z-index: 1050;
+    cursor: col-resize;
+    background: transparent;
+    transition: background-color 0.2s ease;
+    display: none; /* По умолчанию скрыт */
+}
+
+.sidebar-resizer.visible {
+    display: block;
+}
+
+/* Визуальный индикатор в центре ресайзера */
+.resizer-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 40px;
+    border-radius: 2px;
+    background-color: rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease, height 0.2s ease;
+}
+
+.sidebar-resizer:hover .resizer-handle {
+    background-color: rgba(99, 102, 241, 0.5); /* Индикатор активности */
+    height: 80px; /* Увеличиваем размер при наведении */
+}
+
+.sidebar-resizing .resizer-handle {
+    background-color: rgba(99, 102, 241, 0.8); /* Яркий индикатор при перетаскивании */
+    height: 120px; /* Еще больше увеличиваем при перетаскивании */
+}
+
+/* Стили для темной темы */
+body.dark-theme .resizer-handle {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .sidebar-resizer:hover .resizer-handle {
+    background-color: rgba(139, 92, 246, 0.5);
+}
+
+body.dark-theme .sidebar-resizing .resizer-handle {
+    background-color: rgba(139, 92, 246, 0.8);
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 767.98px) {
+    .sidebar {
+        width: 280px !important; /* Фиксированная ширина для мобильных */
+        transform: translateX(-100%);
+        position: fixed;
+        min-width: unset;
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .chat-area {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .sidebar-resizer {
+        display: none !important;
+    }
+}
+
+/* Базовые стили для плавного перехода между режимами */
+.chat-area {
+    transition: margin-left 0.1s ease, width 0.1s ease;
+}
