@@ -160,9 +160,9 @@ prompt = no
 
 [req_distinguished_name]
 C = RU
-ST = Your-State
-L = Your-City
-O = Local Development
+ST = Belarus
+L = Minsk
+O = PS
 OU = Development
 CN = localhost
 
@@ -177,8 +177,10 @@ subjectAltName = @alt_names
 DNS.1 = localhost
 DNS.2 = *.localhost
 DNS.3 = 127.0.0.1
+DNS.4 = 213.184.227.203
 IP.1 = 127.0.0.1
-IP.2 = ::1
+IP.2 = 213.184.227.203
+IP.3 = ::1
 ```
 
 ### Генерация сертификата
