@@ -259,3 +259,26 @@ openssl verify -CAfile ~/local-ca/certs/ca.crt ~/local-ca/certs/server.crt
 ```
 /path/to/server.crt: OK
 ```
+
+
+
+
+
+### Использование mkcert (Самый простой)
+
+
+# macOS
+brew install mkcert
+
+# Linux
+wget -O mkcert https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
+chmod +x mkcert
+sudo mv mkcert /usr/local/bin/
+
+# Установите локальный CA
+mkcert -install
+
+# Создайте сертификат для localhost
+mkcert -pkcs12 -p12-file src/main/resources/keystore/keystore.p12 localhost 127.0.0.1 ::1
+
+# Установите пароль для keystore (по умолчанию "changeit")
