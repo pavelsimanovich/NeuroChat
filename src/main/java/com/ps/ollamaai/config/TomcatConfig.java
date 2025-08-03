@@ -39,20 +39,19 @@ public class TomcatConfig {
             }
         };
 
-        // Настройка протоколов и шифров для TLS
-        tomcat.addConnectorCustomizers(connector -> {
-            if (connector.getSecure()) {
-                connector.setProperty("sslProtocol", "TLS");
-                connector.setProperty("SSLEnabled", "true");
-                connector.setProperty("sslEnabledProtocols", "TLSv1.2,TLSv1.3");
-                connector.setProperty("ciphers", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384," +
-                        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
-                        "TLS_AES_256_GCM_SHA384," +
-                        "TLS_AES_128_GCM_SHA256");
-            }
-        });
-
         if (sslEnabled) {
+            // Настройка протоколов и шифров для TLS
+            tomcat.addConnectorCustomizers(connector -> {
+                if (connector.getSecure()) {
+                    connector.setProperty("sslProtocol", "TLS");
+                    connector.setProperty("SSLEnabled", "true");
+                    connector.setProperty("sslEnabledProtocols", "TLSv1.2,TLSv1.3");
+                    connector.setProperty("ciphers", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384," +
+                            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
+                            "TLS_AES_256_GCM_SHA384," +
+                            "TLS_AES_128_GCM_SHA256");
+                }
+            });
             tomcat.addAdditionalTomcatConnectors(redirectConnector());
         }
 
