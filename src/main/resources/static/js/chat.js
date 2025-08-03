@@ -5,7 +5,7 @@ const config = {
         enabled: true,
         threshold: 100 // pixels from bottom to consider user at the bottom
     },
-    apiBaseUrl: 'http://localhost:8080/api/chat',
+    apiBaseUrl: '/api/chat', // Относительный URL для работы на всех устройствах,
     theme: {
         LIGHT: 'light',
         DARK: 'dark',
