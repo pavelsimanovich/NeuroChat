@@ -55,15 +55,13 @@ app:
   url: http://localhost:8443
   security:
     remember-me-key: ${REMEMBER_ME_KEY:OlBQr5U8RXChrFpPG3oR89073kkib5YiUboIBcuBCMRBfVnffzgySCb8pRz71ePE}
-  encryption:
-    secret-key: ${ENCRYPTION_SECRET_KEY:2CHkAlJvGYP/mp63eIX2arDb/gzeWZzifYK5e4QcUMg=}
 
 server:
   http:
     port: 8080
   http2:
     enabled: true
-  port: 8443
+  port: 8443 #8080 если ssl.enabled = false
   ssl:
     enabled: true
     key-store: classpath:keystore/keystore.p12
