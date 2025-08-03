@@ -61,6 +61,8 @@ app:
     secret-key: ${ENCRYPTION_SECRET_KEY:2CHkAlJvGYP/mp63eIX2arDb/gzeWZzifYK5e4QcUMg=}
 
 server:
+  http:
+    port: 8080
   http2:
     enabled: true
   port: 8443

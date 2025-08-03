@@ -76,9 +76,25 @@ public class WebSecurityConfig {
         // Принудительное перенаправление на HTTPS если SSL включен
         if (sslEnabled) {
             http.requiresChannel(channel -> 
-                channel.requestMatchers(r -> r.getHeader("X-Forwarded-Proto") != null)
-                       .requiresSecure());
+                channel.anyRequest().requiresSecure());
+
+            // Добавляем флаг, чтобы куки передавались только по HTTPS
+            http.sessionManagement(session -> 
+                session.sessionFixation().migrateSession()
+                      .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
+            );
         }
+
+        // Настройка Content Security Policy
+        http.headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp
+                        .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                                + "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                                + "img-src 'self' data:; "
+                                + "font-src 'self' https://cdn.jsdelivr.net; "
+                                + "connect-src 'self';")
+                )
+        );
 
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();

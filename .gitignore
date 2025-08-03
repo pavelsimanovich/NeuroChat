@@ -35,3 +35,12 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Ignore all keystore files
+*.p12
+*.jks
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer

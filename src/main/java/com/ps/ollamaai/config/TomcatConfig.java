@@ -16,6 +16,12 @@ public class TomcatConfig {
     @Value("${server.ssl.enabled:false}")
     private boolean sslEnabled;
 
+    @Value("${server.port:8443}")
+    private int serverPort;
+
+    @Value("${server.http.port:8080}")
+    private int httpPort;
+
     @Bean
     public ServletWebServerFactory servletContainer() {
         TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory() {
@@ -33,6 +39,19 @@ public class TomcatConfig {
             }
         };
 
+        // Настройка протоколов и шифров для TLS
+        tomcat.addConnectorCustomizers(connector -> {
+            if (connector.getSecure()) {
+                connector.setProperty("sslProtocol", "TLS");
+                connector.setProperty("SSLEnabled", "true");
+                connector.setProperty("sslEnabledProtocols", "TLSv1.2,TLSv1.3");
+                connector.setProperty("ciphers", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384," +
+                        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
+                        "TLS_AES_256_GCM_SHA384," +
+                        "TLS_AES_128_GCM_SHA256");
+            }
+        });
+
         if (sslEnabled) {
             tomcat.addAdditionalTomcatConnectors(redirectConnector());
         }
@@ -43,9 +62,14 @@ public class TomcatConfig {
     private Connector redirectConnector() {
         Connector connector = new Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL);
         connector.setScheme("http");
-        connector.setPort(8080);
+        connector.setPort(httpPort);
         connector.setSecure(false);
-        connector.setRedirectPort(8443);
+        connector.setRedirectPort(serverPort);
+
+        // Дополнительные настройки коннектора для большей безопасности
+        connector.setXpoweredBy(false);
+        connector.setAllowTrace(false);
+
         return connector;
     }
 }
