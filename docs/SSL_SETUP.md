@@ -119,7 +119,7 @@ mkdir -p ~/local-ca/certs ~/local-ca/private
 openssl genrsa -out ~/local-ca/private/ca.key 4096
 
 # Создаем корневой сертификат CA (действительный 10 лет)
-openssl req -x509 -new -nodes -key ~/local-ca/private/ca.key -sha256 -days 3650 -out ~/local-ca/certs/ca.crt -subj "/C=RU/ST=Your-State/L=Your-City/O=Your-Org/OU=Development/CN=Local Development CA"
+openssl req -x509 -new -nodes -key ~/local-ca/private/ca.key -sha256 -days 3650 -out ~/local-ca/certs/ca.crt -subj "/C=RU/ST=Belarus/L=Minsk/O=PS/OU=Development/CN=Local Development CA"
 ```
 
 ## 2. Установка корневого сертификата в систему
@@ -167,13 +167,16 @@ OU = Development
 CN = localhost
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
-extendedKeyUsage = serverAuth
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth, clientAuth
 subjectAltName = @alt_names
+
 
 [alt_names]
 DNS.1 = localhost
 DNS.2 = *.localhost
+DNS.3 = 127.0.0.1
 IP.1 = 127.0.0.1
 IP.2 = ::1
 ```

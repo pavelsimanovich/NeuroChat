@@ -44,8 +44,6 @@ spring:
     properties:
       "mail.smtp.auth": true
       "mail.smtp.ssl.enable": true
-  security:
-    require-ssl: true
   session:
     cookie:
       secure: true # Куки только через HTTPS
