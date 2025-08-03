@@ -22,14 +22,17 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.style.right = '0';
     overlay.style.bottom = '0';
     overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    overlay.style.zIndex = '1030';
+    overlay.style.zIndex = '1029'; // Понижаем z-index, чтобы оверлей был ниже сайдбара
     overlay.style.display = 'none';
     document.body.appendChild(overlay);
 
     // Функция открытия сайдбара
     function openSidebar() {
         mobileSidebar.classList.add('show');
-        overlay.style.display = 'block';
+        // Небольшая задержка перед показом оверлея для плавности
+        setTimeout(() => {
+            overlay.style.display = 'block';
+        }, 10);
     }
 
     // Функция закрытия сайдбара
@@ -67,7 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
     sidebarToggleBtn.addEventListener('click', toggleSidebar);
 
     // Скрытие сайдбара при клике на оверлей
-    overlay.addEventListener('click', closeSidebar);
+    overlay.addEventListener('click', function(e) {
+        e.stopPropagation(); // Предотвращаем всплытие события
+        closeSidebar();
+    });
 
     // Закрывать сайдбар при клике за его пределами
     document.addEventListener('click', function(event) {

@@ -288,6 +288,7 @@ body {
         z-index: 1040;
         box-shadow: 2px 0 15px var(--shadow-medium);
         transition: left 0.3s ease-in-out;
+        pointer-events: auto; /* Гарантируем, что сайдбар получает события взаимодействия */
     }
 
     .sidebar.show {

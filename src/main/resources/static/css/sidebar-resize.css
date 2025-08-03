@@ -82,6 +82,7 @@ body.dark-theme .sidebar-resizing .resizer-handle {
         transform: translateX(-100%);
         position: fixed;
         min-width: unset;
+        z-index: 1031; /* Увеличиваем z-index сайдбара, чтобы он был выше оверлея */
     }
 
     .sidebar.show {

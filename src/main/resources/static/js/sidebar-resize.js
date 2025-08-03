@@ -1,6 +1,7 @@
 /**
  * Модуль для управления изменением размера сайдбара.
  * Обеспечивает интерактивное изменение ширины боковой панели путем перетаскивания разделителя.
+ * Поддерживает как mouse, так и touch события для работы на планшетах.
  */
 document.addEventListener('DOMContentLoaded', function() {
     // Основные элементы
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Применяем ширину
         applyWidths(savedWidth);
 
-        // Показываем ресайзер только на десктопах
+        // Показываем ресайзер только на устройствах с достаточной шириной экрана (включая планшеты)
         if (window.innerWidth >= 768) {
             resizer.classList.add('visible');
         } else {
@@ -74,6 +75,17 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem(STORAGE_KEY, sidebarWidth);
     }
 
+    // Получение координат из события (поддерживает как mouse, так и touch)
+    function getEventCoordinates(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        } else {
+            return { x: e.clientX, y: e.clientY };
+        }
+    }
+
     // Обработчики для изменения размера
     function initializeResizeEvents() {
         if (!resizer) return;
@@ -82,13 +94,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let startX;
         let startWidth;
 
-        // Начало перетаскивания
-        resizer.addEventListener('mousedown', function(e) {
-            // Только основная кнопка мыши (левая)
-            if (e.button !== 0) return;
+        // Функция начала изменения размера
+        function startResize(e) {
+            // Для mouse событий проверяем, что это левая кнопка
+            if (e.type === 'mousedown' && e.button !== 0) return;
 
             isResizing = true;
-            startX = e.clientX;
+            const coords = getEventCoordinates(e);
+            startX = coords.x;
             startWidth = parseInt(sidebar.offsetWidth);
 
             // Добавляем класс, который показывает, что идет изменение размера
@@ -101,23 +114,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
             e.preventDefault();
             e.stopPropagation();
-        });
+        }
 
-        // Перемещение мыши
-        document.addEventListener('mousemove', function(e) {
+        // Функция изменения размера
+        function doResize(e) {
             if (!isResizing) return;
 
+            const coords = getEventCoordinates(e);
             // Вычисляем новую ширину
-            const newWidth = startWidth + (e.clientX - startX);
+            const newWidth = startWidth + (coords.x - startX);
 
             // Проверяем ограничения
             if (newWidth >= MIN_SIDEBAR_WIDTH && newWidth <= MAX_SIDEBAR_WIDTH) {
                 applyWidths(newWidth);
             }
-        });
 
-        // Окончание перетаскивания
-        document.addEventListener('mouseup', function() {
+            e.preventDefault();
+        }
+
+        // Функция окончания изменения размера
+        function endResize(e) {
             if (isResizing) {
                 isResizing = false;
                 document.body.classList.remove('sidebar-resizing');
@@ -130,12 +146,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Сохраняем финальную ширину
                 localStorage.setItem(STORAGE_KEY, sidebar.offsetWidth);
             }
-        });
+        }
+
+        // Mouse события
+        resizer.addEventListener('mousedown', startResize);
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', endResize);
+
+        // Touch события для планшетов и мобильных устройств
+        resizer.addEventListener('touchstart', startResize, { passive: false });
+        document.addEventListener('touchmove', doResize, { passive: false });
+        document.addEventListener('touchend', endResize);
+        document.addEventListener('touchcancel', endResize);
 
         // Двойной клик для сброса к значению по умолчанию
         resizer.addEventListener('dblclick', function() {
             const defaultWidth = Math.floor(container.offsetWidth * DEFAULT_WIDTH_PERCENT / 100);
             applyWidths(defaultWidth);
+        });
+
+        // Двойное касание для планшетов
+        let lastTouchTime = 0;
+        resizer.addEventListener('touchend', function(e) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTouchTime;
+            if (tapLength < 500 && tapLength > 0) {
+                const defaultWidth = Math.floor(container.offsetWidth * DEFAULT_WIDTH_PERCENT / 100);
+                applyWidths(defaultWidth);
+                e.preventDefault();
+            }
+            lastTouchTime = currentTime;
         });
     }
 
@@ -155,6 +195,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Определение типа устройства
+    function isTouchDevice() {
+        return 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+    }
+
     // Инициализация
     if (sidebar && resizer && chatArea && container) {
         // Начальная настройка
@@ -166,6 +211,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Обработка изменения размера окна
         window.addEventListener('resize', handleWindowResize);
 
+        // Дополнительные стили для touch устройств
+        if (isTouchDevice()) {
+            resizer.style.touchAction = 'none';
+            resizer.style.cursor = 'col-resize';
+        }
+
         // Экспортируем функции для использования в других модулях
         window.sidebarResizeManager = {
             initialize: initializeResizable,
@@ -173,7 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
             resetToDefault: function() {
                 const defaultWidth = Math.floor(container.offsetWidth * DEFAULT_WIDTH_PERCENT / 100);
                 applyWidths(defaultWidth);
-            }
+            },
+            isTouchDevice: isTouchDevice
         };
     }
 });
