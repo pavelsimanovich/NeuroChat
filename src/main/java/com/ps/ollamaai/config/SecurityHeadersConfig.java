@@ -25,11 +25,7 @@ public class SecurityHeadersConfig {
                 response.setHeader("X-Frame-Options", "DENY");
                 response.setHeader("X-XSS-Protection", "1; mode=block");
                 response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-                response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), interest-cohort=()");
                 response.setHeader("Access-Control-Allow-Origin", "*"); // Укажите конкретные домены в продакшне
-                response.setHeader("Feature-Policy", "accelerometer 'none'; camera 'none'; geolocation 'none'; "
-                        + "gyroscope 'none'; magnetometer 'none'; microphone 'none'; payment 'none'; usb 'none'");
-
                 filterChain.doFilter(request, response);
             }
         };
