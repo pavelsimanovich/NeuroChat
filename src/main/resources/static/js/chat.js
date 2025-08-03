@@ -1325,7 +1325,7 @@ async function handleDeleteRoom(roomId, title) {
             elements.currentRoomTitle.textContent = 'Выберите или создайте чат';
         }
 
-       // renderRoomsList();
+        renderRoomsList();
 
         // Switch to another room if available
         if (state.rooms.length > 0) {
