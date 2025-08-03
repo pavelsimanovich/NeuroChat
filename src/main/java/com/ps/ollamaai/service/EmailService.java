@@ -46,7 +46,7 @@ public class EmailService {
             String html = templateEngine.process(templateName, context);
 
             helper.setTo(to);
-            helper.setFrom("ai-assistant@gmail.com");
+            helper.setFrom(from);
             helper.setSubject(subject);
             helper.setText(html, true);
 
