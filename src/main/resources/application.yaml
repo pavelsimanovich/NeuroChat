@@ -44,14 +44,33 @@ spring:
     properties:
       "mail.smtp.auth": true
       "mail.smtp.ssl.enable": true
+  session:
+    cookie:
+      secure: true # Куки только через HTTPS
+      http-only: true # Защита от XSS
+      same-site: strict # Защита от CSRF
 
 app:
   chat-limit: 100
-  url: http://localhost:8080
+  url: http://localhost:8443
+  security:
+    remember-me-key: ${REMEMBER_ME_KEY:OlBQr5U8RXChrFpPG3oR89073kkib5YiUboIBcuBCMRBfVnffzgySCb8pRz71ePE}
 
 server:
+  http:
+    port: 8080
   http2:
     enabled: true
+  port: 8443 #8080 если ssl.enabled = false
+  ssl:
+    enabled: true
+    key-store: classpath:keystore/keystore.p12
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:password}
+    key-store-type: PKCS12
+    key-alias: ollama-ai
+    protocol: TLS
+    enabled-protocols: TLSv1.2,TLSv1.3
+    ciphers: TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
 
 logging:
   level:

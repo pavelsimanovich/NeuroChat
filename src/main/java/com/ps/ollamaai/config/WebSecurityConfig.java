@@ -1,6 +1,7 @@
 package com.ps.ollamaai.config;
 
 import com.ps.ollamaai.userdetails.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,6 +23,12 @@ public class WebSecurityConfig {
     private final DataSource dataSource;
     private final CustomUserDetailsService userDetailsService;
 
+    @Value("${server.ssl.enabled:false}")
+    private boolean sslEnabled;
+
+    @Value("${app.security.remember-me-key:ollama-ai-secret-key}")
+    private String rememberMeKey;
+
     public WebSecurityConfig(DataSource dataSource, CustomUserDetailsService userDetailsService) {
         this.dataSource = dataSource;
         this.userDetailsService = userDetailsService;
@@ -32,7 +39,7 @@ public class WebSecurityConfig {
         http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/", "/index", "/registration", "/saveUser",
-                                "/forgot-password", "/reset-password")
+                                "/forgot-password", "/reset-password", "/actuator/health")
                         .permitAll()
                         .anyRequest()
                         .authenticated()
@@ -49,22 +56,39 @@ public class WebSecurityConfig {
                         .tokenValiditySeconds(604800) // 7 дней
                         .userDetailsService(userDetailsService)
                         .rememberMeParameter("remember-me")
-                        .key("ollama-ai-secret-key") // уникальный ключ для подписи токенов
+                        .key(rememberMeKey)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/index?logout=true")
                         .deleteCookies("JSESSIONID", "remember-me")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
                         .permitAll()
                 )
-                .sessionManagement(session -> session.invalidSessionUrl("/index"));
+                .sessionManagement(session -> session
+                        .invalidSessionUrl("/index")
+                        .maximumSessions(3) // Максимум 3 сессии на пользователя
+                        .maxSessionsPreventsLogin(false)
+                        .expiredUrl("/index?expired=true")
+                );
+
+        // Принудительное перенаправление на HTTPS если SSL включен
+        if (sslEnabled) {
+            http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
+            http.sessionManagement(session ->
+                session.sessionFixation().migrateSession()
+                      .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
+            );
+        }
+
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(12); // Увеличиваем количество раундов для большей безопасности
     }
 
     @Bean
@@ -78,6 +102,7 @@ public class WebSecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring()
                 .requestMatchers("/resources/**", "/static/**",
-                        "/css/**", "/js/**", "/images/**", "/webjars/**");
+                        "/css/**", "/js/**", "/images/**", "/webjars/**", 
+                        "/favicon.ico", "/robots.txt");
     }
 }
