@@ -645,7 +645,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 19px 20px;
+    padding: 16px 20px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1639,9 +1639,8 @@ pre[class*="language-"] {
     transform: scale(1.1);
 }
 
-/* Enhanced input container with glassmorphism */
 .message-input {
-    padding: 16px 20px;
+    padding: 14px 20px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
