@@ -27,7 +27,7 @@ https://huggingface.co/
 - Spring Boot: Simplifies the configuration and deployment of the application, Embedded Tomcat server .
 - Spring Web + Flux: Facilitates the creation of RESTful web services and handles HTTP requests.
 - Spring Thymeleaf: Server-side templating, Spring MVC binding .
-- Spring Security: Provides authentication and authorization.
+- Spring Security: Provides authentication and authorization. 
 - Spring AI: Ollama API integration layer, AI response processing. https://spring.io/projects/spring-ai
 
 ## ☕ Java 24
@@ -90,6 +90,8 @@ https://huggingface.co/
 - **User Settings**
   - Lite and Dark Mode
   - User can add a System Prompt
+  - Users can choose an available Model from the list
+- **SSL Encryption**
 
 ### P.S.
-- Project in development and can contain errors, some part of code should be rewritten.
+- Project in development and can contain errors, some parts of code should be rewritten.
