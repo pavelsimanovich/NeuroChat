@@ -749,16 +749,6 @@ function setupFileUpload() {
     const messageInputContainer = elements.messageInput.closest('.message-input');
     if (!messageInputContainer) return;
 
-    // // Клонируем элементы для предотвращения дублирования обработчиков
-    // const newUploadButton = elements.uploadButton.cloneNode(true);
-    // const newFileInput = elements.fileInput.cloneNode(true);
-    //
-    // elements.uploadButton.parentNode?.replaceChild(newUploadButton, elements.uploadButton);
-    // elements.fileInput.parentNode?.replaceChild(newFileInput, elements.fileInput);
-    //
-    // elements.uploadButton = newUploadButton;
-    // elements.fileInput = newFileInput;
-
     // Обработчик клика по кнопке загрузки
     elements.uploadButton.addEventListener('click', (e) => {
         e.preventDefault();
@@ -2342,9 +2332,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (elements.uploadButton) {
-            elements.uploadButton.addEventListener('click', () => elements.fileInput.click());
-        }
 
         imageModal.init();
 

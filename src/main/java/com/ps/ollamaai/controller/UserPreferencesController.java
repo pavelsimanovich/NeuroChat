@@ -1,6 +1,6 @@
 package com.ps.ollamaai.controller;
 
-import com.ps.ollamaai.domain.UserPreferencies;
+import com.ps.ollamaai.dto.UserPreferencesDTO;
 import com.ps.ollamaai.service.UserPreferencesService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -8,27 +8,26 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/user/preferences")
 @AllArgsConstructor
 public class UserPreferencesController {
-
     private final UserPreferencesService userPreferencesService;
 
     @GetMapping
-    public ResponseEntity<UserPreferencies> getUserPreferences(@AuthenticationPrincipal UserDetails userDetails) {
-        return userPreferencesService.findByUserId(userDetails.getUsername())
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.ok(new UserPreferencies()));
+    public ResponseEntity<UserPreferencesDTO> getUserPreferences(@AuthenticationPrincipal UserDetails userDetails) {
+        UserPreferencesDTO dto = userPreferencesService.getUserPreferencesOrDefault(userDetails.getUsername());
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping
-    public ResponseEntity<UserPreferencies> saveUserPreferences(@AuthenticationPrincipal UserDetails userDetails,
-                                                              @RequestBody Map<String, String> payload) {
-        String systemPrompt = payload.get("systemPrompt");
-        UserPreferencies savedPreferences = userPreferencesService.createOrUpdatePreferences(userDetails.getUsername(), systemPrompt);
+    public ResponseEntity<UserPreferencesDTO> saveUserPreferences(@AuthenticationPrincipal UserDetails userDetails,
+                                                               @RequestBody UserPreferencesDTO payload) {
+        UserPreferencesDTO savedPreferences = userPreferencesService.createOrUpdatePreferences(
+            userDetails.getUsername(),
+            payload
+        );
+
         return ResponseEntity.ok(savedPreferences);
     }
 }

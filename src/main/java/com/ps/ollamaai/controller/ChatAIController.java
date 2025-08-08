@@ -2,7 +2,7 @@ package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.FileData;
 import com.ps.ollamaai.dto.ChunkResponseDTO;
-import com.ps.ollamaai.exceptions.GeneralFluxException;
+import com.ps.ollamaai.dto.UserPreferencesDTO;
 import com.ps.ollamaai.exceptions.LimitExceededException;
 import com.ps.ollamaai.service.ChatMessageService;
 import com.ps.ollamaai.service.ChatRoomService;
@@ -19,6 +19,7 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
+import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
@@ -38,6 +39,7 @@ import java.util.List;
 import static com.ps.ollamaai.dto.enums.ErrorType.LIMIT_EXCEEDED;
 import static com.ps.ollamaai.dto.enums.ErrorType.SERVER_ERROR;
 import static com.ps.ollamaai.llm.Prompts.CURRENT_PROMPT_INSTRUCTIONS;
+import static com.ps.ollamaai.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 
 @Slf4j
 @RestController
@@ -60,32 +62,43 @@ public class ChatAIController {
             Principal principal) {
 
         FileData fileData = getFileData(fileId);
+        String username = principal.getName();
 
-        return reactiveService.processChatMessageReactive(question, chatId, principal.getName(), fileData)
-                .flatMapMany(currentHistory -> {
-                    try {
-                        List<Message> messages = getMessages(question, fileData, currentHistory, principal.getName());
+        return reactiveService.processChatMessageReactive(question, chatId, username, fileData)
+                .flatMapMany(currentHistory -> loadUserPreferences(username)
+                        .flatMapMany(prefs -> {
+                            String systemPrompt = StringUtils.hasText(prefs.getSystemPrompt())
+                                    ? prefs.getSystemPrompt()
+                                    : PROMPT_GENERAL_INSTRUCTIONS;
+                            String preferredModel = prefs.getPreferredModel();
 
-                        Prompt prompt = new Prompt(messages);
+                            List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
+                            Prompt prompt = new Prompt(messages);
 
-                        return chatClient
-                                .prompt(prompt)
-                                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId))
-                                .stream()
-                                .content()
-                                .map(chunk -> new ChunkResponseDTO(chunk, false, null))
-                                .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
-                                .doOnComplete(() -> {
-                                    String response = chatMessageService.saveAiResponse(chatId);
-                                    // Обновляем currentHistory
-                                    currentHistory.add(new UserMessage(question));
-                                    currentHistory.add(new AssistantMessage(response));
-                                })
-                                .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
-                    } catch (Exception e) {
-                        throw new GeneralFluxException("Error building prompt: " + e.getMessage(), e);
-                    }
-                })
+                            var spec = chatClient
+                                    .prompt(prompt)
+                                    .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
+
+                            if (StringUtils.hasText(preferredModel)) {
+                                var options = OllamaOptions.builder()
+                                        .model(preferredModel)
+                                        .build();
+                                spec = spec.options(options);
+                            }
+
+                            return spec
+                                    .stream()
+                                    .content()
+                                    .map(chunk -> new ChunkResponseDTO(chunk, false, null))
+                                    .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
+                                    .doOnComplete(() -> {
+                                        String response = chatMessageService.saveAiResponse(chatId);
+                                        // Extend in-memory history for next turn
+                                        currentHistory.add(new UserMessage(question));
+                                        currentHistory.add(new AssistantMessage(response));
+                                    })
+                                    .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
+                        }))
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(LimitExceededException.class, e -> Mono.<Void>fromCallable(() -> {
                             chatRoomService.setInactive(chatId);
@@ -100,42 +113,43 @@ public class ChatAIController {
                 });
     }
 
-    private FileData getFileData(String fileId) {
-        FileData fileData;
-        if (StringUtils.hasText(fileId)) {
-            fileData = fileStorageService.getFile(fileId);
-        } else {
-            fileData = null;
-        }
-        return fileData;
+    private Mono<UserPreferencesDTO> loadUserPreferences(String username) {
+        return Mono.fromCallable(() -> userPreferencesService.getUserPreferencesOrDefault(username))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private List<Message> getMessages(String question, FileData fileData, List<Message> currentHistory, String userId) {
+    private FileData getFileData(String fileId) {
+        return StringUtils.hasText(fileId) ? fileStorageService.getFile(fileId) : null;
+    }
+
+    private List<Message> buildMessages(String question, FileData fileData, List<Message> currentHistory, String systemPrompt) {
         List<Message> messages = new ArrayList<>(currentHistory);
-        messages.add(new SystemMessage(userPreferencesService.getUserSystemPrompt(userId)));
-
-        UserMessage userMessage;
-        if (fileData != null) {
-            final FileData finalFileData = fileData;
-            ByteArrayResource resource = new ByteArrayResource(fileData.getData()) {
-                @Override
-                public String getFilename() {
-                    return finalFileData.getFileName();
-                }
-            };
-
-            Media imageMedia = Media.builder()
-                    .data(resource)
-                    .mimeType(MimeType.valueOf(finalFileData.getContentType()))
-                    .build();
-            userMessage = UserMessage.builder()
-                    .text(CURRENT_PROMPT_INSTRUCTIONS + question)
-                    .media(List.of(imageMedia))
-                    .build();
-        } else {
-            userMessage = new UserMessage(CURRENT_PROMPT_INSTRUCTIONS + question);
-        }
-        messages.add(userMessage);
+        messages.add(new SystemMessage(systemPrompt));
+        messages.add(buildUserMessage(question, fileData));
         return messages;
+    }
+
+    private UserMessage buildUserMessage(String question, FileData fileData) {
+        if (fileData == null) {
+            return new UserMessage(CURRENT_PROMPT_INSTRUCTIONS + question);
+        }
+
+        final FileData finalFileData = fileData;
+        ByteArrayResource resource = new ByteArrayResource(fileData.getData()) {
+            @Override
+            public String getFilename() {
+                return finalFileData.getFileName();
+            }
+        };
+
+        Media imageMedia = Media.builder()
+                .data(resource)
+                .mimeType(MimeType.valueOf(finalFileData.getContentType()))
+                .build();
+
+        return UserMessage.builder()
+                .text(CURRENT_PROMPT_INSTRUCTIONS + question)
+                .media(List.of(imageMedia))
+                .build();
     }
 }

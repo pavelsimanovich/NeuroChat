@@ -18,6 +18,10 @@ spring:
   ai:
     ollama:
       base-url: http://localhost:11434
+      init:
+        chat:
+          additional-models:
+            - qwen2.5-coder
       chat:
         options:
           model: gemma3:4b
