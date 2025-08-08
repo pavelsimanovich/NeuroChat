@@ -20,7 +20,8 @@ public class OllamaService {
         return ollamaChatModel.getDefaultOptions().getModel();
     }
 
-    private static final String PROMPT = """
+    public String generateChatName(String context) {
+        final String promptText = """
             Ты — нейросетевая модель, которая генерирует название чата на основе его последнего сообщения .
             Твоя задача — всегда возвращать только одно краткое название чата , длиной не более 50 символов .
             Название должно отражать суть сообщения, быть понятным и информативным.
@@ -29,9 +30,7 @@ public class OllamaService {
             
             Контекст:
             """;
-
-    public String generateChatName(String context) {
-        Prompt prompt = new Prompt(PROMPT.concat(context));
+        Prompt prompt = new Prompt(promptText.concat(context));
         return ollamaChatModel.call(prompt).getResult().getOutput().getText();
     }
 }

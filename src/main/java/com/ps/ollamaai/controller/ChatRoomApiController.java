@@ -98,7 +98,6 @@ public class ChatRoomApiController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.TEXT_PLAIN)
-                .contentLength(chatContent.length())
                 .body(resource);
     }
 }

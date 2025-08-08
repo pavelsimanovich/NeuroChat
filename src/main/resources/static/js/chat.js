@@ -1,6 +1,11 @@
 // Конфигурация
 const config = {
-    apiBaseUrl: 'http://localhost:8080/api/chat',
+    // Auto-scroll configuration
+    autoScroll: {
+        enabled: true,
+        threshold: 100 // pixels from bottom to consider user at the bottom
+    },
+    apiBaseUrl: '/api/chat', // Относительный URL для работы на всех устройствах,
     theme: {
         LIGHT: 'light',
         DARK: 'dark',
@@ -28,9 +33,9 @@ const elements = (function() {
         sendButton: document.getElementById('sendMessageBtn'),
         stopButton: document.getElementById('stopGenerationBtn'),
         createRoomBtn: document.getElementById('createRoomBtn'),
-        roomTitleInput: document.getElementById('roomTitleInput'),
         userId: document.getElementById('userId')?.value || '',
         userName: document.getElementById('userName')?.value || 'User',
+        limitMessages: document.getElementById('limitMessages'),
         fileInput: null,
         filePreview: null,
         uploadButton: null
@@ -84,7 +89,6 @@ const elements = (function() {
                 });
             }
         }
-
         return elements;
     }
     return init();
@@ -225,13 +229,55 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
     groupElement.className = 'chat-group';
     groupElement.setAttribute('data-group', groupId);
 
+    // Применяем сохраненное состояние сворачивания группы
+    try {
+        const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+        if (Array.isArray(collapsedGroups) && collapsedGroups.includes(groupId)) {
+            groupElement.classList.add('collapsed');
+        }
+    } catch (e) {}
+
     // Заголовок группы
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
+    headerElement.setAttribute('role', 'button');
+    headerElement.setAttribute('tabindex', '0');
+    headerElement.setAttribute('aria-expanded', groupElement.classList.contains('collapsed') ? 'false' : 'true');
     headerElement.innerHTML = `
-        <i class="bi ${iconClass}"></i>
-        <span>${title}</span>
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi ${iconClass}"></i>
+            <span>${title}</span>
+        </div>
+        <i class="bi bi-chevron-down group-chevron" aria-hidden="true"></i>
     `;
+
+    // Обработчики для сворачивания/разворачивания конкретной группы
+    const toggleGroup = () => {
+        const willCollapse = !groupElement.classList.contains('collapsed');
+        groupElement.classList.toggle('collapsed');
+        headerElement.setAttribute('aria-expanded', willCollapse ? 'false' : 'true');
+        try {
+            const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+            const set = new Set(Array.isArray(collapsedGroups) ? collapsedGroups : []);
+            if (willCollapse) {
+                set.add(groupId);
+            } else {
+                set.delete(groupId);
+            }
+            localStorage.setItem('collapsedGroups', JSON.stringify(Array.from(set)));
+        } catch (e) {}
+    };
+
+    headerElement.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleGroup();
+    });
+    headerElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleGroup();
+        }
+    });
 
     // Контент группы
     const contentElement = document.createElement('div');
@@ -273,6 +319,7 @@ function createRoomElement(room) {
     menuButton.title = 'Действия';
     menuButton.addEventListener('click', (e) => {
         e.stopPropagation();
+        e.preventDefault(); // Предотвращаем любую стандартную обработку клика
         showContextMenu(e, room.id, roomElement, pinned);
     });
 
@@ -283,10 +330,23 @@ function createRoomElement(room) {
     roomElement.appendChild(nameElement);
     roomElement.appendChild(actionsContainer);
 
+    // Обработчик клика на комнату для переключения
+    roomElement.addEventListener('click', (e) => {
+        // Проверяем, не является ли клик на кнопке меню
+        if (e.target.closest('.btn-menu')) {
+            return; // Пропускаем клик на кнопке меню
+        }
+
+        const room = state.rooms.find(r => r.id === roomElement.getAttribute('data-room-id'));
+        if (room) {
+            switchRoom(room);
+        }
+    });
+
     // Обработчик контекстного меню
     roomElement.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        showContextMenu(e, room.id, roomElement);
+        showContextMenu(e, room.id, roomElement, pinned);
     });
 
     return roomElement;
@@ -337,7 +397,11 @@ async function switchRoom(room) {
             elements.limitMessages.innerHTML = '';
         }
 
-        scrollToBottom();
+        scrollToBottom(true);
+            // Закрываем сайдбар в мобильной версии после выбора чата
+            if (window.innerWidth < 768 && window.sidebarManager) {
+                setTimeout(() => window.sidebarManager.close(), 150);
+            }
     } catch (error) {
         console.error('Error switching room:', error);
         showNotification('Ошибка загрузки', 'error');
@@ -381,16 +445,35 @@ function formatTime(timestamp) {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-function scrollToBottom() {
-    if (elements.chatMessages) {
+// Track if user has scrolled up
+let userScrolledUp = false;
+
+// Check if user is near the bottom of the chat
+function isNearBottom() {
+    if (!elements || !elements.chatMessages) return true;
+    const { scrollTop, scrollHeight, clientHeight } = elements.chatMessages;
+    return scrollHeight - scrollTop - clientHeight <= config.autoScroll.threshold;
+}
+
+// Scroll to bottom only if user is already at the bottom or auto-scroll is forced
+function scrollToBottom(force = false) {
+    if (!elements || !elements.chatMessages) return;
+    
+    if (force || !userScrolledUp || isNearBottom()) {
         elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+        userScrolledUp = false;
     }
 }
 
-/**
- * Creates a new chat room with a default name
- * @returns {Promise<Object|null>} The created room or null if failed
- */
+// Handle scroll events to detect user scroll up
+function setupScrollHandlers() {
+    if (!elements || !elements.chatMessages) return;
+    
+    elements.chatMessages.addEventListener('scroll', () => {
+        userScrolledUp = !isNearBottom();
+    });
+}
+
 async function createRoom() {
     try {
         const response = await fetch(
@@ -435,11 +518,7 @@ function getTempMessage(roomId, messageContent, idPrefix, userId) {
     };
 }
 
-/**
- * Generates a chat name based on the message content
- * @param {string} message - The message content to generate a name from
- * @param {string} roomId - The ID of the room to update
- */
+
 async function generateChatNameFromMessage(message, roomId) {
     try {
         const response = await fetch(
@@ -485,6 +564,9 @@ async function sendMessage() {
     if (!messageContent && !files.length) return;
 
     elements.sendButton.disabled = true;
+    if (voiceInput.isListening) {
+        voiceInput.stopListening();
+    }
 
     const roomId = state.currentRoom.id;
     const isFirstMessage = state.messages.length === 0;
@@ -516,7 +598,7 @@ async function sendMessage() {
     
     state.messages.push(tempMessage);
     renderMessages();
-    scrollToBottom();
+    scrollToBottom(true);
 
     try {
         if (!state.currentRoom) throw new Error('No current room selected');
@@ -524,9 +606,6 @@ async function sendMessage() {
         if (window.eventSource) {
             window.eventSource.close();
         }
-
-        if (elements.messageInput) elements.messageInput.value = '';
-        if (elements.fileInput) elements.fileInput.value = '';
 
         typingIndicator.show();
         if (elements.filePreview) {
@@ -540,11 +619,9 @@ async function sendMessage() {
         if (fileData) {
             url.searchParams.append('fileId', fileData.id);
         }
-        
-        // Clear message input and file input
+
         if (elements.messageInput) elements.messageInput.value = '';
         if (elements.fileInput) elements.fileInput.value = '';
-
 
         eventSource = new EventSource(url.toString());
         chatConnections[roomId] = eventSource;
@@ -586,16 +663,15 @@ async function sendMessage() {
                 isStreamActive = false;
                 stopStream(roomId);
 
-                //todo
                 if (message.error === 'LIMIT_EXCEEDED') {
                     handleLimitExceeded(uuid);
-                } if (message.error === 'SERVER_ERROR') {
+                } else if (message.error === 'SERVER_ERROR') {
                     onErrorSendMessage(message.content, roomId, tempMessage);
                 } else {
                     state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
                     window.dispatchEvent(new CustomEvent('messageSent'));
-                    renderMessages();
-                    scrollToBottom();
+                    //renderMessages();
+                    scrollToBottom(true);
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
@@ -604,6 +680,7 @@ async function sendMessage() {
                 if (contentDiv) {
                     contentDiv.innerHTML = marked.parse(response);
                     Prism.highlightAllUnder(contentDiv);
+                    scrollToBottom();
                 }
             }
         };
@@ -657,9 +734,11 @@ function toggleStreamingUI(isStreaming) {
     }
 
     if (isStreaming) {
-        // Show stop button with smooth transition
+        // Show and activate stop button
         elements.stopButton.classList.add('active');
         elements.stopButton.disabled = false;
+        elements.stopButton.style.display = 'flex';
+        elements.stopButton.style.visibility = 'visible';
         
         // Disable send button and upload button during streaming
         elements.sendButton.disabled = true;
@@ -670,7 +749,7 @@ function toggleStreamingUI(isStreaming) {
             state.currentRoom.isStreaming = true;
         }
     } else {
-        // Hide stop button
+        // Deactivate stop button but keep it in the layout
         elements.stopButton.classList.remove('active');
         elements.stopButton.disabled = true;
         
@@ -682,7 +761,6 @@ function toggleStreamingUI(isStreaming) {
         if (state.currentRoom) {
             state.currentRoom.isStreaming = false;
         }
-        elements.stopButton.classList.add('d-none');
     }
 }
 
@@ -713,30 +791,11 @@ function setupFileUpload() {
     const messageInputContainer = elements.messageInput.closest('.message-input');
     if (!messageInputContainer) return;
 
-    // Клонируем элементы для предотвращения дублирования обработчиков
-    const newUploadButton = elements.uploadButton.cloneNode(true);
-    const newFileInput = elements.fileInput.cloneNode(true);
-
-    elements.uploadButton.parentNode?.replaceChild(newUploadButton, elements.uploadButton);
-    elements.fileInput.parentNode?.replaceChild(newFileInput, elements.fileInput);
-
-    elements.uploadButton = newUploadButton;
-    elements.fileInput = newFileInput;
-
     // Обработчик клика по кнопке загрузки
     elements.uploadButton.addEventListener('click', (e) => {
         e.preventDefault();
         elements.fileInput.click();
     });
-
-    // Обработчик изменения fileInput
-    const handleFileChange = () => {
-        if (elements.fileInput.files?.length) {
-            showFilePreviews(Array.from(elements.fileInput.files));
-        }
-    };
-    elements.fileInput.removeEventListener('change', handleFileChange);
-    elements.fileInput.addEventListener('change', handleFileChange);
 
     // Drag and drop
     const dragOverlay = createDragOverlay(messageInputContainer);
@@ -806,16 +865,6 @@ function setupFileUpload() {
         document.removeEventListener(event, handler);
         document.addEventListener(event, handler);
     });
-
-    const handleMessageSent = () => {
-        elements.fileInput.value = '';
-        elements.filePreview.innerHTML = '';
-        elements.filePreview.style.display = 'none';
-        updateSendButtonState();
-    };
-
-    window.removeEventListener('messageSent', handleMessageSent);
-    window.addEventListener('messageSent', handleMessageSent, { once: true });
 }
 
 function removeFile(index) {
@@ -842,7 +891,6 @@ function debounce(func, wait) {
     };
 }
 
-// Модифицированная функция showFilePreviews
 const showFilePreviews = debounce((files) => {
     if (!elements.filePreview) return;
 
@@ -1033,11 +1081,8 @@ const typingIndicator = {
                     } else {
                         chatContainer.appendChild(this.container);
                     }
-                    
-                    console.log('Typing indicator initialized successfully');
                     return true;
                 }
-                
                 console.warn('Could not find a suitable container for the typing indicator');
                 return false;
             }
@@ -1069,6 +1114,181 @@ const typingIndicator = {
         if (container) {
             container.scrollTop = container.scrollHeight;
         }
+    }
+};
+
+// Voice input functionality
+const voiceInput = {
+    isListening: false,
+    recognition: null,
+    finalTranscript: '',
+    
+    init() {
+        // Check for browser support
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            this.showUnsupportedMessage();
+            return;
+        }
+        
+        // Initialize speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.maxAlternatives = 1;
+        this.recognition.lang = 'ru-RU';
+        
+        // Setup event handlers
+        this.recognition.onstart = this.onStart.bind(this);
+        this.recognition.onresult = this.onResult.bind(this);
+        this.recognition.onerror = this.onError.bind(this);
+        this.recognition.onend = this.onEnd.bind(this);
+        
+        // Add click handler to the voice input button
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', this.toggleListening.bind(this));
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.code === 'Space') {
+                e.preventDefault();
+                this.toggleListening();
+            }
+        });
+    },
+    
+    toggleListening() {
+        if (this.isListening) {
+            this.stopListening();
+        } else {
+            this.startListening();
+        }
+    },
+    
+    startListening() {
+        if (!this.recognition) return;
+        
+        this.finalTranscript = '';
+        this.isListening = true;
+        document.getElementById('voiceInputBtn').classList.add('recording');
+        
+        try {
+            this.recognition.start();
+        } catch (error) {
+            console.error('Error starting speech recognition:', error);
+            this.showError('Ошибка при запуске распознавания речи');
+            this.stopListening();
+        }
+    },
+    
+    stopListening() {
+        if (!this.recognition) return;
+        
+        this.isListening = false;
+        
+        try {
+            this.recognition.stop();
+        } catch (error) {
+            console.error('Error stopping speech recognition:', error);
+        }
+        
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        if (voiceBtn) {
+            voiceBtn.classList.remove('recording');
+        }
+    },
+    
+    onStart() {
+        // Only clear on first start, not on auto-restart
+        if (!this.isListening) {
+            this.finalTranscript = '';
+            showNotification('Диктуйте... (нажмите еще раз для остановки)', 'info');
+        }
+        this.isListening = true;
+    },
+    
+    onResult(event) {
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            const transcript = result[0].transcript;
+            
+            if (result.isFinal) {
+                // Add space between phrases for better readability
+                this.finalTranscript = (this.finalTranscript + ' ' + transcript).trim();
+                // Reset interim transcript when we get a final result
+                interimTranscript = '';
+            } else {
+                // Show interim results as they come in
+                interimTranscript = transcript;
+            }
+        }
+        
+        // Update the input field with both final and interim results
+        const input = document.getElementById('messageInput');
+        const displayText = (this.finalTranscript + ' ' + interimTranscript).trim();
+        input.value = displayText;
+        
+        // Move cursor to the end of the input
+        input.focus();
+        input.setSelectionRange(displayText.length, displayText.length);
+        
+        // Trigger input event for any listeners
+        input.dispatchEvent(new Event('input'));
+    },
+    
+    // Clear the current transcription
+    clearTranscription() {
+        this.finalTranscript = '';
+        const input = document.getElementById('messageInput');
+        input.value = '';
+        input.dispatchEvent(new Event('input'));
+    },
+    
+    onError(event) {
+        console.error('Speech recognition error', event.error);
+        
+        let errorMessage = 'Ошибка распознавания речи';
+        if (event.error === 'not-allowed') {
+            errorMessage = 'Доступ к микрофону запрещен. Пожалуйста, разрешите доступ к микрофону в настройках браузера.';
+        } else if (event.error === 'audio-capture') {
+            errorMessage = 'Не удалось получить доступ к микрофону. Убедитесь, что микрофон подключен и настроен правильно.';
+        }
+        
+        this.showError(errorMessage);
+        this.stopListening();
+    },
+    
+    onEnd() {
+        if (this.isListening) {
+            try {
+                // Restart recognition if it was stopped unexpectedly
+                this.recognition.start();
+            } catch (e) {
+                console.error('Error restarting recognition:', e);
+                this.stopListening();
+            }
+        }
+    },
+    
+    showUnsupportedMessage() {
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        if (voiceBtn) {
+            voiceBtn.disabled = true;
+            voiceBtn.title = 'Голосовой ввод не поддерживается в вашем браузере';
+            voiceBtn.classList.add('tooltip');
+            
+            const tooltip = document.createElement('span');
+            tooltip.className = 'tooltiptext';
+            tooltip.textContent = 'Голосовой ввод поддерживается в последних версиях Chrome, Edge, Safari и других современных браузеров';
+            voiceBtn.appendChild(tooltip);
+        }
+    },
+    
+    showError(message) {
+        showNotification(message, 'error');
     }
 };
 
@@ -1127,7 +1347,6 @@ async function handleDeleteRoom(roomId, title) {
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
-        // Update state
         const wasCurrentRoom = state.currentRoom?.id === roomId;
         state.rooms = state.rooms.filter(room => room.id !== roomId);
 
@@ -1138,7 +1357,6 @@ async function handleDeleteRoom(roomId, title) {
             elements.currentRoomTitle.textContent = 'Выберите или создайте чат';
         }
 
-        // Update UI
         renderRoomsList();
 
         // Switch to another room if available
@@ -1151,47 +1369,75 @@ async function handleDeleteRoom(roomId, title) {
             const welcomeScreen = document.createElement('div');
             welcomeScreen.id = 'welcomeScreen';
             welcomeScreen.className = 'h-100 d-flex flex-column align-items-center justify-content-center text-center p-4';
-            welcomeScreen.style.maxWidth = '700px';
+            welcomeScreen.style.maxWidth = '800px';
             welcomeScreen.style.margin = '0 auto';
             welcomeScreen.style.display = 'flex';
 
             welcomeScreen.innerHTML = `
-                <div class="mb-4" style="width: 120px; height: 120px; background-color: #f0f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #4f46e5;"></i>
+                <div class="mb-4" style="width: 130px; height: 130px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);">
+                    <i class="bi bi-robot" style="font-size: 3.5rem; color: white;"></i>
                 </div>
-                <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
-                <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
-                <button id="createRoomBtn1" class="btn btn-primary" onclick="createRoom()">
-                    <i class="bi bi-plus-lg me-2"></i>Новый чат
+                <h3 class="mb-3 fw-bold">Добро пожаловать в AI Чат-ассистент</h3>
+                <p class="text-muted mb-4 fs-5">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
+                <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm" onclick="createRoom()">
+                    <i class="bi bi-plus-lg me-2"></i>Начать новый диалог
                 </button>
                 <div class="mt-5 pt-4 border-top w-100">
-                    <h6 class="mb-3">Попробуйте спросить:</h6>
-                    <div class="row g-3">
+                    <h5 class="mb-4">Что я могу для вас сделать:</h5>
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
-                            onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения?')">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?')">
                                 <div class="card-body">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
-                                            <i class="bi bi-lightbulb text-primary"></i>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-lightbulb-fill text-primary"></i>
                                         </div>
-                                        <h6 class="mb-0">Идеи для проекта</h6>
+                                        <h6 class="mb-0 fw-bold">Идеи для разработки</h6>
                                     </div>
-                                    <p class="text-muted small mb-0">Какие есть интересные идеи для веб-приложения?</p>
+                                    <p class="text-muted mb-0">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
                                 </div>
                             </div>
                         </div>
-                      <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer" 
-                               onclick="setExampleQuestion('Как оптимизировать SQL-запрос?')"">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?')">
                                 <div class="card-body">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="bg-success bg-opacity-10 p-2 rounded me-2">
-                                            <i class="bi bi-code-slash text-success"></i>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-code-square text-success"></i>
                                         </div>
-                                        <h6 class="mb-0">Помощь с кодом</h6>
+                                        <h6 class="mb-0 fw-bold">Оптимизация кода</h6>
                                     </div>
-                                    <p class="text-muted small mb-0">Как оптимизировать SQL-запрос?</p>
+                                    <p class="text-muted mb-0">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?')">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-gear-fill text-info"></i>
+                                        </div>
+                                        <h6 class="mb-0 fw-bold">Архитектура приложений</h6>
+                                    </div>
+                                    <p class="text-muted mb-0">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                 onclick="setExampleQuestion('Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория')">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+                                            <i class="bi bi-file-earmark-code-fill text-warning"></i>
+                                        </div>
+                                        <h6 class="mb-0 fw-bold">Примеры кода</h6>
+                                    </div>
+                                    <p class="text-muted mb-0">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
                                 </div>
                             </div>
                         </div>
@@ -1226,20 +1472,135 @@ async function handleDeleteRoom(roomId, title) {
 
 async function confirmDeleteChat(title) {
     const result = await Swal.fire({
-        title: 'Подтверждение удаления',
-        html: `Вы уверены, что хотите удалить чат <b>"${title}"</b>?`,
-        icon: 'warning',
+        title: '<span class="delete-title">Подтверждение удаления</span>',
+        html: `<div class="delete-message">
+                <div class="delete-icon-container">
+                    <i class="bi bi-trash-fill delete-icon-animated"></i>
+                </div>
+                <p>Вы уверены, что хотите удалить чат</p>
+                <p class="chat-title">«${title}»</p>
+                <p class="delete-warning">Это действие нельзя будет отменить</p>
+              </div>`,
+        icon: null,
         showCancelButton: true,
-        confirmButtonText: 'Да, удалить',
-        cancelButtonText: 'Отмена',
+        confirmButtonText: '<i class="bi bi-trash me-1"></i> Удалить',
+        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
+        cancelButtonColor: '#6c757d',
         reverseButtons: true,
         backdrop: true,
+        customClass: {
+            container: 'delete-dialog-container',
+            popup: 'delete-dialog-popup',
+            title: 'delete-dialog-title',
+            confirmButton: 'btn-delete-confirm',
+            cancelButton: 'btn-delete-cancel',
+            actions: 'delete-dialog-actions'
+        },
+        buttonsStyling: true,
         allowOutsideClick: false,
-        showClass: { popup: 'animate__animated animate__fadeInDown' },
-        hideClass: { popup: 'animate__animated animate__fadeOutUp' }
+        showClass: { 
+            popup: 'animate__animated animate__fadeInDown animate__faster' 
+        },
+        hideClass: { 
+            popup: 'animate__animated animate__fadeOutUp animate__faster' 
+        },
+        didOpen: (modal) => {
+            // Добавляем стили для красивого отображения диалога
+            const style = document.createElement('style');
+            style.textContent = `
+                .delete-dialog-container {
+                    z-index: 1060;
+                }
+                .delete-dialog-popup {
+                    border-radius: 16px;
+                    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-color);
+                    padding: 24px;
+                    max-width: 400px;
+                }
+                .delete-title {
+                    font-weight: 600;
+                    font-size: 1.25rem;
+                    margin-bottom: 0;
+                    color: var(--danger-color);
+                }
+                .delete-message {
+                    margin: 20px 0;
+                    text-align: center;
+                }
+                .delete-icon-container {
+                    margin-bottom: 16px;
+                }
+                .delete-icon-animated {
+                    font-size: 3rem;
+                    color: var(--danger-color);
+                    animation: shake 0.5s ease-in-out 0.2s;
+                    display: inline-block;
+                }
+                .chat-title {
+                    font-weight: 600;
+                    font-size: 1.1rem;
+                    margin: 8px 0;
+                    color: var(--text-primary);
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .delete-warning {
+                    margin-top: 16px;
+                    font-size: 0.85rem;
+                    color: var(--text-muted);
+                }
+                .delete-dialog-actions {
+                    margin-top: 16px;
+                    gap: 12px;
+                }
+                .btn-delete-confirm {
+                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+                    transition: all 0.2s ease;
+                    border-radius: 8px;
+                    font-weight: 500;
+                }
+                .btn-delete-confirm:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.5);
+                }
+                .btn-delete-confirm:active {
+                    transform: translateY(0);
+                }
+                .btn-delete-cancel {
+                    border-radius: 8px;
+                    transition: all 0.2s ease;
+                    font-weight: 500;
+                }
+                .btn-delete-cancel:hover {
+                    transform: translateY(-2px);
+                }
+                @keyframes shake {
+                    0%, 100% { transform: rotate(0); }
+                    20% { transform: rotate(-10deg); }
+                    40% { transform: rotate(10deg); }
+                    60% { transform: rotate(-10deg); }
+                    80% { transform: rotate(10deg); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Добавляем эффект при открытии
+            setTimeout(() => {
+                const icon = modal.querySelector('.delete-icon-animated');
+                if (icon) icon.style.animation = 'shake 0.5s ease-in-out';
+            }, 200);
+
+            // Убираем стили при закрытии
+            modal.addEventListener('close', () => {
+                document.head.removeChild(style);
+            });
+        }
     });
+
     return result.isConfirmed;
 }
 
@@ -1319,19 +1680,34 @@ const imageModal = {
     }
 };
 
+// Track last clicked room and menu state
+let lastClickedRoom = null;
+let isContextMenuOpen = false;
+
 // Show context menu for room actions
 function showContextMenu(event, roomId, roomElement, isPinned = false) {
     // Prevent default context menu
     event.preventDefault();
     event.stopPropagation();
 
-    // Update state
-    contextMenuState.roomId = roomId;
-    contextMenuState.roomElement = roomElement;
-
     // Get context menu element
     const contextMenu = document.getElementById('roomContextMenu');
     if (!contextMenu) return;
+    
+    // Check if clicking the same room with an open menu
+    const isSameRoom = lastClickedRoom === roomId;
+    const menuIsVisible = contextMenu.classList.contains('visible');
+    
+    if (isSameRoom && menuIsVisible) {
+        hideContextMenu();
+        return;
+    }
+
+    // Update state
+    contextMenuState.roomId = roomId;
+    contextMenuState.roomElement = roomElement;
+    lastClickedRoom = roomId;
+    isContextMenuOpen = true;
 
     // Update pin menu item text and icon based on current pin state
     const pinItem = contextMenu.querySelector('[data-action="pin"]');
@@ -1416,35 +1792,109 @@ function handleContextMenuAction(action) {
 
 // Show rename room modal
 function showRenameRoomModal(roomId, currentTitle) {
-    const modal = new bootstrap.Modal(document.getElementById('renameRoomModal'));
-    const input = document.getElementById('renameRoomInput');
-    const charCount = document.getElementById('renameCharCount');
-
-    document.getElementById('renamingRoomId').value = roomId;
-    input.value = currentTitle || '';
-    charCount.textContent = (currentTitle || '').length;
-
-    // Update character count
-    input.addEventListener('input', () => {
-        charCount.textContent = input.value.length;
-    });
-
-    // Handle confirm button click
-    document.getElementById('confirmRenameRoom').onclick = async () => {
-        const newTitle = input.value.trim();
-        if (!newTitle) {
-            showNotification('Название не может быть пустым', 'error');
-            return;
+    // Unified SweetAlert2 dialog styled similarly to delete confirmation
+    Swal.fire({
+        title: '<span class="rename-title">Переименовать чат</span>',
+        input: 'text',
+        inputValue: currentTitle || '',
+        inputAttributes: {
+            maxlength: '50',
+            autocapitalize: 'off',
+            autocorrect: 'off',
+            'aria-label': 'Новое название чата'
+        },
+        html: `<div class="rename-message">
+                <div class="rename-icon-container">
+                    <i class="bi bi-pencil-square rename-icon-animated"></i>
+                </div>
+                <p class="text-muted mb-0">Введите новое название чата</p>
+               </div>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Сохранить',
+        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        reverseButtons: true,
+        backdrop: true,
+        customClass: {
+            container: 'rename-dialog-container',
+            popup: 'rename-dialog-popup',
+            title: 'rename-dialog-title',
+            confirmButton: 'btn-rename-confirm',
+            cancelButton: 'btn-rename-cancel',
+            actions: 'rename-dialog-actions',
+            input: 'rename-dialog-input'
+        },
+        buttonsStyling: true,
+        allowOutsideClick: false,
+        focusConfirm: false,
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown animate__faster'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp animate__faster'
+        },
+        didOpen: (modal) => {
+            const style = document.createElement('style');
+            style.textContent = `
+                .rename-dialog-container { z-index: 1060; }
+                .rename-dialog-popup {
+                    border-radius: 16px;
+                    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-color);
+                    padding: 24px;
+                    max-width: 420px;
+                }
+                .rename-title {
+                    font-weight: 600;
+                    font-size: 1.25rem;
+                    margin-bottom: 0;
+                    color: var(--primary-color, #0d6efd);
+                }
+                .rename-message { margin: 12px 0 8px; text-align: center; }
+                .rename-icon-container { margin-bottom: 10px; }
+                .rename-icon-animated {
+                    font-size: 2.5rem;
+                    color: var(--primary-color, #0d6efd);
+                    animation: pulse 0.6s ease-in-out 0.2s;
+                    display: inline-block;
+                }
+                .rename-dialog-input {
+                    margin-top: 6px;
+                }
+                .rename-dialog-actions { margin-top: 10px; gap: 12px; }
+                .btn-rename-confirm {
+                    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+                    transition: all 0.2s ease; border-radius: 8px; font-weight: 500;
+                }
+                .btn-rename-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(13, 110, 253, 0.45); }
+                .btn-rename-confirm:active { transform: translateY(0); }
+                .btn-rename-cancel { border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
+                .btn-rename-cancel:hover { transform: translateY(-2px); }
+                @keyframes pulse { 0%{ transform: scale(0.95);} 50%{ transform: scale(1.03);} 100%{ transform: scale(1);} }
+            `;
+            document.head.appendChild(style);
+            modal.addEventListener('close', () => {
+                if (style.parentNode) document.head.removeChild(style);
+            });
+        },
+        preConfirm: () => {
+            const value = Swal.getInput()?.value?.trim();
+            if (!value) {
+                Swal.showValidationMessage('Название не может быть пустым');
+                return false;
+            }
+            return value;
         }
-
+    }).then(async (result) => {
+        if (!result.isConfirmed) return;
+        const newTitle = result.value;
         try {
             const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/rename?title=${encodeURIComponent(newTitle)}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
-
             if (!response.ok) throw new Error('Не удалось переименовать чат');
 
             // Update room title in the UI
@@ -1456,65 +1906,122 @@ function showRenameRoomModal(roomId, currentTitle) {
                     nameElement.title = newTitle;
                     roomElement.setAttribute('data-room-title', newTitle);
                 }
-
-                // Update current room title if this is the active room
                 if (state.currentRoom?.id === roomId) {
                     state.currentRoom.title = newTitle;
                     document.getElementById('currentRoomTitle').textContent = newTitle;
                 }
             }
-
             showNotification('Чат успешно переименован', 'success');
-            modal.hide();
         } catch (error) {
             console.error('Error renaming room:', error);
             showNotification('Ошибка при переименовании чата', 'error');
         }
-    };
-
-    modal.show();
+    });
 }
 
-// Simple loading state management
+/**
+ * Универсальный компонент для отображения состояния загрузки
+ */
 const loadingState = {
-    show: function() {
-        // Create the loading element if it doesn't exist
-        let loadingElement = document.getElementById('export-loading');
+    /**
+     * Показывает индикатор загрузки с возможностью отмены
+     * @param {Object} options - Опции для настройки индикатора загрузки
+     * @param {string} [options.message='Загрузка...'] - Сообщение для отображения
+     * @param {Function} [options.onCancel=null] - Функция, вызываемая при отмене
+     * @param {string} [options.buttonText='Отмена'] - Текст кнопки отмены
+     */
+    show: function(options = {}) {
+        const {
+            message = 'Загрузка...',
+            onCancel = null,
+            buttonText = 'Отмена'
+        } = options;
+
+        // Создаем элемент индикатора загрузки, если он не существует
+        let loadingElement = document.getElementById('loading-overlay-component');
+
         if (!loadingElement) {
             loadingElement = document.createElement('div');
-            loadingElement.id = 'export-loading';
+            loadingElement.id = 'loading-overlay-component';
             loadingElement.innerHTML = `
                 <div class="loading-overlay">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                        <span class="visually-hidden">Загрузка</span>
                     </div>
-                    <p>Экспорт истории чата...</p>
-                    <button class="btn btn-sm btn-outline-light mt-2" id="cancel-export">Отмена</button>
+                    <p id="loading-message">${message}</p>
+                    ${onCancel ? `<button class="btn btn-sm btn-outline-light mt-2" id="cancel-loading-btn">${buttonText}</button>` : ''}
                 </div>
             `;
             document.body.appendChild(loadingElement);
-            
-            // Add cancel button handler
-            document.getElementById('cancel-export')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                loadingState.hide();
-                if (exportController) {
-                    exportController.abort();
-                    exportController = null;
+        } else {
+            // Обновляем сообщение и кнопку, если элемент уже существует
+            const messageEl = loadingElement.querySelector('#loading-message');
+            if (messageEl) messageEl.textContent = message;
+
+            const cancelBtn = loadingElement.querySelector('#cancel-loading-btn');
+
+            if (onCancel) {
+                if (!cancelBtn) {
+                    const cancelBtnNew = document.createElement('button');
+                    cancelBtnNew.id = 'cancel-loading-btn';
+                    cancelBtnNew.className = 'btn btn-sm btn-outline-light mt-2';
+                    cancelBtnNew.textContent = buttonText;
+                    loadingElement.querySelector('.loading-overlay').appendChild(cancelBtnNew);
+                } else {
+                    cancelBtn.textContent = buttonText;
+                    cancelBtn.style.display = '';
                 }
-            });
+            } else if (cancelBtn) {
+                cancelBtn.style.display = 'none';
+            }
         }
-        
-        // Show the loading element
+
+        // Добавляем обработчик для кнопки отмены
+        const cancelBtn = loadingElement.querySelector('#cancel-loading-btn');
+
+        if (cancelBtn) {
+            // Удаляем все существующие обработчики
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            if (cancelBtn.parentNode) {
+                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            }
+
+            if (onCancel) {
+                newCancelBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    onCancel();
+                    this.hide();
+                });
+            }
+        }
+
+        // Показываем индикатор загрузки
         loadingElement.style.display = 'block';
         document.body.style.overflow = 'hidden';
     },
-    
+
+    /**
+     * Скрывает индикатор загрузки
+     */
     hide: function() {
-        const loadingElement = document.getElementById('export-loading');
+        const loadingElement = document.getElementById('loading-overlay-component');
         if (loadingElement) {
             loadingElement.style.display = 'none';
             document.body.style.overflow = '';
+        }
+    },
+
+    /**
+     * Обновляет сообщение в индикаторе загрузки
+     * @param {string} message - Новое сообщение
+     */
+    updateMessage: function(message) {
+        const loadingElement = document.getElementById('loading-overlay-component');
+        if (loadingElement) {
+            const messageEl = loadingElement.querySelector('#loading-message');
+            if (messageEl) {
+                messageEl.textContent = message;
+            }
         }
     }
 };
@@ -1523,14 +2030,29 @@ const loadingState = {
 let exportController = null;
 
 async function exportChatHistory(roomId) {
-    // Show loading state
-    loadingState.show();
-    
+    if (!roomId) {
+        showNotification('Ошибка: ID комнаты не указан', 'error');
+        return;
+    }
+
+    // Показываем индикатор загрузки с возможностью отмены
+    loadingState.show({
+        message: 'Экспорт истории чата...',
+        buttonText: 'Отменить',
+        onCancel: () => {
+            if (exportController) {
+                exportController.abort();
+                exportController = null;
+                showNotification('Экспорт отменен', 'info');
+            }
+        }
+    });
+
     try {
-        // Create a new AbortController for this request
+        // Создаем новый AbortController для этого запроса
         exportController = new AbortController();
         const signal = exportController.signal;
-        
+
         const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/export`, {
             headers: {
                 'X-User-Id': elements.userId
@@ -1543,41 +2065,71 @@ async function exportChatHistory(roomId) {
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
+        // Обрабатываем ответ
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+
+        // Получаем имя файла из заголовков или используем стандартное
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `chat_history_${roomId}.txt`;
+
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename=\"(.+)\"/i);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        // Создаем URL и ссылку для скачивания
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `chat_history_${roomId}.txt`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
-        
-        // Cleanup
+
+        // Очищаем ресурсы
         setTimeout(() => {
-            window.URL.revokeObjectURL(url);
+            URL.revokeObjectURL(url);
             a.remove();
         }, 100);
 
         showNotification('История чата успешно экспортирована', 'success');
     } catch (error) {
-        // Don't show error if the request was aborted
+        // Не показываем ошибку, если запрос был отменен
         if (error.name !== 'AbortError') {
-            console.error('Export error:', error);
+            console.error('Ошибка экспорта:', error);
             showNotification('Ошибка при экспорте истории: ' + (error.message || 'Неизвестная ошибка'), 'error');
         }
     } finally {
         loadingState.hide();
         exportController = null;
+
+        // Закрываем сайдбар в мобильной версии
+        if (window.innerWidth < 768 && window.sidebarManager) {
+            setTimeout(() => window.sidebarManager.close(), 150);
+        }
     }
 }
 
-// Enhanced renderMessages function with image click handlers
 function renderMessages() {
     if (!elements.chatMessages) return;
 
     elements.chatMessages.innerHTML = '';
 
     if (!state.messages.length && state.currentRoom) {
-        elements.chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
+        elements.chatMessages.innerHTML = `
+            <div class="empty-chat-container">
+                <div class="empty-chat-illustration">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <h4>Начните общение</h4>
+                <p class="text-muted">Это начало вашего разговора с AI ассистентом.<br>Чем я могу вам помочь?</p>
+                <div class="empty-chat-suggestions">
+                    <button class="suggestion-btn" onclick="setExampleQuestion('Расскажи о себе')">Расскажи о себе</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('Помоги мне с Java')">Помоги мне с Java</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('Что такое Spring Data JPA?')">Что такое Spring Data JPA?</button>
+                </div>
+            </div>`;
         return;
     }
 
@@ -1655,13 +2207,116 @@ function renderMessages() {
     });
 
     Prism.highlightAll();
-    scrollToBottom();
+    scrollToBottom(true);
 }
+
+// Функция поиска чатов
+function setupChatSearch() {
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'chat-search-container mb-2';
+    searchContainer.innerHTML = `
+    <div class="search-box position-relative">
+        <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
+        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" placeholder="Поиск чатов...">
+        <i id="clearSearchBtn" class="bi bi-x-circle position-absolute end-0 top-50 translate-middle-y me-3 text-muted d-none" style="cursor: pointer;"></i>
+    </div>
+`;
+
+// Вставляем контейнер поиска перед списком чатов
+    const roomsList = document.getElementById('roomsList');
+    if (roomsList && roomsList.parentNode) {
+        roomsList.parentNode.insertBefore(searchContainer, roomsList);
+    }
+
+    const searchInput = document.getElementById('chatSearchInput');
+    const clearButton = document.getElementById('clearSearchBtn');
+
+    if (!searchInput || !clearButton) return;
+
+// Функция поиска
+    const performSearch = (query) => {
+        query = query.toLowerCase().trim();
+        clearButton.classList.toggle('d-none', !query);
+
+        if (!query) {
+            // Если поиск пустой, восстанавливаем исходное отображение и состояние свернутых групп
+            document.querySelectorAll('.chat-group').forEach(group => {
+                group.style.display = '';
+
+                // Восстанавливаем состояние групп из localStorage
+                const groupId = group.getAttribute('data-group');
+                const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+                if (collapsedGroups.includes(groupId)) {
+                    group.classList.add('collapsed');
+                } else {
+                    group.classList.remove('collapsed');
+                }
+            });
+
+            document.querySelectorAll('.room-item').forEach(room => {
+                room.style.display = '';
+            });
+            return;
+        }
+
+        // Ищем комнаты, соответствующие запросу
+        document.querySelectorAll('.room-item').forEach(room => {
+            const roomTitle = room.getAttribute('data-room-title').toLowerCase();
+            const matches = roomTitle.includes(query);
+            room.style.display = matches ? '' : 'none';
+        });
+
+        // Показываем только группы, в которых есть видимые комнаты
+        document.querySelectorAll('.chat-group').forEach(group => {
+            const hasVisibleRooms = Array.from(group.querySelectorAll('.room-item')).some(room =>
+                room.style.display !== 'none'
+            );
+            group.style.display = hasVisibleRooms ? '' : 'none';
+
+            // Разворачиваем группы с результатами поиска
+            if (hasVisibleRooms) {
+                group.classList.remove('collapsed');
+            }
+        });
+    };
+
+// Обработчик ввода в поле поиска
+    searchInput.addEventListener('input', () => {
+        performSearch(searchInput.value);
+    });
+
+// Обработчик кнопки очистки
+    clearButton.addEventListener('click', clearSearch);
+
+    // Функция очистки поиска
+    function clearSearch() {
+        searchInput.value = '';
+        performSearch('');
+        searchInput.focus();
+    }
+
+// Обработчик горячих клавиш (Ctrl+F для поиска)
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+F для фокуса на поиске
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.activeElement !== elements.messageInput) {
+            e.preventDefault();
+            searchInput.focus();
+        } 
+        // Escape для очистки и выхода из поиска
+        else if (e.key === 'Escape' && document.activeElement === searchInput) {
+            clearSearch();
+            searchInput.blur();
+        }
+    });
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
         typingIndicator.init();
         setupFileUpload();
+        voiceInput.init();
+        setupChatSearch(); // Инициализация поиска чатов
 
         // Initialize context menu event listeners
         document.addEventListener('click', (e) => {
@@ -1787,10 +2442,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (elements.uploadButton) {
-            elements.uploadButton.addEventListener('click', () => elements.fileInput.click());
-        }
-
         imageModal.init();
 
         window.setExampleQuestion = function(value) {
@@ -1804,6 +2455,83 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification('Ошибка при создании комнаты', 'error');
             });
         };
+
+        const btn = document.getElementById('logoutBtn');
+        if (!btn) return;
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const form = btn.closest('form');
+            if (!form) return;
+
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                Swal.fire({
+                    title: '<span class="logout-title">Выйти из аккаунта?</span>',
+                    html: `<div class="logout-message">
+                            <div class="logout-icon-container">
+                                <i class="bi bi-box-arrow-right logout-icon-animated"></i>
+                            </div>
+                            <p class="text-muted mb-0">Вы сможете войти снова в любое время.</p>
+                           </div>`,
+                    icon: null,
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-door-open me-1"></i> Выйти',
+                    cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+                    reverseButtons: true,
+                    focusCancel: true,
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                    customClass: {
+                        container: 'logout-dialog-container',
+                        popup: 'logout-dialog-popup',
+                        title: 'logout-dialog-title',
+                        confirmButton: 'btn-logout-confirm',
+                        cancelButton: 'btn-logout-cancel',
+                        actions: 'logout-dialog-actions'
+                    },
+                    buttonsStyling: true,
+                    allowOutsideClick: true,
+                    showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' },
+                    hideClass: { popup: 'animate__animated animate__fadeOutUp animate__faster' },
+                    didOpen: (modal) => {
+                        const style = document.createElement('style');
+                        style.textContent = `
+                            .logout-dialog-container { z-index: 1060; }
+                            .logout-dialog-popup {
+                                border-radius: 16px; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+                                background: var(--bg-secondary); border: 1px solid var(--border-color);
+                                padding: 24px; max-width: 420px;
+                            }
+                            .logout-title { font-weight: 600; font-size: 1.25rem; margin-bottom: 0; color: var(--primary-color, #0d6efd); }
+                            .logout-message { margin: 12px 0 8px; text-align: center; }
+                            .logout-icon-container { margin-bottom: 10px; }
+                            .logout-icon-animated { font-size: 2.5rem; color: var(--primary-color, #0d6efd); animation: slide 0.5s ease-in-out 0.2s; display: inline-block; }
+                            .logout-dialog-actions { margin-top: 10px; gap: 12px; }
+                            .btn-logout-confirm { box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35); transition: all 0.2s ease; border-radius: 8px; font-weight: 500; }
+                            .btn-logout-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(13, 110, 253, 0.45); }
+                            .btn-logout-confirm:active { transform: translateY(0); }
+                            .btn-logout-cancel { border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
+                            .btn-logout-cancel:hover { transform: translateY(-2px); }
+                            @keyframes slide { 0%{ transform: translateX(-4px);} 50%{ transform: translateX(2px);} 100%{ transform: translateX(0);} }
+                        `;
+                        document.head.appendChild(style);
+                        modal.addEventListener('close', () => {
+                            if (style.parentNode) document.head.removeChild(style);
+                        });
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            } else {
+                // Fallback на стандартное подтверждение, если SweetAlert2 недоступен
+                if (confirm('Выйти из аккаунта?')) {
+                    form.submit();
+                }
+            }
+        });
+
+        setupScrollHandlers();
     } catch (error) {
         console.error('Initialization error:', error);
         showNotification('Ошибка при инициализации приложения', 'error');

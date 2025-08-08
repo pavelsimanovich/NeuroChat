@@ -5,38 +5,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Чат</title>
-    <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css" />
-    <link th:href="@{/css/lib/prism.css}" rel="stylesheet" />
-    <link th:href="@{/css/chat.css}" rel="stylesheet" />
+    <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
+    <link th:href="@{/css/lib/prism.css}" rel="stylesheet"/>
+    <link th:href="@{/css/chat.css}" rel="stylesheet"/>
+    <link th:href="@{/css/sidebar-resize.css}" rel="stylesheet"/>
+        <style>
+            .transition-all {
+                transition: all 0.2s ease-in-out;
+            }
+
+            .hover-shadow:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            }
+
+            .cursor-pointer {
+                cursor: pointer;
+            }
+        </style>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
 
-<input type="hidden" id="userId" th:value="${userId}" >
-<input type="hidden" id="userName" th:value="${userName}" >
-<input type="hidden" id="modelName" th:value="${modelName}" >
+<input type="hidden" id="userId" th:value="${userId}">
+<input type="hidden" id="userName" th:value="${userName}">
+<input type="hidden" id="modelName" th:value="${modelName}">
 
 <div class="container-fluid">
-    <div class="row">
+    <div class="row position-relative">
+        <!-- Кнопка переключения сайдбара перенесена в заголовок чата -->
         <!-- Modern Sidebar -->
-        <div class="col-md-3 sidebar">
+        <div class="sidebar" id="mobileSidebar">
             <div class="sidebar-header">
                 <div class="d-flex justify-content-between align-items-center w-100">
                     <h4 class="mb-0">AI Assistant</h4>
-                    <div class="d-flex gap-2">
-                        <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary" title="Переключить тему">
-                            <i class="bi bi-moon-stars"></i>
-                        </button>
+                    <div class="d-flex gap-2 align-items-center">
                         <button id="createRoomBtn" class="btn btn-primary btn-sm">
                             <i class="bi bi-plus-lg"></i>
                             <span>Новый чат</span>
                         </button>
+                        <button id="userSettingsBtn" class="btn btn-sm btn-outline-secondary"
+                                title="Настройки пользователя">
+                            <i class="bi bi-gear"></i>
+                        </button>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Chat List -->
             <div id="roomsList" class="rooms-list"></div>
 
@@ -49,7 +66,7 @@
                     <i class="bi bi-pencil"></i> Переименовать
                 </div>
                 <div class="context-menu-item" data-action="export">
-                    <i class="bi bi-download"></i> Экспортировать историю
+                    <i class="bi bi-filetype-txt"></i> Экспортировать историю TXT
                 </div>
                 <div class="divider"></div>
                 <div class="context-menu-item text-danger" data-action="delete">
@@ -57,38 +74,79 @@
                 </div>
             </div>
 
-            <!-- Footer with model status and logout -->
-            <div class="logout">
-                <div class="model-status">
-                    <i class="bi bi-lightning-charge-fill"></i>
-                    <span class="model-name" th:text="${modelName}"></span>
+            <!-- Footer with user info and logout -->
+            <div class="logout" role="contentinfo" aria-label="Панель пользователя">
+                <div class="user-info d-flex align-items-center gap-2 cursor-pointer" title="Открыть настройки"
+                     onclick="const btn=document.getElementById('userSettingsBtn'); if(btn){btn.click();}">
+                    <img th:src="${userAvatarUrl}" alt="Аватар пользователя" width="28" height="28" style="border-radius:50%; object-fit:cover;"
+                         onerror="this.onerror=null; this.src='/img/default-avatar.svg';"/>
+                    <span class="user-name text-truncate" style="max-width: 140px;" th:text="${userName}"></span>
                 </div>
-                <form th:action="@{/logout}" method="post">
-                    <button type="submit" class="btn btn-link">
-                        <i class="bi bi-box-arrow-right"></i> Выход
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button type="button" id="logoutBtn" class="btn btn-link" title="Выйти из аккаунта" aria-label="Выйти">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i> <span>Выход</span>
                     </button>
                 </form>
             </div>
 
         </div>
 
+        <!-- Разделитель для изменения размера (ресайзер) -->
+        <div id="sidebarResizer" class="sidebar-resizer" title="Изменить размер панели">
+            <div class="resizer-handle"></div>
+        </div>
+
         <!-- Основная область чата -->
-        <div class="col-md-9 chat-area">
+        <div class="chat-area">
             <div class="chat-header d-flex justify-content-between align-items-center">
-                <h4 id="currentRoomTitle" th:text="${userName + ' Выберите или создайте чат'}"></h4>
-                <button id="toggleSearch" class="btn btn-link text-decoration-none">
-                    <i class="bi bi-search"></i>
-                </button>
-            </div>
-            <div class="search-bar mb-3 d-none">
-                <div class="input-group">
-                    <input type="text" id="searchInput" class="form-control" placeholder="Поиск сообщений...">
-                    <button id="searchButton" class="btn btn-outline-secondary" type="button">
+                <div class="w-100 d-flex align-items-center">
+                    <button id="sidebarToggleBtn" class="btn d-md-none">
+                        <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+                    </button>
+                    <h4 id="currentRoomTitle" class="mb-0 flex-grow-1 text-truncate" th:text="${userName + ' выберите или создайте чат'}"></h4>
+                    <div class="model-badge d-flex align-items-center me-2 model-status">
+                        <i class="bi bi-lightning-charge-fill me-1"></i>
+                        <span class="model-name" th:text="${modelName}"></span>
+                    </div>
+                    <button id="toggleSearch" class="btn btn-link text-decoration-none p-1 ms-2" title="Поиск по сообщениям">
                         <i class="bi bi-search"></i>
                     </button>
                 </div>
             </div>
-            <div class="search-results d-none" id="searchResults"></div>
+
+            <!-- Улучшенная форма поиска -->
+            <div class="search-container position-relative">
+                <div class="search-bar mb-3 d-none shadow-sm">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="searchInput" class="form-control border-start-0" 
+                               placeholder="Поиск по содержимому сообщений..." autocomplete="off">
+                        <button id="clearSearchBtn" class="btn btn-link position-absolute end-0 d-none" 
+                                style="z-index: 5; top: 0; height: 100%; opacity: 0.7;" title="Очистить поиск">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                        <button id="searchButton" class="btn btn-primary" type="button">
+                            Найти
+                        </button>
+                    </div>
+                    <div id="searchInfo" class="small text-muted mt-1 ps-1 d-none">
+                        <span id="searchResultsCount">0</span> результатов
+                    </div>
+                </div>
+
+                <!-- Контейнер результатов поиска с анимацией -->
+                <div class="search-results d-none shadow" id="searchResults">
+                    <div class="search-results-header d-flex justify-content-between align-items-center p-2 border-bottom bg-light">
+                        <div class="fw-bold">Результаты поиска</div>
+                        <button id="closeSearchResults" class="btn btn-sm btn-link p-0 text-muted">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <div id="searchResultsContent" class="p-0"></div>
+                </div>
+            </div>
 
             <!-- Контейнер для уведомлений -->
             <div id="toastContainer" class="toast-container"></div>
@@ -99,43 +157,74 @@
             </div>
 
             <div id="chatMessages" class="chat-messages">
-                <div id="welcomeScreen" class="h-100 d-flex flex-column align-items-center justify-content-center text-center p-4" style="max-width: 700px; margin: 0 auto;">
-                    <div class="mb-4" style="width: 120px; height: 120px; background-color: #f0f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #4f46e5;"></i>
+                <div id="welcomeScreen"
+                     class="h-100 d-flex flex-column align-items-center justify-content-center text-center p-4"
+                     style="max-width: 800px; margin: 0 auto;">
+                    <div class="mb-4"
+                         style="width: 130px; height: 130px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);">
+                        <i class="bi bi-robot" style="font-size: 3.5rem; color: white;"></i>
                     </div>
-                    <h4 class="mb-3">Добро пожаловать в AI Чат</h4>
-                    <p class="text-muted mb-4">Начните новый разговор или выберите существующий чат из списка. Я помогу вам с любыми вопросами!</p>
-                        <button id="createRoomBtn1" class="btn btn-primary" onclick="createRoom()">
-                            <i class="bi bi-plus-lg me-2"></i>Новый чат
-                        </button>
+                    <h3 class="mb-3 fw-bold">Добро пожаловать в AI Чат-ассистент</h3>
+                    <p class="text-muted mb-4 fs-5">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
+                    <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm" onclick="createRoom()">
+                        <i class="bi bi-plus-lg me-2"></i>Начать новый диалог
+                    </button>
                     <div class="mt-5 pt-4 border-top w-100">
-                        <h6 class="mb-3">Попробуйте спросить:</h6>
-                        <div class="row g-3">
+                        <h5 class="mb-4">Что я могу для вас сделать:</h5>
+                        <div class="row g-4">
                             <div class="col-md-6">
-                                <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer"
-                                     onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения?')">
+                                <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                     onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?')">
                                     <div class="card-body">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
-                                                <i class="bi bi-lightbulb text-primary"></i>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                                                <i class="bi bi-lightbulb-fill text-primary"></i>
                                             </div>
-                                            <h6 class="mb-0">Идеи для проекта</h6>
+                                            <h6 class="mb-0 fw-bold">Идеи для разработки</h6>
                                         </div>
-                                        <p class="text-muted small mb-0">Какие есть интересные идеи для веб-приложения?</p>
+                                        <p class="text-muted mb-0">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer"
-                                     onclick="setExampleQuestion('Как оптимизировать SQL-запрос?')">
+                                <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                     onclick="setExampleQuestion('Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?')">
                                     <div class="card-body">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="bg-success bg-opacity-10 p-2 rounded me-2">
-                                                <i class="bi bi-code-slash text-success"></i>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
+                                                <i class="bi bi-code-square text-success"></i>
                                             </div>
-                                            <h6 class="mb-0">Помощь с кодом</h6>
+                                            <h6 class="mb-0 fw-bold">Оптимизация кода</h6>
                                         </div>
-                                        <p class="text-muted small mb-0">Как оптимизировать SQL-запрос?</p>
+                                        <p class="text-muted mb-0">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                     onclick="setExampleQuestion('Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?')">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
+                                                <i class="bi bi-gear-fill text-info"></i>
+                                            </div>
+                                            <h6 class="mb-0 fw-bold">Архитектура приложений</h6>
+                                        </div>
+                                        <p class="text-muted mb-0">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
+                                     onclick="setExampleQuestion('Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория')">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+                                                <i class="bi bi-file-earmark-code-fill text-warning"></i>
+                                            </div>
+                                            <h6 class="mb-0 fw-bold">Примеры кода</h6>
+                                        </div>
+                                        <p class="text-muted mb-0">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
                                     </div>
                                 </div>
                             </div>
@@ -158,43 +247,153 @@
             <div id="error"></div>
 
             <div class="message-input" id="messageInputArea">
-                <!-- Hidden download link for chat export -->
-                <a id="exportChatLink" style="display: none;"></a>
-
                 <!-- Add error boundary container -->
                 <div id="filePreview" class="file-preview-container"></div>
-                
+
                 <div class="message-input-wrapper">
                     <!-- Message input area -->
                     <div class="message-input-container" id="messageInputContainer">
                         <!-- File input (hidden) -->
                         <input type="file" id="fileInput" multiple>
-                        
+
                         <!-- Upload button -->
                         <button type="button" id="uploadButton" title="Прикрепить файл">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-paperclip" viewBox="0 0 16 16">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                 class="bi bi-paperclip" viewBox="0 0 16 16">
                                 <path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z"/>
                             </svg>
                         </button>
-                        
+
+                        <!-- Voice input button -->
+                        <button type="button" id="voiceInputBtn" title="Голосовой ввод">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                 class="bi bi-mic" viewBox="0 0 16 16">
+                                <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M10 8a2 2 0 1 1-4 0V3a2 2 0 1 1 4 0v5zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3z"/>
+                            </svg>
+                        </button>
+
                         <!-- Text input -->
                         <textarea id="messageInput" placeholder="Чем я могу помочь Вам сегодня?" rows="1"></textarea>
-                        
+
                         <!-- Send button -->
                         <button type="button" id="sendMessageBtn" title="Отправить сообщение">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-send" viewBox="0 0 16 16">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                 class="bi bi-send" viewBox="0 0 16 16">
                                 <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11zM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493z"/>
                             </svg>
                         </button>
-                        
+
                         <!-- Stop generation button -->
                         <button type="button" id="stopGenerationBtn" title="Остановить генерацию">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-stop-circle" viewBox="0 0 16 16">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                 class="bi bi-stop-circle" viewBox="0 0 16 16">
                                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                                 <path d="M5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3z"/>
                             </svg>
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Settings Modal -->
+<div class="modal fade" id="userSettingsModal" tabindex="-1" aria-labelledby="userSettingsModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userSettingsModalLabel"><i class="bi bi-gear-wide-connected me-2"></i>Настройки
+                    пользователя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-12 col-md-3 border-end">
+                        <div class="nav flex-column nav-pills gap-2" id="userSettingsTabs" role="tablist" aria-orientation="vertical">
+                            <button class="nav-link active d-flex align-items-center" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
+                                <i class="bi bi-sliders me-2"></i> <span>Общие</span>
+                            </button>
+                            <button class="nav-link d-flex align-items-center" id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">
+                                <i class="bi bi-person-circle me-2"></i> <span>Профиль</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-9">
+                        <div class="tab-content pt-2" id="userSettingsTabsContent">
+                            <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                                <p class="text-muted">Эти настройки будут применяться ко всем новым чатам.</p>
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <label class="form-label mb-0"><strong>Тема интерфейса</strong></label>
+                                        <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" title="Переключить тему">
+                                            <i class="bi bi-moon-stars"></i> <span>Темная тема</span>
+                                        </button>
+                                    </div>
+                                    <div class="border-bottom mb-4"></div>
+                                    <div class="mb-3">
+                                        <label for="modelSelect" class="form-label"><strong>Модель ИИ</strong></label>
+                                        <select class="form-select" id="modelSelect">
+                                            <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
+                                            <option value="gemma3:4b">Gemma 3 (4B)</option>
+                                            <option value="gemma3:12b">Gemma 3 (12B)</option>
+                                        </select>
+                                        <div class="form-text">Выберите предпочитаемую модель для ваших чатов.</div>
+                                    </div>
+                                    <div class="border-bottom mb-4"></div>
+                                    <div class="mb-3">
+                                        <label for="systemPrompt" class="form-label"><strong>Системный промпт</strong></label>
+                                        <textarea class="form-control" id="systemPrompt" rows="5" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
+                                        <div class="form-text">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее больше 1000 символов.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                                <div class="row g-4">
+                                    <div class="col-md-5 text-center">
+                                        <div class="mb-3">
+                                            <img id="avatarPreview" src="" alt="Аватар" class="rounded-circle border" style="width: 160px; height: 160px; object-fit: cover;">
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <input class="form-control" type="file" id="avatarInput" accept="image/*">
+                                            <input type="hidden" id="avatarFileId">
+                                            <small class="text-muted">Загрузите изображение в формате JPG/PNG, до 10МБ.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title mb-3">Смена пароля</h6>
+                                                <div class="mb-3">
+                                                    <label for="currentPassword" class="form-label">Текущий пароль</label>
+                                                    <input type="password" class="form-control" id="currentPassword" autocomplete="current-password">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="newPassword" class="form-label">Новый пароль</label>
+                                                    <input type="password" class="form-control" id="newPassword" autocomplete="new-password">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="confirmPassword" class="form-label">Подтверждение пароля</label>
+                                                    <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password">
+                                                </div>
+                                                <div class="d-grid">
+                                                    <button type="button" class="btn btn-outline-primary" id="changePasswordBtn">
+                                                        <i class="bi bi-shield-lock"></i> Изменить пароль
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-primary" id="saveUserSettings">Сохранить</button>
                 </div>
             </div>
         </div>
@@ -242,7 +441,6 @@
     </div>
 </div>
 
-
 <!--JS libraries-->
 <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
 <script th:src="@{/js/lib/marked.min.js}" type="text/javascript"></script>
@@ -255,6 +453,8 @@
 <script type="text/javascript" th:src="@{/js/chat.js}"></script>
 <script type="text/javascript" th:src="@{/js/search.js}"></script>
 <script type="text/javascript" th:src="@{/js/theme-toggle.js}"></script>
-
+<script type="text/javascript" th:src="@{/js/user-settings.js}"></script>
+<script type="text/javascript" th:src="@{/js/sidebar-resize.js}"></script>
+<script type="text/javascript" th:src="@{/js/sidebar.js}"></script>
 </body>
 </html>

@@ -1,0 +1,1 @@
+CREATE DATABASE IF NOT EXISTS llama_ai_chat_app;

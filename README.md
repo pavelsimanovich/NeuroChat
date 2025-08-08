@@ -27,10 +27,10 @@ https://huggingface.co/
 - Spring Boot: Simplifies the configuration and deployment of the application, Embedded Tomcat server .
 - Spring Web + Flux: Facilitates the creation of RESTful web services and handles HTTP requests.
 - Spring Thymeleaf: Server-side templating, Spring MVC binding .
-- Spring Security: Provides authentication and authorization.
+- Spring Security: Provides authentication and authorization. 
 - Spring AI: Ollama API integration layer, AI response processing. https://spring.io/projects/spring-ai
 
-## ☕ Java 21
+## ☕ Java 24
 
 -  Programming language for the application.
 
@@ -73,7 +73,7 @@ https://huggingface.co/
 ### 🌐 REST API
 - **Flexible Endpoints**: Comprehensive API for seamless interaction with the chat system
 - **Stream Support**: Real-time communication using streaming technology
-- **Room Management**: Create, join and manage chat rooms programmatically
+- **Room Management**: Create and manage chat rooms programmatically
 - **User System**: Secure login/registration flows
 
 ### 🤖 AI Chat Functionality
@@ -86,8 +86,12 @@ https://huggingface.co/
     - Configurable rate limiting
 - **Image Analysis**
 - **Chat Export**
-- **Lite and Dark Mode**
+- **Voice input**
+- **User Settings**
+  - Lite and Dark Mode
+  - User can add a System Prompt
+  - Users can choose an available Model from the list
+- **SSL Encryption**
 
 ### P.S.
-- Project in development and can contain errors, some part of code should be rewritten.
-- Any help would be appreciated
+- Project in development and can contain errors, some parts of code should be rewritten.

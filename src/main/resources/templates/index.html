@@ -10,7 +10,7 @@
 </head>
 
 <body>
-<div class="auth-container">
+<div class="container-fluid auth-container">
     <div class="auth-card">
         <div class="auth-header">
             <!--                <div class="auth-logo">-->
@@ -46,9 +46,11 @@
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <label for="password" class="form-label">Пароль</label>
+                    <a th:href="@{/forgot-password}" class="forgot-password text-decoration-none">
+                        <i class="bi bi-question-circle me-1 small"></i>Забыли пароль?
+                    </a>
                 </div>
                 <input type="password" class="form-control" id="password" name="password" required>
-                <!--                    <a href="#" class="forgot-password">Забыли пароль?</a>-->
             </div>
 
             <div class="form-check mb-4">
@@ -67,7 +69,7 @@
                     <i class="bi bi-google"></i> Google
                 </button>
                 <button type="button" class="social-btn">
-                    <i class="bi bi-github"></i> GitHub
+                    <i class="bi bi-facebook"></i> Facebook
                 </button>
             </div>
         </form>
