@@ -8,4 +8,5 @@ import lombok.Setter;
 public class UserPreferencesDTO {
     private String systemPrompt;
     private String preferredModel;
+    private String avatarFileId;
 }

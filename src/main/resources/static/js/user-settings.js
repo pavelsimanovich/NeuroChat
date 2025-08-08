@@ -5,6 +5,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const systemPromptTextarea = document.getElementById('systemPrompt');
     const modelSelectElement = document.getElementById('modelSelect');
 
+    // Profile tab elements
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarFileIdHidden = document.getElementById('avatarFileId');
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+    function setAvatarPreview(fileId) {
+        if (fileId) {
+            avatarPreview.src = `/api/files/${fileId}/preview`;
+        } else {
+            avatarPreview.src = 'https://via.placeholder.com/160?text=Avatar';
+        }
+    }
+
     // Show the modal
     if (userSettingsBtn) {
         userSettingsBtn.addEventListener('click', () => {
@@ -17,6 +31,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     if (data && typeof data.preferredModel === 'string' && data.preferredModel) {
                         modelSelectElement.value = data.preferredModel;
+                    }
+                    if (data && typeof data.avatarFileId === 'string') {
+                        avatarFileIdHidden.value = data.avatarFileId || '';
+                        setAvatarPreview(data.avatarFileId);
+                    } else {
+                        avatarFileIdHidden.value = '';
+                        setAvatarPreview(null);
                     }
                     userSettingsModal.show();
                 })
@@ -31,11 +52,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Save the settings
+    // Avatar upload
+    if (avatarInput) {
+        avatarInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const resp = await fetch('/api/files/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!resp.ok) throw new Error('Upload failed');
+                const data = await resp.json();
+                if (data && data.id) {
+                    avatarFileIdHidden.value = data.id;
+                    setAvatarPreview(data.id);
+                    Swal.fire({ icon: 'success', title: 'Аватар загружен', timer: 1200, showConfirmButton: false });
+                }
+            } catch (err) {
+                console.error('Avatar upload error', err);
+                Swal.fire({ icon: 'error', title: 'Ошибка загрузки', text: 'Не удалось загрузить аватар' });
+            }
+        });
+    }
+
+    // Save the settings (including avatar file id)
     if (saveUserSettingsBtn) {
         saveUserSettingsBtn.addEventListener('click', () => {
             const systemPrompt = systemPromptTextarea.value;
             const preferredModel = modelSelectElement.value;
+            const avatarFileId = avatarFileIdHidden ? avatarFileIdHidden.value : '';
 
             fetch('/api/user/preferences', {
                 method: 'POST',
@@ -44,7 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 body: JSON.stringify({ 
                     systemPrompt: systemPrompt,
-                    preferredModel: preferredModel 
+                    preferredModel: preferredModel,
+                    avatarFileId: avatarFileId
                 })
             })
             .then(response => response.json())
@@ -75,6 +124,36 @@ document.addEventListener('DOMContentLoaded', function () {
                     text: 'Не удалось сохранить настройки. Пожалуйста, попробуйте еще раз.'
                 });
             });
+        });
+    }
+
+    // Change password
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', async () => {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                Swal.fire({ icon: 'warning', title: 'Заполните все поля' });
+                return;
+            }
+            try {
+                const resp = await fetch('/api/user/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) {
+                    throw new Error(data?.message || 'Не удалось изменить пароль');
+                }
+                Swal.fire({ icon: 'success', title: 'Пароль изменен' });
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Ошибка', text: e.message });
+            }
         });
     }
 });

@@ -25,4 +25,6 @@ public class UserPreferencies implements Serializable {
     @Column(columnDefinition = "TEXT")
     private String userSystemPrompt;
     private String model;
+    // ID загруженного файла-аватара (из таблицы file_data)
+    private String avatarFileId;
 }

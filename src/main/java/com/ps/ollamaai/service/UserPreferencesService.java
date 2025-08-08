@@ -36,6 +36,7 @@ public class UserPreferencesService {
         UserPreferencesDTO dto = new UserPreferencesDTO();
         dto.setSystemPrompt(entity.getUserSystemPrompt());
         dto.setPreferredModel(entity.getModel());
+        dto.setAvatarFileId(entity.getAvatarFileId());
         return dto;
     }
 
@@ -49,6 +50,9 @@ public class UserPreferencesService {
             } else {
                 log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.", preferredModel, email);
             }
+        }
+        if (StringUtils.hasText(dto.getAvatarFileId())) {
+            entity.setAvatarFileId(dto.getAvatarFileId());
         }
     }
 

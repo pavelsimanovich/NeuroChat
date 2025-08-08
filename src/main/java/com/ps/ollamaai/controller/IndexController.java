@@ -31,15 +31,21 @@ public class IndexController {
     public String home(Model model, @AuthenticationPrincipal UserDetails currentUser) {
         final var user = userService.findByEmail(currentUser.getUsername());
 
-        // Prefer user-selected model name if available; otherwise fall back to default
         Optional<UserPreferencies> prefsOpt = userPreferencesService.findByUserId(currentUser.getUsername());
         String modelName = prefsOpt.map(UserPreferencies::getModel)
                 .filter(StringUtils::hasText)
                 .orElse(ollamaService.getCurrentModelName());
 
+        // Determine avatar URL: preview if uploaded, otherwise default
+        String avatarUrl = prefsOpt.map(UserPreferencies::getAvatarFileId)
+                .filter(StringUtils::hasText)
+                .map(id -> "/api/files/" + id + "/preview")
+                .orElse("/img/default-avatar.svg");
+
         model.addAttribute("modelName", modelName);
         model.addAttribute("userId", user.getId());
         model.addAttribute("userName", "%s %s".formatted(user.getFirstName(), user.getLastName()));
+        model.addAttribute("userAvatarUrl", avatarUrl);
         return "home";
     }
 }
