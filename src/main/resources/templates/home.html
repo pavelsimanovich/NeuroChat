@@ -309,74 +309,80 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <ul class="nav nav-tabs" id="userSettingsTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">Общие</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Профиль</button>
-                    </li>
-                </ul>
-                <div class="tab-content pt-3" id="userSettingsTabsContent">
-                    <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
-                        <p class="text-muted">Эти настройки будут применяться ко всем новым чатам.</p>
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <label class="form-label mb-0"><strong>Тема интерфейса</strong></label>
-                                <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" title="Переключить тему">
-                                    <i class="bi bi-moon-stars"></i> <span>Темная тема</span>
-                                </button>
-                            </div>
-                            <div class="border-bottom mb-4"></div>
-                            <div class="mb-3">
-                                <label for="modelSelect" class="form-label"><strong>Модель ИИ</strong></label>
-                                <select class="form-select" id="modelSelect">
-                                    <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
-                                    <option value="gemma3:4b">Gemma 3 (4B)</option>
-                                    <option value="gemma3:12b">Gemma 3 (12B)</option>
-                                </select>
-                                <div class="form-text">Выберите предпочитаемую модель для ваших чатов.</div>
-                            </div>
-                            <div class="border-bottom mb-4"></div>
-                            <div class="mb-3">
-                                <label for="systemPrompt" class="form-label"><strong>Системный промпт</strong></label>
-                                <textarea class="form-control" id="systemPrompt" rows="5" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
-                                <div class="form-text">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее больше 1000 символов.</div>
-                            </div>
+                <div class="row">
+                    <div class="col-12 col-md-3 border-end">
+                        <div class="nav flex-column nav-pills gap-2" id="userSettingsTabs" role="tablist" aria-orientation="vertical">
+                            <button class="nav-link active d-flex align-items-center" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
+                                <i class="bi bi-sliders me-2"></i> <span>Общие</span>
+                            </button>
+                            <button class="nav-link d-flex align-items-center" id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">
+                                <i class="bi bi-person-circle me-2"></i> <span>Профиль</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                        <div class="row g-4">
-                            <div class="col-md-5 text-center">
-                                <div class="mb-3">
-                                    <img id="avatarPreview" src="" alt="Аватар" class="rounded-circle border" style="width: 160px; height: 160px; object-fit: cover;">
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <input class="form-control" type="file" id="avatarInput" accept="image/*">
-                                    <input type="hidden" id="avatarFileId">
-                                    <small class="text-muted">Загрузите изображение в формате JPG/PNG, до 10МБ.</small>
+                    <div class="col-12 col-md-9">
+                        <div class="tab-content pt-2" id="userSettingsTabsContent">
+                            <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                                <p class="text-muted">Эти настройки будут применяться ко всем новым чатам.</p>
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <label class="form-label mb-0"><strong>Тема интерфейса</strong></label>
+                                        <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" title="Переключить тему">
+                                            <i class="bi bi-moon-stars"></i> <span>Темная тема</span>
+                                        </button>
+                                    </div>
+                                    <div class="border-bottom mb-4"></div>
+                                    <div class="mb-3">
+                                        <label for="modelSelect" class="form-label"><strong>Модель ИИ</strong></label>
+                                        <select class="form-select" id="modelSelect">
+                                            <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
+                                            <option value="gemma3:4b">Gemma 3 (4B)</option>
+                                            <option value="gemma3:12b">Gemma 3 (12B)</option>
+                                        </select>
+                                        <div class="form-text">Выберите предпочитаемую модель для ваших чатов.</div>
+                                    </div>
+                                    <div class="border-bottom mb-4"></div>
+                                    <div class="mb-3">
+                                        <label for="systemPrompt" class="form-label"><strong>Системный промпт</strong></label>
+                                        <textarea class="form-control" id="systemPrompt" rows="5" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
+                                        <div class="form-text">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее больше 1000 символов.</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-7">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h6 class="card-title mb-3">Смена пароля</h6>
+                            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                                <div class="row g-4">
+                                    <div class="col-md-5 text-center">
                                         <div class="mb-3">
-                                            <label for="currentPassword" class="form-label">Текущий пароль</label>
-                                            <input type="password" class="form-control" id="currentPassword" autocomplete="current-password">
+                                            <img id="avatarPreview" src="" alt="Аватар" class="rounded-circle border" style="width: 160px; height: 160px; object-fit: cover;">
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="newPassword" class="form-label">Новый пароль</label>
-                                            <input type="password" class="form-control" id="newPassword" autocomplete="new-password">
+                                        <div class="d-grid gap-2">
+                                            <input class="form-control" type="file" id="avatarInput" accept="image/*">
+                                            <input type="hidden" id="avatarFileId">
+                                            <small class="text-muted">Загрузите изображение в формате JPG/PNG, до 10МБ.</small>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="confirmPassword" class="form-label">Подтверждение пароля</label>
-                                            <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password">
-                                        </div>
-                                        <div class="d-grid">
-                                            <button type="button" class="btn btn-outline-primary" id="changePasswordBtn">
-                                                <i class="bi bi-shield-lock"></i> Изменить пароль
-                                            </button>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title mb-3">Смена пароля</h6>
+                                                <div class="mb-3">
+                                                    <label for="currentPassword" class="form-label">Текущий пароль</label>
+                                                    <input type="password" class="form-control" id="currentPassword" autocomplete="current-password">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="newPassword" class="form-label">Новый пароль</label>
+                                                    <input type="password" class="form-control" id="newPassword" autocomplete="new-password">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="confirmPassword" class="form-label">Подтверждение пароля</label>
+                                                    <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password">
+                                                </div>
+                                                <div class="d-grid">
+                                                    <button type="button" class="btn btn-outline-primary" id="changePasswordBtn">
+                                                        <i class="bi bi-shield-lock"></i> Изменить пароль
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
