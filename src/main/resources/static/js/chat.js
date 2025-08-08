@@ -2374,7 +2374,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-
         imageModal.init();
 
         window.setExampleQuestion = function(value) {
@@ -2388,6 +2387,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification('Ошибка при создании комнаты', 'error');
             });
         };
+
+        const btn = document.getElementById('logoutBtn');
+        if (!btn) return;
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const form = btn.closest('form');
+            if (!form) return;
+
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                Swal.fire({
+                    title: 'Выйти из аккаунта?',
+                    text: 'Вы сможете войти снова в любое время.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Выйти',
+                    cancelButtonText: 'Отмена',
+                    reverseButtons: true,
+                    focusCancel: true,
+                    confirmButtonColor: '#d33'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            } else {
+                // Fallback на стандартное подтверждение, если SweetAlert2 недоступен
+                if (confirm('Выйти из аккаунта?')) {
+                    form.submit();
+                }
+            }
+        });
 
         setupScrollHandlers();
     } catch (error) {
