@@ -30,7 +30,7 @@ public class UserPreferencesService {
     }
 
     @Transactional
-    public UserPreferencies createOrUpdatePreferences(String email, String systemPrompt) {
+    public UserPreferencies createOrUpdatePreferences(String email, String systemPrompt, String preferredModel) {
         UserPreferencies preferences = findByUserId(email)
                 .orElseGet(() -> {
                     UserPreferencies newPreferences = new UserPreferencies();
@@ -38,6 +38,15 @@ public class UserPreferencesService {
                     return newPreferences;
                 });
         preferences.setUserSystemPrompt(systemPrompt);
+
+        if (preferredModel != null && !preferredModel.isEmpty()) {
+            if (com.ps.ollamaai.dto.enums.SupportedOllamaModel.isSupported(preferredModel)) {
+                preferences.setModel(preferredModel);
+            } else {
+                log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.", preferredModel, email);
+            }
+        }
+
         return save(preferences);
     }
 

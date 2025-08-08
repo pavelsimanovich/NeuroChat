@@ -1,6 +1,7 @@
 package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.FileData;
+import com.ps.ollamaai.domain.UserPreferencies;
 import com.ps.ollamaai.dto.ChunkResponseDTO;
 import com.ps.ollamaai.exceptions.GeneralFluxException;
 import com.ps.ollamaai.exceptions.LimitExceededException;
@@ -68,9 +69,24 @@ public class ChatAIController {
 
                         Prompt prompt = new Prompt(messages);
 
-                        return chatClient
+                        // Apply user selected model if present
+                        String preferredModel = userPreferencesService.findByUserId(principal.getName())
+                                .map(UserPreferencies::getModel)
+                                .filter(org.springframework.util.StringUtils::hasText)
+                                .orElse(null);
+
+                        var spec = chatClient
                                 .prompt(prompt)
-                                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId))
+                                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
+
+                        if (preferredModel != null) {
+                            var options = org.springframework.ai.ollama.api.OllamaOptions.builder()
+                                    .model(preferredModel)
+                                    .build();
+                            spec = spec.options(options);
+                        }
+
+                        return spec
                                 .stream()
                                 .content()
                                 .map(chunk -> new ChunkResponseDTO(chunk, false, null))

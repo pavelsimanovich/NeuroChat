@@ -14,7 +14,6 @@ import java.util.Map;
 @RequestMapping("/api/user/preferences")
 @AllArgsConstructor
 public class UserPreferencesController {
-
     private final UserPreferencesService userPreferencesService;
 
     @GetMapping
@@ -28,7 +27,14 @@ public class UserPreferencesController {
     public ResponseEntity<UserPreferencies> saveUserPreferences(@AuthenticationPrincipal UserDetails userDetails,
                                                               @RequestBody Map<String, String> payload) {
         String systemPrompt = payload.get("systemPrompt");
-        UserPreferencies savedPreferences = userPreferencesService.createOrUpdatePreferences(userDetails.getUsername(), systemPrompt);
+        String preferredModel = payload.get("preferredModel");
+
+        UserPreferencies savedPreferences = userPreferencesService.createOrUpdatePreferences(
+            userDetails.getUsername(), 
+            systemPrompt, 
+            preferredModel
+        );
+
         return ResponseEntity.ok(savedPreferences);
     }
 }

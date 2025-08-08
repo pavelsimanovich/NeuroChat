@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const userSettingsModal = new bootstrap.Modal(document.getElementById('userSettingsModal'));
     const saveUserSettingsBtn = document.getElementById('saveUserSettings');
     const systemPromptTextarea = document.getElementById('systemPrompt');
+    const modelSelectElement = document.getElementById('modelSelect');
 
     // Show the modal
     if (userSettingsBtn) {
@@ -13,6 +14,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(data => {
                     if (data && data.userSystemPrompt) {
                         systemPromptTextarea.value = data.userSystemPrompt;
+                    }
+                    if (data && data.model) {
+                        modelSelectElement.value = data.model;
+                    }
+                    if (data && data.preferredModel) {
+                        modelSelectElement.value = data.preferredModel;
                     }
                     userSettingsModal.show();
                 })
@@ -31,13 +38,17 @@ document.addEventListener('DOMContentLoaded', function () {
     if (saveUserSettingsBtn) {
         saveUserSettingsBtn.addEventListener('click', () => {
             const systemPrompt = systemPromptTextarea.value;
+            const preferredModel = modelSelectElement.value;
 
             fetch('/api/user/preferences', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ systemPrompt: systemPrompt })
+                body: JSON.stringify({ 
+                    systemPrompt: systemPrompt,
+                    preferredModel: preferredModel 
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -49,6 +60,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     timer: 1500,
                     showConfirmButton: false
                 });
+
+                // Обновляем отображение модели в интерфейсе, если она изменилась
+                const currentModelBadge = document.querySelector('.model-name');
+                if (currentModelBadge) {
+                    const newModel = data?.preferredModel || data?.model || preferredModel;
+                    if (newModel) {
+                        currentModelBadge.textContent = newModel;
+                    }
+                }
             })
             .catch(error => {
                 console.error('Error saving user preferences:', error);
