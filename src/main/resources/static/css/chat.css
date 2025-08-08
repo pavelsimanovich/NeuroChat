@@ -23,6 +23,17 @@ html, body, .sidebar, .chat-container, .message-input, .message, .sidebar-header
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+/* Collapse rooms (chat list) */
+.sidebar.rooms-collapsed .rooms-list {
+    display: none;
+}
+.sidebar.rooms-collapsed .sidebar-header #collapseRoomsIcon {
+    transform: rotate(180deg);
+}
+.sidebar.rooms-collapsed .sidebar-header {
+    margin-bottom: 0; /* reduce gap when list hidden */
+}
+
 #export-loading .loading-overlay {
     position: absolute;
     top: 0;
@@ -1801,12 +1812,22 @@ pre[class*="language-"] {
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
+    cursor: pointer;
 }
 
 .chat-group-header i {
     font-size: 0.8rem;
     opacity: 0.7;
+}
+
+.chat-group-header .group-chevron {
+    transition: transform 0.2s ease;
+}
+
+.chat-group.collapsed .group-chevron {
+    transform: rotate(-90deg);
 }
 
 [data-bs-theme="dark"] .chat-group-header {
@@ -1818,6 +1839,10 @@ pre[class*="language-"] {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+}
+
+.chat-group.collapsed .chat-group-content {
+    display: none;
 }
 
 /* Pinned chats styles */

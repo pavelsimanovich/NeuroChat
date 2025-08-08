@@ -229,13 +229,55 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
     groupElement.className = 'chat-group';
     groupElement.setAttribute('data-group', groupId);
 
+    // Применяем сохраненное состояние сворачивания группы
+    try {
+        const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+        if (Array.isArray(collapsedGroups) && collapsedGroups.includes(groupId)) {
+            groupElement.classList.add('collapsed');
+        }
+    } catch (e) {}
+
     // Заголовок группы
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
+    headerElement.setAttribute('role', 'button');
+    headerElement.setAttribute('tabindex', '0');
+    headerElement.setAttribute('aria-expanded', groupElement.classList.contains('collapsed') ? 'false' : 'true');
     headerElement.innerHTML = `
-        <i class="bi ${iconClass}"></i>
-        <span>${title}</span>
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi ${iconClass}"></i>
+            <span>${title}</span>
+        </div>
+        <i class="bi bi-chevron-down group-chevron" aria-hidden="true"></i>
     `;
+
+    // Обработчики для сворачивания/разворачивания конкретной группы
+    const toggleGroup = () => {
+        const willCollapse = !groupElement.classList.contains('collapsed');
+        groupElement.classList.toggle('collapsed');
+        headerElement.setAttribute('aria-expanded', willCollapse ? 'false' : 'true');
+        try {
+            const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '[]');
+            const set = new Set(Array.isArray(collapsedGroups) ? collapsedGroups : []);
+            if (willCollapse) {
+                set.add(groupId);
+            } else {
+                set.delete(groupId);
+            }
+            localStorage.setItem('collapsedGroups', JSON.stringify(Array.from(set)));
+        } catch (e) {}
+    };
+
+    headerElement.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleGroup();
+    });
+    headerElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleGroup();
+        }
+    });
 
     // Контент группы
     const contentElement = document.createElement('div');

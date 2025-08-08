@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Получаем основные элементы
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileSidebar = document.getElementById('mobileSidebar');
+    const collapseRoomsBtn = document.getElementById('collapseRoomsBtn');
+    const collapseRoomsIcon = document.getElementById('collapseRoomsIcon');
     const elements = {
         roomsList: document.getElementById('roomsList')
     };
@@ -150,6 +152,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Кнопка сворачивания списка чатов
+    function initRoomsCollapseFromStorage() {
+        try {
+            const stored = localStorage.getItem('roomsCollapsed');
+            const shouldCollapse = stored === '1';
+            if (shouldCollapse) {
+                mobileSidebar.classList.add('rooms-collapsed');
+                if (collapseRoomsBtn) collapseRoomsBtn.setAttribute('aria-pressed', 'true');
+            }
+        } catch (e) {}
+    }
+
+    if (collapseRoomsBtn) {
+        // Первичная инициализация состояния
+        initRoomsCollapseFromStorage();
+        collapseRoomsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const currentlyCollapsed = mobileSidebar.classList.contains('rooms-collapsed');
+            const nextState = !currentlyCollapsed;
+            mobileSidebar.classList.toggle('rooms-collapsed', nextState);
+            collapseRoomsBtn.setAttribute('aria-pressed', nextState ? 'true' : 'false');
+            collapseRoomsBtn.title = nextState ? 'Развернуть список чатов' : 'Свернуть список чатов';
+            try { localStorage.setItem('roomsCollapsed', nextState ? '1' : '0'); } catch (e) {}
+        });
+    }
+
     // Добавляем обработчики для модальных окон и диалогов
     document.addEventListener('click', function(e) {
         if (window.innerWidth < 768) {
@@ -179,6 +208,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.sidebarResizeManager) {
                 window.sidebarResizeManager.resetToDefault();
             }
+        },
+        toggleRoomsCollapse: function(forceState) {
+            // forceState: true -> collapse, false -> expand, undefined -> toggle
+            const currentlyCollapsed = mobileSidebar.classList.contains('rooms-collapsed');
+            const shouldCollapse = (typeof forceState === 'boolean') ? forceState : !currentlyCollapsed;
+            mobileSidebar.classList.toggle('rooms-collapsed', shouldCollapse);
+            if (collapseRoomsBtn) {
+                collapseRoomsBtn.setAttribute('aria-pressed', shouldCollapse ? 'true' : 'false');
+                collapseRoomsBtn.title = shouldCollapse ? 'Развернуть список чатов' : 'Свернуть список чатов';
+            }
+            try { localStorage.setItem('roomsCollapsed', shouldCollapse ? '1' : '0'); } catch (e) {}
         }
     };
 
