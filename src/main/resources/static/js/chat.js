@@ -1792,35 +1792,109 @@ function handleContextMenuAction(action) {
 
 // Show rename room modal
 function showRenameRoomModal(roomId, currentTitle) {
-    const modal = new bootstrap.Modal(document.getElementById('renameRoomModal'));
-    const input = document.getElementById('renameRoomInput');
-    const charCount = document.getElementById('renameCharCount');
-
-    document.getElementById('renamingRoomId').value = roomId;
-    input.value = currentTitle || '';
-    charCount.textContent = (currentTitle || '').length;
-
-    // Update character count
-    input.addEventListener('input', () => {
-        charCount.textContent = input.value.length;
-    });
-
-    // Handle confirm button click
-    document.getElementById('confirmRenameRoom').onclick = async () => {
-        const newTitle = input.value.trim();
-        if (!newTitle) {
-            showNotification('Название не может быть пустым', 'error');
-            return;
+    // Unified SweetAlert2 dialog styled similarly to delete confirmation
+    Swal.fire({
+        title: '<span class="rename-title">Переименовать чат</span>',
+        input: 'text',
+        inputValue: currentTitle || '',
+        inputAttributes: {
+            maxlength: '50',
+            autocapitalize: 'off',
+            autocorrect: 'off',
+            'aria-label': 'Новое название чата'
+        },
+        html: `<div class="rename-message">
+                <div class="rename-icon-container">
+                    <i class="bi bi-pencil-square rename-icon-animated"></i>
+                </div>
+                <p class="text-muted mb-0">Введите новое название чата</p>
+               </div>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Сохранить',
+        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        reverseButtons: true,
+        backdrop: true,
+        customClass: {
+            container: 'rename-dialog-container',
+            popup: 'rename-dialog-popup',
+            title: 'rename-dialog-title',
+            confirmButton: 'btn-rename-confirm',
+            cancelButton: 'btn-rename-cancel',
+            actions: 'rename-dialog-actions',
+            input: 'rename-dialog-input'
+        },
+        buttonsStyling: true,
+        allowOutsideClick: false,
+        focusConfirm: false,
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown animate__faster'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp animate__faster'
+        },
+        didOpen: (modal) => {
+            const style = document.createElement('style');
+            style.textContent = `
+                .rename-dialog-container { z-index: 1060; }
+                .rename-dialog-popup {
+                    border-radius: 16px;
+                    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-color);
+                    padding: 24px;
+                    max-width: 420px;
+                }
+                .rename-title {
+                    font-weight: 600;
+                    font-size: 1.25rem;
+                    margin-bottom: 0;
+                    color: var(--primary-color, #0d6efd);
+                }
+                .rename-message { margin: 12px 0 8px; text-align: center; }
+                .rename-icon-container { margin-bottom: 10px; }
+                .rename-icon-animated {
+                    font-size: 2.5rem;
+                    color: var(--primary-color, #0d6efd);
+                    animation: pulse 0.6s ease-in-out 0.2s;
+                    display: inline-block;
+                }
+                .rename-dialog-input {
+                    margin-top: 6px;
+                }
+                .rename-dialog-actions { margin-top: 10px; gap: 12px; }
+                .btn-rename-confirm {
+                    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+                    transition: all 0.2s ease; border-radius: 8px; font-weight: 500;
+                }
+                .btn-rename-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(13, 110, 253, 0.45); }
+                .btn-rename-confirm:active { transform: translateY(0); }
+                .btn-rename-cancel { border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
+                .btn-rename-cancel:hover { transform: translateY(-2px); }
+                @keyframes pulse { 0%{ transform: scale(0.95);} 50%{ transform: scale(1.03);} 100%{ transform: scale(1);} }
+            `;
+            document.head.appendChild(style);
+            modal.addEventListener('close', () => {
+                if (style.parentNode) document.head.removeChild(style);
+            });
+        },
+        preConfirm: () => {
+            const value = Swal.getInput()?.value?.trim();
+            if (!value) {
+                Swal.showValidationMessage('Название не может быть пустым');
+                return false;
+            }
+            return value;
         }
-
+    }).then(async (result) => {
+        if (!result.isConfirmed) return;
+        const newTitle = result.value;
         try {
             const response = await fetch(`${config.apiBaseUrl}/rooms/${roomId}/rename?title=${encodeURIComponent(newTitle)}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
-
             if (!response.ok) throw new Error('Не удалось переименовать чат');
 
             // Update room title in the UI
@@ -1832,23 +1906,17 @@ function showRenameRoomModal(roomId, currentTitle) {
                     nameElement.title = newTitle;
                     roomElement.setAttribute('data-room-title', newTitle);
                 }
-
-                // Update current room title if this is the active room
                 if (state.currentRoom?.id === roomId) {
                     state.currentRoom.title = newTitle;
                     document.getElementById('currentRoomTitle').textContent = newTitle;
                 }
             }
-
             showNotification('Чат успешно переименован', 'success');
-            modal.hide();
         } catch (error) {
             console.error('Error renaming room:', error);
             showNotification('Ошибка при переименовании чата', 'error');
         }
-    };
-
-    modal.show();
+    });
 }
 
 /**
@@ -2397,15 +2465,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (window.Swal && typeof window.Swal.fire === 'function') {
                 Swal.fire({
-                    title: 'Выйти из аккаунта?',
-                    text: 'Вы сможете войти снова в любое время.',
-                    icon: 'question',
+                    title: '<span class="logout-title">Выйти из аккаунта?</span>',
+                    html: `<div class="logout-message">
+                            <div class="logout-icon-container">
+                                <i class="bi bi-box-arrow-right logout-icon-animated"></i>
+                            </div>
+                            <p class="text-muted mb-0">Вы сможете войти снова в любое время.</p>
+                           </div>`,
+                    icon: null,
                     showCancelButton: true,
-                    confirmButtonText: 'Выйти',
-                    cancelButtonText: 'Отмена',
+                    confirmButtonText: '<i class="bi bi-door-open me-1"></i> Выйти',
+                    cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
                     reverseButtons: true,
                     focusCancel: true,
-                    confirmButtonColor: '#d33'
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                    customClass: {
+                        container: 'logout-dialog-container',
+                        popup: 'logout-dialog-popup',
+                        title: 'logout-dialog-title',
+                        confirmButton: 'btn-logout-confirm',
+                        cancelButton: 'btn-logout-cancel',
+                        actions: 'logout-dialog-actions'
+                    },
+                    buttonsStyling: true,
+                    allowOutsideClick: true,
+                    showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' },
+                    hideClass: { popup: 'animate__animated animate__fadeOutUp animate__faster' },
+                    didOpen: (modal) => {
+                        const style = document.createElement('style');
+                        style.textContent = `
+                            .logout-dialog-container { z-index: 1060; }
+                            .logout-dialog-popup {
+                                border-radius: 16px; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+                                background: var(--bg-secondary); border: 1px solid var(--border-color);
+                                padding: 24px; max-width: 420px;
+                            }
+                            .logout-title { font-weight: 600; font-size: 1.25rem; margin-bottom: 0; color: var(--primary-color, #0d6efd); }
+                            .logout-message { margin: 12px 0 8px; text-align: center; }
+                            .logout-icon-container { margin-bottom: 10px; }
+                            .logout-icon-animated { font-size: 2.5rem; color: var(--primary-color, #0d6efd); animation: slide 0.5s ease-in-out 0.2s; display: inline-block; }
+                            .logout-dialog-actions { margin-top: 10px; gap: 12px; }
+                            .btn-logout-confirm { box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35); transition: all 0.2s ease; border-radius: 8px; font-weight: 500; }
+                            .btn-logout-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(13, 110, 253, 0.45); }
+                            .btn-logout-confirm:active { transform: translateY(0); }
+                            .btn-logout-cancel { border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
+                            .btn-logout-cancel:hover { transform: translateY(-2px); }
+                            @keyframes slide { 0%{ transform: translateX(-4px);} 50%{ transform: translateX(2px);} 100%{ transform: translateX(0);} }
+                        `;
+                        document.head.appendChild(style);
+                        modal.addEventListener('close', () => {
+                            if (style.parentNode) document.head.removeChild(style);
+                        });
+                    }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         form.submit();
