@@ -1,6 +1,8 @@
 package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.UserPreferencies;
+import com.ps.ollamaai.dto.UserPreferencesDTO;
+import com.ps.ollamaai.dto.enums.SupportedOllamaModel;
 import com.ps.ollamaai.repository.UserPreferenciesRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,36 +31,60 @@ public class UserPreferencesService {
         return userPreferenciesRepository.save(userPreferencies);
     }
 
+    private static UserPreferencesDTO toDto(UserPreferencies entity) {
+        if (entity == null) return null;
+        UserPreferencesDTO dto = new UserPreferencesDTO();
+        dto.setSystemPrompt(entity.getUserSystemPrompt());
+        dto.setPreferredModel(entity.getModel());
+        return dto;
+    }
+
+    private static void applyDtoToEntity(UserPreferencesDTO dto, UserPreferencies entity, String email) {
+        if (dto == null || entity == null) return;
+        entity.setUserSystemPrompt(dto.getSystemPrompt());
+        String preferredModel = dto.getPreferredModel();
+        if (StringUtils.hasText(preferredModel)) {
+            if (SupportedOllamaModel.isSupported(preferredModel)) {
+                entity.setModel(preferredModel);
+            } else {
+                log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.", preferredModel, email);
+            }
+        }
+    }
+
     @Transactional
-    public UserPreferencies createOrUpdatePreferences(String email, String systemPrompt, String preferredModel) {
+    public UserPreferencesDTO createOrUpdatePreferences(String email, UserPreferencesDTO dto) {
         UserPreferencies preferences = findByUserId(email)
                 .orElseGet(() -> {
                     UserPreferencies newPreferences = new UserPreferencies();
                     newPreferences.setUserId(email);
                     return newPreferences;
                 });
-        preferences.setUserSystemPrompt(systemPrompt);
-
-        if (preferredModel != null && !preferredModel.isEmpty()) {
-            if (com.ps.ollamaai.dto.enums.SupportedOllamaModel.isSupported(preferredModel)) {
-                preferences.setModel(preferredModel);
-            } else {
-                log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.", preferredModel, email);
-            }
-        }
-
-        return save(preferences);
+        applyDtoToEntity(dto, preferences, email);
+        return toDto(save(preferences));
     }
 
-    public String getUserSystemPrompt(String email) {
+    @Transactional(readOnly = true)
+    public UserPreferencesDTO getUserPreferencesOrDefault(String email) {
         try {
             Optional<UserPreferencies> preferences = findByUserId(email);
-            if (preferences.isPresent() && StringUtils.hasText(preferences.get().getUserSystemPrompt())) {
-                return preferences.get().getUserSystemPrompt();
+            if (preferences.isPresent()) {
+                UserPreferencies entity = preferences.get();
+                UserPreferencesDTO dto = toDto(entity);
+                if (!StringUtils.hasText(dto.getSystemPrompt())) {
+                    dto.setSystemPrompt(PROMPT_GENERAL_INSTRUCTIONS);
+                }
+                if (!StringUtils.hasText(dto.getPreferredModel())) {
+                    dto.setPreferredModel("");
+                }
+                return dto;
             }
         } catch (Exception e) {
-            log.warn("Failed to load user preferences for userId: {}, using default prompt", email, e);
+            log.warn("Failed to load user preferences for userId: {}, using defaults", email, e);
         }
-        return PROMPT_GENERAL_INSTRUCTIONS;
+        UserPreferencesDTO dto = new UserPreferencesDTO();
+        dto.setSystemPrompt(PROMPT_GENERAL_INSTRUCTIONS);
+        dto.setPreferredModel("");
+        return dto;
     }
 }

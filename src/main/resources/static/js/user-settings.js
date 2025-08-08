@@ -12,13 +12,10 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch('/api/user/preferences')
                 .then(response => response.json())
                 .then(data => {
-                    if (data && data.userSystemPrompt) {
-                        systemPromptTextarea.value = data.userSystemPrompt;
+                    if (data && typeof data.systemPrompt === 'string') {
+                        systemPromptTextarea.value = data.systemPrompt;
                     }
-                    if (data && data.model) {
-                        modelSelectElement.value = data.model;
-                    }
-                    if (data && data.preferredModel) {
+                    if (data && typeof data.preferredModel === 'string' && data.preferredModel) {
                         modelSelectElement.value = data.preferredModel;
                     }
                     userSettingsModal.show();
@@ -64,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Обновляем отображение модели в интерфейсе, если она изменилась
                 const currentModelBadge = document.querySelector('.model-name');
                 if (currentModelBadge) {
-                    const newModel = data?.preferredModel || data?.model || preferredModel;
+                    const newModel = data?.preferredModel || preferredModel;
                     if (newModel) {
                         currentModelBadge.textContent = newModel;
                     }

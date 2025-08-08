@@ -1,7 +1,6 @@
 package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.FileData;
-import com.ps.ollamaai.domain.UserPreferencies;
 import com.ps.ollamaai.dto.ChunkResponseDTO;
 import com.ps.ollamaai.exceptions.GeneralFluxException;
 import com.ps.ollamaai.exceptions.LimitExceededException;
@@ -65,39 +64,40 @@ public class ChatAIController {
         return reactiveService.processChatMessageReactive(question, chatId, principal.getName(), fileData)
                 .flatMapMany(currentHistory -> {
                     try {
-                        List<Message> messages = getMessages(question, fileData, currentHistory, principal.getName());
+                        return Mono.fromCallable(() -> userPreferencesService.getUserPreferencesOrDefault(principal.getName()))
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .flatMapMany(prefs -> {
+                                    String systemPrompt = prefs.getSystemPrompt();
+                                    String preferredModel = prefs.getPreferredModel();
 
-                        Prompt prompt = new Prompt(messages);
+                                    List<Message> messages = getMessages(question, fileData, currentHistory, systemPrompt);
 
-                        // Apply user selected model if present
-                        String preferredModel = userPreferencesService.findByUserId(principal.getName())
-                                .map(UserPreferencies::getModel)
-                                .filter(org.springframework.util.StringUtils::hasText)
-                                .orElse(null);
+                                    Prompt prompt = new Prompt(messages);
 
-                        var spec = chatClient
-                                .prompt(prompt)
-                                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
+                                    var spec = chatClient
+                                            .prompt(prompt)
+                                            .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
 
-                        if (preferredModel != null) {
-                            var options = org.springframework.ai.ollama.api.OllamaOptions.builder()
-                                    .model(preferredModel)
-                                    .build();
-                            spec = spec.options(options);
-                        }
+                                    if (StringUtils.hasText(preferredModel)) {
+                                        var options = org.springframework.ai.ollama.api.OllamaOptions.builder()
+                                                .model(preferredModel)
+                                                .build();
+                                        spec = spec.options(options);
+                                    }
 
-                        return spec
-                                .stream()
-                                .content()
-                                .map(chunk -> new ChunkResponseDTO(chunk, false, null))
-                                .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
-                                .doOnComplete(() -> {
-                                    String response = chatMessageService.saveAiResponse(chatId);
-                                    // Обновляем currentHistory
-                                    currentHistory.add(new UserMessage(question));
-                                    currentHistory.add(new AssistantMessage(response));
-                                })
-                                .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
+                                    return spec
+                                            .stream()
+                                            .content()
+                                            .map(chunk -> new ChunkResponseDTO(chunk, false, null))
+                                            .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
+                                            .doOnComplete(() -> {
+                                                String response = chatMessageService.saveAiResponse(chatId);
+                                                // Обновляем currentHistory
+                                                currentHistory.add(new UserMessage(question));
+                                                currentHistory.add(new AssistantMessage(response));
+                                            })
+                                            .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
+                                });
                     } catch (Exception e) {
                         throw new GeneralFluxException("Error building prompt: " + e.getMessage(), e);
                     }
@@ -126,9 +126,9 @@ public class ChatAIController {
         return fileData;
     }
 
-    private List<Message> getMessages(String question, FileData fileData, List<Message> currentHistory, String userId) {
+    private List<Message> getMessages(String question, FileData fileData, List<Message> currentHistory, String systemPrompt) {
         List<Message> messages = new ArrayList<>(currentHistory);
-        messages.add(new SystemMessage(userPreferencesService.getUserSystemPrompt(userId)));
+        messages.add(new SystemMessage(systemPrompt));
 
         UserMessage userMessage;
         if (fileData != null) {
