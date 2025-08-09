@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -28,4 +29,5 @@ public class User implements Serializable {
     private String lastName;
     private String role;
     private boolean enabled;
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

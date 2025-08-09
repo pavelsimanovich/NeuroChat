@@ -2193,6 +2193,10 @@ border-color: rgba(255, 193, 7, 0.15);
     transition: all 0.3s ease;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
+    /* Fixed height for static-sized modal */
+    height: 750px;
+    display: flex;
+    flex-direction: column;
 }
 
 #userSettingsModal .modal-header {
@@ -2243,6 +2247,9 @@ border-color: rgba(255, 193, 7, 0.15);
 #userSettingsModal .modal-body {
     padding: 1.5rem;
     color: var(--text-primary);
+    /* Make the body scrollable within fixed-height modal */
+    flex: 1 1 auto;
+    overflow: auto;
 }
 
 #userSettingsModal .modal-footer {
@@ -2321,6 +2328,22 @@ border-color: rgba(255, 193, 7, 0.15);
     color: var(--text-primary);
     padding: 1.25rem;
     border-top: 1px solid var(--border-color);
+}
+
+/* Fixed width for static-sized modal */
+#userSettingsModal .modal-dialog {
+    max-width: none; /* override bootstrap size limits */
+    width: 900px;
+}
+
+/* Safety: keep usable on very small screens */
+@media (max-width: 768px) {
+    #userSettingsModal .modal-dialog {
+        width: 92vw;
+    }
+    #userSettingsModal .modal-content {
+        height: 90vh;
+    }
 }
 
 /* Dark theme adjustments */

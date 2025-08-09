@@ -319,6 +319,9 @@
                             <button class="nav-link d-flex align-items-center" id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">
                                 <i class="bi bi-person-circle me-2"></i> <span>Профиль</span>
                             </button>
+                            <button class="nav-link d-flex align-items-center" id="about-tab" data-bs-toggle="pill" data-bs-target="#about" type="button" role="tab" aria-controls="about" aria-selected="false">
+                                <i class="bi bi-info-circle me-2"></i> <span>О программе</span>
+                            </button>
                         </div>
                     </div>
                     <div class="col-12 col-md-9">
@@ -388,13 +391,16 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="tab-pane fade" id="about" role="tabpanel" aria-labelledby="about-tab">
+                                <p class="text-muted">О программе.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    <button type="button" class="btn btn-primary" id="saveUserSettings">Сохранить</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" id="saveUserSettings">Сохранить</button>
             </div>
         </div>
     </div>
