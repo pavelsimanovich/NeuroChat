@@ -21,39 +21,8 @@ public class UserPreferencesService {
 
     private final UserPreferenciesRepository userPreferenciesRepository;
 
-    @Transactional(readOnly = true)
     public Optional<UserPreferencies> findByUserId(String email) {
         return userPreferenciesRepository.findByUserId(email);
-    }
-
-    @Transactional
-    public UserPreferencies save(UserPreferencies userPreferencies) {
-        return userPreferenciesRepository.save(userPreferencies);
-    }
-
-    private static UserPreferencesDTO toDto(UserPreferencies entity) {
-        if (entity == null) return null;
-        UserPreferencesDTO dto = new UserPreferencesDTO();
-        dto.setSystemPrompt(entity.getUserSystemPrompt());
-        dto.setPreferredModel(entity.getModel());
-        dto.setAvatarFileId(entity.getAvatarFileId());
-        return dto;
-    }
-
-    private static void applyDtoToEntity(UserPreferencesDTO dto, UserPreferencies entity, String email) {
-        if (dto == null || entity == null) return;
-        entity.setUserSystemPrompt(dto.getSystemPrompt());
-        String preferredModel = dto.getPreferredModel();
-        if (StringUtils.hasText(preferredModel)) {
-            if (SupportedOllamaModel.isSupported(preferredModel)) {
-                entity.setModel(preferredModel);
-            } else {
-                log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.", preferredModel, email);
-            }
-        }
-        if (StringUtils.hasText(dto.getAvatarFileId())) {
-            entity.setAvatarFileId(dto.getAvatarFileId());
-        }
     }
 
     @Transactional
@@ -90,5 +59,34 @@ public class UserPreferencesService {
         dto.setSystemPrompt(PROMPT_GENERAL_INSTRUCTIONS);
         dto.setPreferredModel("");
         return dto;
+    }
+
+    private UserPreferencies save(UserPreferencies userPreferencies) {
+        return userPreferenciesRepository.save(userPreferencies);
+    }
+
+    private static UserPreferencesDTO toDto(UserPreferencies entity) {
+        if (entity == null) return null;
+        UserPreferencesDTO dto = new UserPreferencesDTO();
+        dto.setSystemPrompt(entity.getUserSystemPrompt());
+        dto.setPreferredModel(entity.getModel());
+        dto.setAvatarFileId(entity.getAvatarFileId());
+        return dto;
+    }
+
+    private static void applyDtoToEntity(UserPreferencesDTO dto, UserPreferencies entity, String email) {
+        if (dto == null || entity == null) return;
+        entity.setUserSystemPrompt(dto.getSystemPrompt());
+        String preferredModel = dto.getPreferredModel();
+        if (StringUtils.hasText(preferredModel)) {
+            if (SupportedOllamaModel.isSupported(preferredModel)) {
+                entity.setModel(preferredModel);
+            } else {
+                log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.", preferredModel, email);
+            }
+        }
+        if (StringUtils.hasText(dto.getAvatarFileId())) {
+            entity.setAvatarFileId(dto.getAvatarFileId());
+        }
     }
 }
