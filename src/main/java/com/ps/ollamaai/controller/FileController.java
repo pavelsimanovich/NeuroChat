@@ -6,6 +6,7 @@ import com.ps.ollamaai.dto.converter.FileDataToDtoConverter;
 import com.ps.ollamaai.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/files")
@@ -41,11 +43,13 @@ public class FileController {
     @GetMapping("/{fileId}")
     public ResponseEntity<ByteArrayResource> downloadFile(@PathVariable String fileId) {
         FileData fileData = fileStorageService.getFile(fileId);
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(fileData.getFileName(), StandardCharsets.UTF_8)
+                .build();
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(fileData.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, 
-                        "attachment; filename=\"" + fileData.getFileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .body(new ByteArrayResource(fileData.getData()));
     }
 
@@ -63,3 +67,4 @@ public class FileController {
                 .body(fileData.getData());
     }
 }
+
