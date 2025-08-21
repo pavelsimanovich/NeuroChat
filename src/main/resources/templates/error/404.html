@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>404 — Страница не найдена</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #111827;
+      --card: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --primary: #4f46e5;
+      --primary-50: #eef2ff;
+      --border: #374151;
+      --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --primary: #4f46e5;
+        --primary-50: #eef2ff;
+        --border: #e5e7eb;
+        --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+      }
+    }
+    html, body { height: 100%; overflow: hidden; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: radial-gradient(1200px 600px at 20% -10%, rgba(79,70,229,.15), transparent), radial-gradient(1000px 500px at 120% 10%, rgba(16,185,129,.12), transparent), var(--bg); color: var(--text); position: relative; }
+    .wrap { min-height: 100dvh; display: grid; place-items: center; padding: 24px; position: relative; overflow: hidden; }
+    .wrap:before { content:""; position:absolute; width:420px; height:420px; border-radius: 9999px; filter: blur(80px); background: linear-gradient(135deg, rgba(79,70,229,.25), rgba(59,130,246,.15)); opacity:.6; left:-120px; top:-120px; animation: float 10s ease-in-out infinite alternate; }
+    .wrap:after { content:""; position:absolute; width:360px; height:360px; border-radius: 9999px; filter: blur(90px); background: linear-gradient(135deg, rgba(16,185,129,.22), rgba(59,130,246,.12)); opacity:.5; right:-120px; bottom:-140px; animation: float 12s ease-in-out infinite alternate-reverse; }
+    @keyframes float { from { transform: translateY(0) } to { transform: translateY(18px) } }
+    .content { max-width: 960px; width: 100%; padding: 20px; text-align: left; }
+    .hero { display:flex; gap:18px; align-items:center; margin-bottom: 18px; }
+    .hero .icon { width:64px; height:64px; border-radius: 16px; display:grid; place-items:center; background: linear-gradient(135deg, var(--primary), #22c55e); color: #fff; font-size: 28px; box-shadow: 0 10px 20px rgba(79,70,229,.25); }
+    .code { font-weight:900; font-size: clamp(3rem, 10vw, 6rem); line-height:1; margin:0; background: linear-gradient(135deg, var(--primary), #22c55e 60%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 8px 30px rgba(79,70,229,.25); }
+    .title { margin: 6px 0 0; font-size: clamp(1.25rem, 2.4vw, 1.6rem); color: var(--muted); }
+    .text { color: var(--muted); font-size: clamp(1rem, 1.6vw, 1.125rem); }
+    .suggest { margin: 14px 0 0; color: var(--muted); font-size: .98rem; }
+    .list { margin: 10px 0 0; padding-left: 18px; color: var(--muted); }
+    .divider { height:1px; background: var(--border); margin: 18px 0; opacity: .7; }
+    .actions { margin-top: 14px; display:flex; gap:12px; flex-wrap: wrap; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; text-decoration:none; border:1px solid var(--border); color: var(--text); background: color-mix(in oklab, var(--surface) 92%, transparent); transition: transform .15s ease, background .2s ease, box-shadow .2s ease; box-shadow: 0 6px 14px rgba(0,0,0,.12); }
+    .btn:hover { background: color-mix(in oklab, var(--surface) 100%, transparent); transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,.18); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), #4338ca); border-color: #4338ca; color: #fff; box-shadow: 0 10px 22px rgba(79,70,229,.35); }
+    .btn-primary:hover { filter: brightness(0.98); }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <div class="content">
+    <div class="hero">
+      <div class="icon">🧭</div>
+      <div>
+        <div class="code">404</div>
+        <div class="title">Страница не найдена</div>
+      </div>
+    </div>
+    <div class="text">К сожалению, запрашиваемая страница не существует или была перемещена.</div>
+    <p class="suggest">Возможно, поможет одно из действий:</p>
+    <ul class="list">
+      <li>Проверьте адрес в строке браузера</li>
+      <li>Вернитесь назад и попробуйте другой путь</li>
+      <li>Перейдите на главную и начните заново</li>
+    </ul>
+    <div class="divider"></div>
+    <div class="actions">
+      <a class="btn btn-primary" href="/">На главную</a>
+      <a class="btn" href="javascript:history.back()">Назад</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>
