@@ -1,3 +1,8 @@
+// Конфигурация
+const config = {
+    apiBaseUrl: '/api/chat' // Базовый URL для API
+};
+
 // Utility function for debouncing
 function debounce(func, wait) {
     let timeout;
@@ -241,8 +246,13 @@ function setupEventListeners() {
  */
 async function searchMessages(query, isAutoSearch = false) {
     // Проверяем наличие текущей комнаты и валидность запроса
-    if (!query.trim() || !state.currentRoom?.id) {
-        hideSearchResults();
+    const chatState = window.chatState || {};
+    const currentRoomId = chatState.currentRoom?.id;
+    
+    if (!query.trim() || !currentRoomId) {
+        if (!isAutoSearch) {
+            hideSearchResults();
+        }
         return;
     }
 
@@ -255,7 +265,7 @@ async function searchMessages(query, isAutoSearch = false) {
 
     try {
         // Отправляем запрос на сервер
-        const response = await fetch(`${config.apiBaseUrl}/messages/search?roomId=${state.currentRoom.id}&query=${encodeURIComponent(query)}`);
+        const response = await fetch(`${config.apiBaseUrl}/messages/search?roomId=${window.chatState.currentRoom.id}&query=${encodeURIComponent(query)}`);
 
         if (!response.ok) {
             throw new Error(`Ошибка HTTP! Статус: ${response.status}`);

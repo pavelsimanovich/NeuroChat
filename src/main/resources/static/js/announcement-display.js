@@ -123,7 +123,7 @@ class AnnouncementDisplay {
             }
             
             // Update modal content
-            this.updateModalContent(announcement, hasMultiple, formatDate);
+            this.updateModalContent(announcement, hasMultiple);
             
         } catch (error) {
             console.error('Error displaying announcement:', error);

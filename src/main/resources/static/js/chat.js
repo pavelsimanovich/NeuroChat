@@ -1,3 +1,10 @@
+// Экспортируем состояние чата в глобальную область видимости
+window.chatState = {
+    currentRoom: null,
+    rooms: [],
+    messages: []
+};
+
 // Конфигурация
 const config = {
     // Auto-scroll configuration
@@ -19,11 +26,8 @@ const config = {
 
 let eventSource = null;
 let chatConnections = {};
-let state = {
-    currentRoom: null,
-    rooms: [],
-    messages: []
-};
+// Используем глобальное состояние чата
+const state = window.chatState;
 
 // Context menu state
 let contextMenuState = {
@@ -151,25 +155,25 @@ function renderRoomsList() {
 
     // Группировка чатов
     const groupedRooms = groupRoomsByDate(state.rooms);
-    
+
     // Отображение закрепленных чатов
     if (groupedRooms.pinned.length > 0) {
         renderChatGroup('pinned', 'Закрепленные', groupedRooms.pinned, 'bi-pin-angle-fill');
     }
-    
+
     // Отображение групп по времени
     if (groupedRooms.today.length > 0) {
         renderChatGroup('today', 'Сегодня', groupedRooms.today, 'bi-clock');
     }
-    
+
     if (groupedRooms.yesterday.length > 0) {
         renderChatGroup('yesterday', 'Вчера', groupedRooms.yesterday, 'bi-clock-history');
     }
-    
+
     if (groupedRooms.thisWeek.length > 0) {
         renderChatGroup('thisWeek', 'На этой неделе', groupedRooms.thisWeek, 'bi-calendar-week');
     }
-    
+
     if (groupedRooms.older.length > 0) {
         renderChatGroup('older', 'Ранее', groupedRooms.older, 'bi-archive');
     }
@@ -192,7 +196,7 @@ function groupRoomsByDate(rooms) {
     };
 
     // Сортируем комнаты по дате создания (новые сверху)
-    const sortedRooms = [...rooms].sort((a, b) => 
+    const sortedRooms = [...rooms].sort((a, b) =>
         new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
 
@@ -297,7 +301,7 @@ function createRoomElement(room) {
     const roomElement = document.createElement('div');
     const isActive = state.currentRoom?.id === room.id;
     const pinned = isPinned(room.id);
-    
+
     roomElement.className = `room-item ${isActive ? 'active' : ''} ${pinned ? 'pinned' : ''}`;
     roomElement.setAttribute('data-room-id', room.id);
     roomElement.setAttribute('data-room-title', room.title);
@@ -361,7 +365,7 @@ function isPinned(roomId) {
 function togglePin(roomId) {
     const pinnedRooms = JSON.parse(localStorage.getItem('pinnedRooms') || '[]');
     const index = pinnedRooms.indexOf(roomId);
-    
+
     if (index > -1) {
         pinnedRooms.splice(index, 1);
         showNotification('Чат откреплен', 'info');
@@ -369,7 +373,7 @@ function togglePin(roomId) {
         pinnedRooms.push(roomId);
         showNotification('Чат закреплен', 'success');
     }
-    
+
     localStorage.setItem('pinnedRooms', JSON.stringify(pinnedRooms));
     renderRoomsList(); // Перерисовываем список
 }
@@ -398,10 +402,10 @@ async function switchRoom(room) {
         }
 
         scrollToBottom(true);
-            // Закрываем сайдбар в мобильной версии после выбора чата
-            if (window.innerWidth < 768 && window.sidebarManager) {
-                setTimeout(() => window.sidebarManager.close(), 150);
-            }
+        // Закрываем сайдбар в мобильной версии после выбора чата
+        if (window.innerWidth < 768 && window.sidebarManager) {
+            setTimeout(() => window.sidebarManager.close(), 150);
+        }
     } catch (error) {
         console.error('Error switching room:', error);
         showNotification('Ошибка загрузки', 'error');
@@ -458,7 +462,7 @@ function isNearBottom() {
 // Scroll to bottom only if user is already at the bottom or auto-scroll is forced
 function scrollToBottom(force = false) {
     if (!elements || !elements.chatMessages) return;
-    
+
     if (force || !userScrolledUp || isNearBottom()) {
         elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
         userScrolledUp = false;
@@ -468,7 +472,7 @@ function scrollToBottom(force = false) {
 // Handle scroll events to detect user scroll up
 function setupScrollHandlers() {
     if (!elements || !elements.chatMessages) return;
-    
+
     elements.chatMessages.addEventListener('scroll', () => {
         userScrolledUp = !isNearBottom();
     });
@@ -530,7 +534,7 @@ async function generateChatNameFromMessage(message, roomId) {
                 }
             }
         );
-        
+
         if (response.ok) {
             const updatedRoom = await response.json();
             // Update the room in the state
@@ -538,10 +542,10 @@ async function generateChatNameFromMessage(message, roomId) {
             if (roomIndex !== -1) {
                 state.rooms[roomIndex] = updatedRoom;
             }
-            
+
             // Update the UI
             renderRoomsList();
-            
+
             // If this is the current room, update the title
             if (state.currentRoom && state.currentRoom.id === updatedRoom.id) {
                 state.currentRoom.title = updatedRoom.title;
@@ -571,13 +575,13 @@ async function sendMessage() {
     const roomId = state.currentRoom.id;
     const isFirstMessage = state.messages.length === 0;
     let fileData = null;
-    
+
     // If this is the first message in the chat, generate a name based on the message
     if (isFirstMessage && messageContent) {
         // Don't await this, let it happen in the background
         generateChatNameFromMessage(messageContent, roomId);
     }
-    
+
     // Upload file first if exists
     if (files.length) {
         try {
@@ -589,13 +593,13 @@ async function sendMessage() {
             return;
         }
     }
-    
+
     // Create temp message with file data if available
     const tempMessage = getTempMessage(roomId, messageContent, 'temp-user-', elements.userId);
     if (fileData) {
         tempMessage.fileData = fileData;
     }
-    
+
     state.messages.push(tempMessage);
     renderMessages();
     scrollToBottom(true);
@@ -739,11 +743,11 @@ function toggleStreamingUI(isStreaming) {
         elements.stopButton.disabled = false;
         elements.stopButton.style.display = 'flex';
         elements.stopButton.style.visibility = 'visible';
-        
+
         // Disable send button and upload button during streaming
         elements.sendButton.disabled = true;
         if (elements.uploadButton) elements.uploadButton.disabled = true;
-        
+
         // Update current room state
         if (state.currentRoom) {
             state.currentRoom.isStreaming = true;
@@ -752,11 +756,11 @@ function toggleStreamingUI(isStreaming) {
         // Deactivate stop button but keep it in the layout
         elements.stopButton.classList.remove('active');
         elements.stopButton.disabled = true;
-        
+
         // Re-enable send button and upload button
         elements.sendButton.disabled = false;
         if (elements.uploadButton) elements.uploadButton.disabled = false;
-        
+
         // Update current room state
         if (state.currentRoom) {
             state.currentRoom.isStreaming = false;
@@ -768,7 +772,7 @@ function stopStream(chatId) {
     if (chatConnections[chatId]) {
         chatConnections[chatId].close();
         delete chatConnections[chatId];
-        
+
         if (state.currentRoom && state.currentRoom.id === chatId) {
             state.currentRoom.isStreaming = false;
         }
@@ -1013,7 +1017,7 @@ async function uploadFile(file) {
             const error = await response.text();
             throw new Error(`File upload failed: ${error}`);
         }
-        
+
         // Get the file data from the response
         return await response.json();
     } catch (error) {
@@ -1025,11 +1029,11 @@ async function uploadFile(file) {
 
 function getFilePreviewUrl(fileData) {
     if (!fileData) return '';
-    
+
     if (fileData.contentType && fileData.contentType.startsWith('image/')) {
         return `/api/files/${fileData.id}/preview`;
     }
-    
+
     return ''; // For non-image files, we'll just show an icon
 }
 
@@ -1051,7 +1055,7 @@ const typingIndicator = {
 
             // Try to find existing container or create a new one
             this.container = document.getElementById('typingIndicatorContainer');
-            
+
             if (!this.container) {
                 this.container = document.createElement('div');
                 this.container.id = 'typingIndicatorContainer';
@@ -1066,16 +1070,16 @@ const typingIndicator = {
                     </div>`;
 
                 // Find the best place to insert the typing indicator
-                const chatContainer = document.querySelector('.chat-messages')?.parentElement || 
-                                    document.querySelector('.chat-container') || 
-                                    document.body;
-                
+                const chatContainer = document.querySelector('.chat-messages')?.parentElement ||
+                    document.querySelector('.chat-container') ||
+                    document.body;
+
                 if (chatContainer) {
                     // Insert before the chat input if possible
-                    const chatInput = chatContainer.querySelector('.message-input') || 
-                                    chatContainer.querySelector('input[type="text"]') ||
-                                    chatContainer.lastElementChild;
-                    
+                    const chatInput = chatContainer.querySelector('.message-input') ||
+                        chatContainer.querySelector('input[type="text"]') ||
+                        chatContainer.lastElementChild;
+
                     if (chatInput) {
                         chatContainer.insertBefore(this.container, chatInput.nextSibling);
                     } else {
@@ -1086,7 +1090,7 @@ const typingIndicator = {
                 console.warn('Could not find a suitable container for the typing indicator');
                 return false;
             }
-            
+
             return true;
         } catch (error) {
             console.error('Error initializing typing indicator:', error);
@@ -1122,14 +1126,14 @@ const voiceInput = {
     isListening: false,
     recognition: null,
     finalTranscript: '',
-    
+
     init() {
         // Check for browser support
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             this.showUnsupportedMessage();
             return;
         }
-        
+
         // Initialize speech recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
@@ -1137,19 +1141,19 @@ const voiceInput = {
         this.recognition.interimResults = true;
         this.recognition.maxAlternatives = 1;
         this.recognition.lang = 'ru-RU';
-        
+
         // Setup event handlers
         this.recognition.onstart = this.onStart.bind(this);
         this.recognition.onresult = this.onResult.bind(this);
         this.recognition.onerror = this.onError.bind(this);
         this.recognition.onend = this.onEnd.bind(this);
-        
+
         // Add click handler to the voice input button
         const voiceBtn = document.getElementById('voiceInputBtn');
         if (voiceBtn) {
             voiceBtn.addEventListener('click', this.toggleListening.bind(this));
         }
-        
+
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.code === 'Space') {
                 e.preventDefault();
@@ -1157,7 +1161,7 @@ const voiceInput = {
             }
         });
     },
-    
+
     toggleListening() {
         if (this.isListening) {
             this.stopListening();
@@ -1165,14 +1169,14 @@ const voiceInput = {
             this.startListening();
         }
     },
-    
+
     startListening() {
         if (!this.recognition) return;
-        
+
         this.finalTranscript = '';
         this.isListening = true;
         document.getElementById('voiceInputBtn').classList.add('recording');
-        
+
         try {
             this.recognition.start();
         } catch (error) {
@@ -1181,24 +1185,24 @@ const voiceInput = {
             this.stopListening();
         }
     },
-    
+
     stopListening() {
         if (!this.recognition) return;
-        
+
         this.isListening = false;
-        
+
         try {
             this.recognition.stop();
         } catch (error) {
             console.error('Error stopping speech recognition:', error);
         }
-        
+
         const voiceBtn = document.getElementById('voiceInputBtn');
         if (voiceBtn) {
             voiceBtn.classList.remove('recording');
         }
     },
-    
+
     onStart() {
         // Only clear on first start, not on auto-restart
         if (!this.isListening) {
@@ -1207,14 +1211,14 @@ const voiceInput = {
         }
         this.isListening = true;
     },
-    
+
     onResult(event) {
         let interimTranscript = '';
-        
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i];
             const transcript = result[0].transcript;
-            
+
             if (result.isFinal) {
                 // Add space between phrases for better readability
                 this.finalTranscript = (this.finalTranscript + ' ' + transcript).trim();
@@ -1225,20 +1229,20 @@ const voiceInput = {
                 interimTranscript = transcript;
             }
         }
-        
+
         // Update the input field with both final and interim results
         const input = document.getElementById('messageInput');
         const displayText = (this.finalTranscript + ' ' + interimTranscript).trim();
         input.value = displayText;
-        
+
         // Move cursor to the end of the input
         input.focus();
         input.setSelectionRange(displayText.length, displayText.length);
-        
+
         // Trigger input event for any listeners
         input.dispatchEvent(new Event('input'));
     },
-    
+
     // Clear the current transcription
     clearTranscription() {
         this.finalTranscript = '';
@@ -1246,21 +1250,21 @@ const voiceInput = {
         input.value = '';
         input.dispatchEvent(new Event('input'));
     },
-    
+
     onError(event) {
         console.error('Speech recognition error', event.error);
-        
+
         let errorMessage = 'Ошибка распознавания речи';
         if (event.error === 'not-allowed') {
             errorMessage = 'Доступ к микрофону запрещен. Пожалуйста, разрешите доступ к микрофону в настройках браузера.';
         } else if (event.error === 'audio-capture') {
             errorMessage = 'Не удалось получить доступ к микрофону. Убедитесь, что микрофон подключен и настроен правильно.';
         }
-        
+
         this.showError(errorMessage);
         this.stopListening();
     },
-    
+
     onEnd() {
         if (this.isListening) {
             try {
@@ -1272,21 +1276,21 @@ const voiceInput = {
             }
         }
     },
-    
+
     showUnsupportedMessage() {
         const voiceBtn = document.getElementById('voiceInputBtn');
         if (voiceBtn) {
             voiceBtn.disabled = true;
             voiceBtn.title = 'Голосовой ввод не поддерживается в вашем браузере';
             voiceBtn.classList.add('tooltip');
-            
+
             const tooltip = document.createElement('span');
             tooltip.className = 'tooltiptext';
             tooltip.textContent = 'Голосовой ввод поддерживается в последних версиях Chrome, Edge, Safari и других современных браузеров';
             voiceBtn.appendChild(tooltip);
         }
     },
-    
+
     showError(message) {
         showNotification(message, 'error');
     }
@@ -1499,11 +1503,11 @@ async function confirmDeleteChat(title) {
         },
         buttonsStyling: true,
         allowOutsideClick: false,
-        showClass: { 
-            popup: 'animate__animated animate__fadeInDown animate__faster' 
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown animate__faster'
         },
-        hideClass: { 
-            popup: 'animate__animated animate__fadeOutUp animate__faster' 
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp animate__faster'
         },
         didOpen: (modal) => {
             // Добавляем стили для красивого отображения диалога
@@ -1693,11 +1697,11 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
     // Get context menu element
     const contextMenu = document.getElementById('roomContextMenu');
     if (!contextMenu) return;
-    
+
     // Check if clicking the same room with an open menu
     const isSameRoom = lastClickedRoom === roomId;
     const menuIsVisible = contextMenu.classList.contains('visible');
-    
+
     if (isSameRoom && menuIsVisible) {
         hideContextMenu();
         return;
@@ -2301,7 +2305,7 @@ function setupChatSearch() {
         if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.activeElement !== elements.messageInput) {
             e.preventDefault();
             searchInput.focus();
-        } 
+        }
         // Escape для очистки и выхода из поиска
         else if (e.key === 'Escape' && document.activeElement === searchInput) {
             clearSearch();
@@ -2329,7 +2333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (action) {
                     handleContextMenuAction(action);
                 }
-               // return;
+                // return;
             }
         });
 
