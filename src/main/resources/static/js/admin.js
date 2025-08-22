@@ -24,6 +24,9 @@
     poll: {
       id: null,
       ms: 5000
+    },
+    users: {
+      statsIntervalId: null
     }
   };
 
@@ -35,6 +38,16 @@
       }).catch(()=>{
         document.getElementById('healthStatus').textContent = 'ERROR';
       });
+  }
+
+  async function loadUserStats(){
+    try {
+      const data = await fetchJSON('/api/admin/users/stats');
+      const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = (v ?? '—'); };
+      set('userStatTotal', data.total);
+      set('userStatNew24h', data.new24h);
+      set('userStatNew7d', data.new7d);
+    } catch(e){ /* ignore */ }
   }
 
   function getMeasurementByStat(measurements, stat){
@@ -241,8 +254,11 @@
     loadHealth();
     initCharts();
     loadUsers();
+    loadUserStats();
     attachHandlers();
     setInterval(loadHealth, 10000);
+    // refresh user stats every 10s
+    state.users.statsIntervalId = setInterval(loadUserStats, 10000);
     // setup polling interval select
     const select = document.getElementById('metricsIntervalSelect');
     const initialMs = parseInt(select?.value || '5000', 10);

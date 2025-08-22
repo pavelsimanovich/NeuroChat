@@ -28,6 +28,11 @@ public class AdminApiController {
         return users.stream().map(AdminUserDto::from).collect(Collectors.toList());
     }
 
+    @GetMapping("/users/stats")
+    public Map<String, Object> userStats() {
+        return userService.getUserStats();
+    }
+
     @PostMapping("/users/{id}/role")
     public ResponseEntity<?> changeRole(@PathVariable("id") String id, @RequestBody Map<String, String> payload) {
         String role = payload.getOrDefault("role", "USER");

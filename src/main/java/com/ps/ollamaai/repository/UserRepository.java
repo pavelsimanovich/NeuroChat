@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
@@ -13,4 +14,10 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     List<User> findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
             String email, String firstName, String lastName);
+
+    long countByEnabled(boolean enabled);
+
+    long countByRole(String role);
+
+    long countByCreatedAtAfter(LocalDateTime createdAt);
 }

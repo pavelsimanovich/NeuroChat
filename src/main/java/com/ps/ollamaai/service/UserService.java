@@ -7,6 +7,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -56,5 +58,33 @@ public class UserService {
             u.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(u);
         });
+    }
+
+    public long countAll() {
+        return userRepository.count();
+    }
+
+    public long countEnabled(boolean enabled) {
+        return userRepository.countByEnabled(enabled);
+    }
+
+    public long countByRole(String role) {
+        return userRepository.countByRole(role);
+    }
+
+    public long countCreatedAfter(LocalDateTime ts) {
+        return userRepository.countByCreatedAtAfter(ts);
+    }
+
+    public Map<String, Object> getUserStats() {
+        long total = countAll();
+        LocalDateTime now = LocalDateTime.now();
+        long new24h = countCreatedAfter(now.minusHours(24));
+        long new7d = countCreatedAfter(now.minusDays(7));
+        return Map.of(
+                "total", total,
+                "new24h", new24h,
+                "new7d", new7d
+        );
     }
 }
