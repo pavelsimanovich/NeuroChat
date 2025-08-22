@@ -35,6 +35,17 @@ class AnnouncementDisplay {
         if (this.closeAnnouncementBtn) {
             this.closeAnnouncementBtn.addEventListener('click', () => this.hideAnnouncement());
         }
+
+        // Add click handler for announcement details button if it exists
+        const announcementDetailsBtn = document.getElementById('announcementDetailsBtn');
+        if (announcementDetailsBtn) {
+            announcementDetailsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.announcements && this.announcements.length > 0) {
+                    this.showModal(this.announcements[this.currentAnnouncementIndex]);
+                }
+            });
+        }
     }
 
     async loadAnnouncements() {
@@ -75,24 +86,6 @@ class AnnouncementDisplay {
         const hasMultiple = this.announcements.length > 1;
         const isHtml = announcement.content && 
                       (announcement.content.includes('<') || announcement.content.includes('&'));
-        
-        // Format dates
-        const formatDate = (dateString) => {
-            if (!dateString) return '';
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleString('ru-RU', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            } catch (e) {
-                console.error('Error formatting date:', e);
-                return dateString;
-            }
-        };
         
         try {
             // Update announcement bar content
@@ -137,7 +130,24 @@ class AnnouncementDisplay {
         }
     }
     
-    updateModalContent(announcement, hasMultiple, formatDate) {
+    formatDate(dateString) {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            console.error('Error formatting date:', e);
+            return dateString;
+        }
+    }
+    
+    updateModalContent(announcement, hasMultiple) {
         const modalTitle = document.getElementById('announcementTitle');
         const modalContent = document.getElementById('announcementModalContent');
         const counter = document.getElementById('announcementCounter');
@@ -154,8 +164,8 @@ class AnnouncementDisplay {
         modalTitle.textContent = announcement.title || 'Объявление';
         
         // Format and set the date
-        const startDate = formatDate(announcement.startDate);
-        const endDate = announcement.endDate ? formatDate(announcement.endDate) : null;
+        const startDate = this.formatDate(announcement.startDate);
+        const endDate = announcement.endDate ? this.formatDate(announcement.endDate) : null;
         
         if (dateElement) {
             if (startDate && endDate) {
@@ -217,7 +227,7 @@ class AnnouncementDisplay {
             
             // Update modal content
             const hasMultiple = this.announcements && this.announcements.length > 1;
-            this.updateModalContent(announcement, hasMultiple, this.formatDate);
+            this.updateModalContent(announcement, this.announcements.length > 1);
             
             // Hide loading state if it exists
             const loadingElement = modalElement.querySelector('.announcement-loading');
