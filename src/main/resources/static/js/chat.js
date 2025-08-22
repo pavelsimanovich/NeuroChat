@@ -17,6 +17,14 @@ const config = {
     }
 };
 
+let eventSource = null;
+let chatConnections = {};
+let state = {
+    currentRoom: null,
+    rooms: [],
+    messages: []
+};
+
 // Context menu state
 let contextMenuState = {
     roomId: null,
@@ -93,14 +101,6 @@ const elements = (function() {
     }
     return init();
 })();
-
-let eventSource = null;
-let chatConnections = {};
-let state = {
-    currentRoom: null,
-    rooms: [],
-    messages: []
-};
 
 async function switchToLastRoom() {
     if (!state.rooms?.length) {

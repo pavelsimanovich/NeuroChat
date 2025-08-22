@@ -65,7 +65,7 @@ public class UserPreferencesService {
         return userPreferenciesRepository.save(userPreferencies);
     }
 
-    private static UserPreferencesDTO toDto(UserPreferencies entity) {
+    private UserPreferencesDTO toDto(UserPreferencies entity) {
         if (entity == null) return null;
         UserPreferencesDTO dto = new UserPreferencesDTO();
         dto.setSystemPrompt(entity.getUserSystemPrompt());
@@ -74,7 +74,7 @@ public class UserPreferencesService {
         return dto;
     }
 
-    private static void applyDtoToEntity(UserPreferencesDTO dto, UserPreferencies entity, String email) {
+    private void applyDtoToEntity(UserPreferencesDTO dto, UserPreferencies entity, String email) {
         if (dto == null || entity == null) return;
         entity.setUserSystemPrompt(dto.getSystemPrompt());
         String preferredModel = dto.getPreferredModel();
