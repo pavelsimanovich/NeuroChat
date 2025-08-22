@@ -125,7 +125,6 @@ class AnnouncementManager {
         announcements.forEach(announcement => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${announcement.id}</td>
                 <td>${this.escapeHtml(announcement.title)}</td>
                 <td>${this.formatDate(announcement.startDate)}</td>
                 <td>${announcement.endDate ? this.formatDate(announcement.endDate) : '—'}</td>

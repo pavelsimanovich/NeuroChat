@@ -30,16 +30,6 @@
     }
   };
 
-  function loadHealth(){
-    fetch('/actuator/health')
-      .then(r=>r.json())
-      .then(d=>{
-        document.getElementById('healthStatus').textContent = d.status || 'UNKNOWN';
-      }).catch(()=>{
-        document.getElementById('healthStatus').textContent = 'ERROR';
-      });
-  }
-
   async function loadUserStats(){
     try {
       const data = await fetchJSON('/api/admin/users/stats');
@@ -251,12 +241,10 @@
   }
 
   document.addEventListener('DOMContentLoaded', function(){
-    loadHealth();
     initCharts();
     loadUsers();
     loadUserStats();
     attachHandlers();
-    setInterval(loadHealth, 10000);
     // refresh user stats every 10s
     state.users.statsIntervalId = setInterval(loadUserStats, 10000);
     // setup polling interval select
