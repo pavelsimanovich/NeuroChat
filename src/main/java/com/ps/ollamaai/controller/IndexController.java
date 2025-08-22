@@ -48,4 +48,9 @@ public class IndexController {
         model.addAttribute("userAvatarUrl", avatarUrl);
         return "home";
     }
+
+    @GetMapping("/admin")
+    public String adminPage() {
+        return "admin";
+    }
 }

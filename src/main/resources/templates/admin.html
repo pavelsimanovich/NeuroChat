@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/home">AI Chat</a>
+        <div class="d-flex">
+            <a class="btn btn-outline-light" href="/home"><i class="bi bi-arrow-left"></i> Назад</a>
+        </div>
+    </div>
+</nav>
+<div class="container my-4">
+    <div class="row g-3">
+        <div class="col-12">
+            <h3 class="mb-3">Мониторинг</h3>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-muted small">Здоровье</div>
+                            <div id="healthStatus" class="fs-5 fw-bold">—</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-muted small">Аптайм (сек)</div>
+                            <div id="uptime" class="fs-5 fw-bold">—</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-muted small">HTTP req/s (посл. замер)</div>
+                            <div id="httpRps" class="fs-5 fw-bold">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Пользователи</h3>
+                <div class="input-group" style="max-width: 360px;">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input id="userSearch" type="text" class="form-control" placeholder="Поиск по email/имени">
+                </div>
+            </div>
+            <div class="table-responsive mt-3">
+                <table class="table table-sm align-middle table-hover">
+                    <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Имя</th>
+                        <th>Роль</th>
+                        <th>Статус</th>
+                        <th>Создан</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/webjars/jquery/jquery.min.js"></script>
+<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

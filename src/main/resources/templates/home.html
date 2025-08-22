@@ -111,6 +111,10 @@
                     <button id="toggleSearch" class="btn btn-link text-decoration-none p-1 ms-2" title="Поиск по сообщениям">
                         <i class="bi bi-search"></i>
                     </button>
+                    <a sec:authorize="hasRole('ADMIN')" href="/admin" class="btn btn-outline-secondary btn-sm ms-2" title="Админ-панель">
+                        <i class="bi bi-shield-lock"></i>
+                        <span class="d-none d-md-inline">Админ</span>
+                    </a>
                 </div>
             </div>
 
