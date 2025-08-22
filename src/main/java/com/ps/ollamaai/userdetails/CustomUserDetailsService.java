@@ -3,7 +3,9 @@ package com.ps.ollamaai.userdetails;
 import com.ps.ollamaai.domain.User;
 import com.ps.ollamaai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -37,7 +39,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-            return List.of();
+            String role = StringUtils.defaultIfBlank(user.getRole(), "USER").toUpperCase();
+            // Spring Security expects roles with prefix "ROLE_"
+            return List.of(new SimpleGrantedAuthority("ROLE_" + role));
         }
 
         @Override
