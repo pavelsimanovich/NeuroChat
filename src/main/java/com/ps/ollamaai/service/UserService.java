@@ -64,14 +64,6 @@ public class UserService {
         return userRepository.count();
     }
 
-    public long countEnabled(boolean enabled) {
-        return userRepository.countByEnabled(enabled);
-    }
-
-    public long countByRole(String role) {
-        return userRepository.countByRole(role);
-    }
-
     public long countCreatedAfter(LocalDateTime ts) {
         return userRepository.countByCreatedAtAfter(ts);
     }

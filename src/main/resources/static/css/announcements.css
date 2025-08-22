@@ -1,0 +1,122 @@
+/* Announcement Bar */
+#announcementContainer {
+    border-radius: 0;
+    margin-bottom: 0;
+    padding: 0.75rem 0;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 1030; /* Above most content but below modals */
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.announcement-content {
+    line-height: 1.5;
+}
+
+.announcement-content.formatted-html {
+    line-height: 1.6;
+}
+
+.announcement-content.formatted-html p:last-child {
+    margin-bottom: 0;
+}
+
+.announcement-content a {
+    color: #0d6efd;
+    text-decoration: underline;
+}
+
+.announcement-content a:hover {
+    text-decoration: none;
+}
+
+.announcement-content code {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: var(--bs-font-monospace);
+    font-size: 0.9em;
+}
+
+.announcement-content pre {
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 1rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+}
+
+.announcement-content pre code {
+    background: none;
+    padding: 0;
+}
+
+#announcementContainer .btn-close {
+    padding: 0.75rem;
+    margin-left: 0.5rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+#announcementContainer .btn-close:hover {
+    opacity: 1;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] #announcementContainer {
+    background-color: var(--bs-dark-bg-subtle);
+    color: var(--bs-light-text);
+}
+
+[data-bs-theme="dark"] #announcementContainer .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Announcement Modal */
+#announcementModal .modal-content {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+#announcementModal .modal-header {
+    border-bottom: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+}
+
+#announcementModal .modal-footer {
+    border-top: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+}
+
+#announcementModal .form-text {
+    color: var(--bs-secondary-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    #announcementContainer {
+        font-size: 0.9rem;
+    }
+    
+    #announcementContainer .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Animation for announcement appearance */
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+#announcementContainer {
+    animation: slideDown 0.3s ease-out;
+}
