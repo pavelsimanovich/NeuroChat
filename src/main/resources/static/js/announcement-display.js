@@ -283,14 +283,16 @@ class AnnouncementDisplay {
     showPreviousAnnouncement() {
         if (this.currentAnnouncementIndex > 0) {
             this.currentAnnouncementIndex--;
-            this.displayCurrentAnnouncement();
+            const announcement = this.announcements[this.currentAnnouncementIndex];
+            this.updateModalContent(announcement, this.announcements.length > 1);
         }
     }
     
     showNextAnnouncement() {
         if (this.currentAnnouncementIndex < this.announcements.length - 1) {
             this.currentAnnouncementIndex++;
-            this.displayCurrentAnnouncement();
+            const announcement = this.announcements[this.currentAnnouncementIndex];
+            this.updateModalContent(announcement, this.announcements.length > 1);
         }
     }
     
