@@ -7,6 +7,9 @@
     <title>Админ-панель</title>
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .card-chart { min-height: 320px; }
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -20,7 +23,18 @@
 <div class="container my-4">
     <div class="row g-3">
         <div class="col-12">
-            <h3 class="mb-3">Мониторинг</h3>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="mb-0">Мониторинг</h3>
+                <div class="d-flex align-items-center gap-2">
+                    <label for="metricsIntervalSelect" class="form-label mb-0 small text-muted">Интервал опроса:</label>
+                    <select id="metricsIntervalSelect" class="form-select form-select-sm" style="width:auto;">
+                        <option value="3000">3 сек</option>
+                        <option value="5000" selected>5 сек</option>
+                        <option value="10000">10 сек</option>
+                        <option value="30000">30 сек</option>
+                    </select>
+                </div>
+            </div>
             <div class="row g-3">
                 <div class="col-md-3">
                     <div class="card">
@@ -44,6 +58,29 @@
                             <div class="text-muted small">HTTP req/s (посл. замер)</div>
                             <div id="httpRps" class="fs-5 fw-bold">—</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-3">
+            <div class="row g-3">
+                <div class="col-12 col-lg-6">
+                    <div class="card card-chart">
+                        <div class="card-header">HTTP Requests per second</div>
+                        <div class="card-body"><canvas id="rpsChart" height="120"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="card card-chart">
+                        <div class="card-header">CPU Usage (%)</div>
+                        <div class="card-body"><canvas id="cpuChart" height="120"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card card-chart">
+                        <div class="card-header">Heap Memory (MB)</div>
+                        <div class="card-body"><canvas id="heapChart" height="120"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -78,6 +115,7 @@
 
 <script src="/webjars/jquery/jquery.min.js"></script>
 <script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/js/admin.js"></script>
 </body>
 </html>

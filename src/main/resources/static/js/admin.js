@@ -3,6 +3,30 @@
     return fetch(url, Object.assign({headers: {'Content-Type': 'application/json'}}, opts)).then(r=>r.json());
   }
 
+  // Simple rolling buffer
+  const MAX_POINTS = 60; // last 60 samples (~3 minutes if 3s interval)
+  const state = {
+    charts: {
+      rps: null,
+      cpu: null,
+      heap: null,
+    },
+    series: {
+      labels: [],
+      rps: [],
+      cpu: [],
+      heap: []
+    },
+    prev: {
+      httpCount: null,
+      ts: null
+    },
+    poll: {
+      id: null,
+      ms: 5000
+    }
+  };
+
   function loadHealth(){
     fetch('/actuator/health')
       .then(r=>r.json())
@@ -13,20 +37,134 @@
       });
   }
 
-  function loadMetrics(){
-    fetch('/actuator/metrics/process.uptime')
-      .then(r=>r.json())
-      .then(d=>{
-        const m = d.measurements && d.measurements[0] ? d.measurements[0].value : 0;
-        document.getElementById('uptime').textContent = Math.floor(m);
-      }).catch(()=>{});
+  function getMeasurementByStat(measurements, stat){
+    if(!Array.isArray(measurements)) return null;
+    const m = measurements.find(x => (x.statistic||'').toUpperCase() === stat.toUpperCase());
+    return m ? m.value : null;
+  }
 
-    fetch('/actuator/metrics/http.server.requests')
-      .then(r=>r.json())
-      .then(d=>{
-        const m = d.measurements && d.measurements[0] ? d.measurements[0].value : 0;
-        document.getElementById('httpRps').textContent = m.toFixed(2);
-      }).catch(()=>{});
+  async function fetchMetric(name, query){
+    const url = query ? `/actuator/metrics/${name}?${query}` : `/actuator/metrics/${name}`;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('metric fetch failed');
+    return r.json();
+  }
+
+  async function sampleMetrics(){
+    const now = Date.now();
+
+    // Uptime
+    try {
+      const up = await fetchMetric('process.uptime');
+      const upVal = up.measurements?.[0]?.value ?? 0;
+      document.getElementById('uptime').textContent = Math.floor(upVal);
+    } catch(e){}
+
+    // HTTP Requests per second (derived from COUNT delta / deltaTime)
+    try {
+      const http = await fetchMetric('http.server.requests');
+      const count = getMeasurementByStat(http.measurements, 'COUNT') ?? null;
+      if(count != null){
+        if(state.prev.httpCount != null && state.prev.ts != null){
+          const dt = (now - state.prev.ts) / 1000.0;
+          const dc = Math.max(0, count - state.prev.httpCount);
+          const rps = dt > 0 ? dc / dt : 0;
+          document.getElementById('httpRps').textContent = rps.toFixed(2);
+          pushPoint(rps, 'rps');
+        }
+        state.prev.httpCount = count;
+        state.prev.ts = now;
+      }
+    } catch(e){}
+
+    // CPU: process.cpu.usage -> 0..1
+    try {
+      const cpu = await fetchMetric('process.cpu.usage');
+      const val = cpu.measurements?.[0]?.value ?? 0;
+      pushPoint((val || 0) * 100, 'cpu');
+    } catch(e){}
+
+    // Heap: jvm.memory.used?tag=area:heap -> bytes
+    try {
+      const heap = await fetchMetric('jvm.memory.used', 'tag=area:heap');
+      const bytes = heap.measurements?.[0]?.value ?? 0;
+      pushPoint(bytes / (1024*1024), 'heap');
+    } catch(e){}
+  }
+
+  function pushPoint(value, key){
+    const timeLabel = new Date().toLocaleTimeString();
+    // Only push one label per sampling cycle; ensure same length
+    if(key === 'rps'){
+      state.series.labels.push(timeLabel);
+      if(state.series.labels.length > MAX_POINTS) state.series.labels.shift();
+    }
+    const arr = state.series[key];
+    arr.push(value);
+    if(arr.length > MAX_POINTS) arr.shift();
+    updateChart(key);
+    if(key === 'heap'){
+      // last key in cycle -> also update labels for other series lengths to match
+      ['cpu','rps','heap'].forEach(k=>{
+        while(state.series[k].length < state.series.labels.length){ state.series[k].unshift(null); }
+        while(state.series[k].length > state.series.labels.length){ state.series[k].shift(); }
+      });
+      ['rps','cpu','heap'].forEach(updateChart);
+    }
+  }
+
+  function createChart(ctx, label, color){
+    return new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: state.series.labels,
+        datasets: [{
+          label,
+          data: [],
+          borderColor: color,
+          backgroundColor: color + '33',
+          borderWidth: 2,
+          tension: 0.25,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { display: true },
+          y: { beginAtZero: true }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  function updateChart(key){
+    const chart = state.charts[key];
+    if(!chart) return;
+    chart.data.labels = state.series.labels;
+    if(key === 'rps') chart.data.datasets[0].data = state.series.rps;
+    if(key === 'cpu') chart.data.datasets[0].data = state.series.cpu;
+    if(key === 'heap') chart.data.datasets[0].data = state.series.heap;
+    chart.update('none');
+  }
+
+  function initCharts(){
+    state.charts.rps = createChart(document.getElementById('rpsChart'), 'RPS', '#0d6efd');
+    state.charts.cpu = createChart(document.getElementById('cpuChart'), 'CPU %', '#20c997');
+    state.charts.heap = createChart(document.getElementById('heapChart'), 'Heap MB', '#6f42c1');
+  }
+
+  function startSampling(ms){
+    if(state.poll.id){
+      clearInterval(state.poll.id);
+      state.poll.id = null;
+    }
+    state.poll.ms = ms;
+    // immediate sample on change
+    sampleMetrics();
+    state.poll.id = setInterval(sampleMetrics, state.poll.ms);
   }
 
   function row(u){
@@ -101,10 +239,19 @@
 
   document.addEventListener('DOMContentLoaded', function(){
     loadHealth();
-    loadMetrics();
+    initCharts();
     loadUsers();
     attachHandlers();
     setInterval(loadHealth, 10000);
-    setInterval(loadMetrics, 15000);
+    // setup polling interval select
+    const select = document.getElementById('metricsIntervalSelect');
+    const initialMs = parseInt(select?.value || '5000', 10);
+    startSampling(isNaN(initialMs) ? 5000 : initialMs);
+    if(select){
+      select.addEventListener('change', ()=>{
+        const ms = parseInt(select.value, 10);
+        startSampling(isNaN(ms) ? state.poll.ms : ms);
+      });
+    }
   });
 })();
