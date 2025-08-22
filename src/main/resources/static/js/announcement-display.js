@@ -62,6 +62,8 @@ class AnnouncementDisplay {
     }
 
     displayAnnouncement(announcement) {
+        console.log('Displaying announcement:', announcement);
+        
         if (!this.announcementContainer || !this.announcementModal) {
             console.error('Announcement container or modal not found');
             return;
@@ -77,82 +79,155 @@ class AnnouncementDisplay {
         // Format dates
         const formatDate = (dateString) => {
             if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleString('ru-RU', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleString('ru-RU', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                console.error('Error formatting date:', e);
+                return dateString;
+            }
         };
         
         try {
-            // Set the announcement content
-            this.announcementContent.innerHTML = `
-                <div class="d-flex align-items-center w-100">
-                    ${hasMultiple ? `
-                        <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="prevAnnouncement" 
-                                ${this.currentAnnouncementIndex === 0 ? 'disabled' : ''}>
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
-                    ` : ''}
-                    
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center flex-wrap">
-                            <strong class="me-2">${this.escapeHtml(announcement.title)}</strong>
-                            ${announcement.startDate ? `
-                                <span class="badge bg-light text-dark small fw-normal me-2" title="Действует с ${formatDate(announcement.startDate)}">
-                                    <i class="bi bi-calendar3"></i> с ${formatDate(announcement.startDate)}
-                                </span>
-                        ` : ''}
-                        ${announcement.endDate ? `
-                            <span class="badge bg-light text-dark small fw-normal" title="Действует до ${formatDate(announcement.endDate)}">
-                                <i class="bi bi-clock"></i> до ${formatDate(announcement.endDate)}
-                            </span>
-                        ` : ''}
-                        ${hasMultiple ? `
-                            <span class="badge bg-secondary ms-auto">
-                                ${this.currentAnnouncementIndex + 1} / ${this.announcements.length}
-                            </span>
-                        ` : ''}
-                    </div>
-                </div>
-                
-                <div class="mt-2">
-                    ${isHtml ? announcement.content : this.escapeHtml(announcement.content).replace(/\n/g, '<br>')}
-                </div>
+            // Update announcement bar content
+            const announcementBarContent = `
+                <i class="bi bi-megaphone me-2"></i>
+                <span>${this.escapeHtml(announcement.title || 'Новое объявление')}</span>
+                ${hasMultiple ? 
+                    `<span class="badge bg-primary ms-2">${this.currentAnnouncementIndex + 1}/${this.announcements.length}</span>` : ''
+                }
             `;
             
-            // Show the modal
-            if (this.announcementModal) {
-                // Hide any existing modal first to ensure clean state
-                this.announcementModal.hide();
+            // Update announcement bar
+            if (this.announcementContent) {
+                this.announcementContent.innerHTML = announcementBarContent;
                 
-                // Use setTimeout to ensure the DOM is updated before showing
-                setTimeout(() => {
-                    try {
-                        this.announcementModal.show();
-                        console.log('Announcement modal shown');
-                    } catch (e) {
-                        console.error('Error showing announcement modal:', e);
-                    }
-                }, 100);
+                // Make the bar clickable to show full announcement
+                this.announcementContainer.style.cursor = 'pointer';
+                this.announcementContainer.onclick = () => this.showModal(announcement);
             }
             
-            // Add event listeners for navigation
-            const prevBtn = document.getElementById('prevAnnouncement');
-            const nextBtn = document.getElementById('nextAnnouncement');
-            
-            if (prevBtn) {
-                prevBtn.onclick = () => this.showPreviousAnnouncement();
-            }
-            if (nextBtn) {
-                nextBtn.onclick = () => this.showNextAnnouncement();
-            }
+            // Update modal content
+            this.updateModalContent(announcement, hasMultiple, formatDate);
             
         } catch (error) {
             console.error('Error displaying announcement:', error);
+        }
+    }
+    
+    updateModalContent(announcement, hasMultiple, formatDate) {
+        const modalTitle = document.getElementById('announcementTitle');
+        const modalContent = document.getElementById('announcementModalContent');
+        const counter = document.getElementById('announcementCounter');
+        const prevBtn = document.getElementById('prevAnnouncement');
+        const nextBtn = document.getElementById('nextAnnouncement');
+        const dateElement = document.getElementById('announcementDate');
+        
+        if (!modalTitle || !modalContent) {
+            console.error('Modal elements not found');
+            return;
+        }
+        
+        // Update modal title and content
+        modalTitle.textContent = announcement.title || 'Объявление';
+        
+        // Format and set the date
+        const startDate = formatDate(announcement.startDate);
+        const endDate = announcement.endDate ? formatDate(announcement.endDate) : null;
+        
+        if (dateElement) {
+            if (startDate && endDate) {
+                dateElement.textContent = `Действует с ${startDate} до ${endDate}`;
+            } else if (startDate) {
+                dateElement.textContent = `Опубликовано: ${startDate}`;
+            } else {
+                dateElement.textContent = '';
+            }
+        }
+        
+        // Set the content
+        const isHtml = announcement.content && 
+                      (announcement.content.includes('<') || announcement.content.includes('&'));
+        
+        modalContent.innerHTML = `
+            <div class="announcement-content">
+                ${isHtml ? announcement.content : this.escapeHtml(announcement.content || '').replace(/\n/g, '<br>')}
+            </div>
+        `;
+        
+        // Update counter
+        if (counter) {
+            counter.textContent = `${this.currentAnnouncementIndex + 1}/${this.announcements.length}`;
+        }
+        
+        // Update navigation buttons
+        if (prevBtn) {
+            prevBtn.disabled = this.currentAnnouncementIndex === 0;
+            prevBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.showPreviousAnnouncement();
+            };
+        }
+        
+        if (nextBtn) {
+            nextBtn.disabled = this.currentAnnouncementIndex === this.announcements.length - 1;
+            nextBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.showNextAnnouncement();
+            };
+        }
+    }
+    
+    showModal(announcement) {
+        console.log('Showing modal for announcement:', announcement);
+        
+        if (!this.announcementModal) {
+            console.error('Announcement modal not found');
+            return;
+        }
+        
+        try {
+            // Hide loading state if it exists
+            const loadingElement = document.querySelector('#announcementModal .announcement-loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            
+            // Show the modal
+            this.announcementModal.show();
+            
+            // Add keyboard navigation
+            const handleKeyDown = (e) => {
+                if (e.key === 'ArrowLeft') {
+                    this.showPreviousAnnouncement();
+                } else if (e.key === 'ArrowRight') {
+                    this.showNextAnnouncement();
+                } else if (e.key === 'Escape') {
+                    this.announcementModal.hide();
+                }
+            };
+            
+            document.addEventListener('keydown', handleKeyDown);
+            
+            // Clean up event listener when modal is hidden
+            const modalElement = document.getElementById('announcementModal');
+            if (modalElement) {
+                const onModalHidden = () => {
+                    document.removeEventListener('keydown', handleKeyDown);
+                    modalElement.removeEventListener('hidden.bs.modal', onModalHidden);
+                };
+                
+                modalElement.addEventListener('hidden.bs.modal', onModalHidden, { once: true });
+            }
+            
+        } catch (error) {
+            console.error('Error showing modal:', error);
         }
     }
     
