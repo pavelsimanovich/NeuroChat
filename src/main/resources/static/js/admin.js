@@ -69,12 +69,24 @@
     try {
       const up = await fetchMetric('process.uptime');
       const upVal = up.measurements?.[0]?.value ?? 0;
+      console.log('Uptime raw value:', upVal);
+      
       const hours = Math.floor(upVal / 3600);
       const minutes = Math.floor((upVal % 3600) / 60);
       const seconds = Math.floor(upVal % 60);
-      document.getElementById('uptime').textContent = 
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    } catch(e){}
+      
+      const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      console.log('Formatted uptime:', formattedTime);
+      
+      const uptimeElement = document.getElementById('uptime');
+      if (uptimeElement) {
+        uptimeElement.textContent = formattedTime;
+      } else {
+        console.error('Element with id "uptime" not found');
+      }
+    } catch(e) {
+      console.error('Error processing uptime:', e);
+    }
 
     // HTTP Requests per second (derived from COUNT delta / deltaTime)
     try {
