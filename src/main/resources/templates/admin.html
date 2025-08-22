@@ -26,13 +26,24 @@
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <h3 class="mb-0">Мониторинг</h3>
                 <div class="d-flex align-items-center gap-2">
-                    <label for="metricsIntervalSelect" class="form-label mb-0 small text-muted">Интервал опроса:</label>
-                    <select id="metricsIntervalSelect" class="form-select form-select-sm" style="width:auto;">
-                        <option value="3000">3 сек</option>
-                        <option value="5000" selected>5 сек</option>
-                        <option value="10000">10 сек</option>
-                        <option value="30000">30 сек</option>
-                    </select>
+                    <div class="input-group input-group-sm" style="width: auto;">
+                        <span class="input-group-text">Период:</span>
+                        <select id="timeRangeSelect" class="form-select form-select-sm" style="width: auto;">
+                            <option value="5">5 мин</option>
+                            <option value="15" selected>15 мин</option>
+                            <option value="30">30 мин</option>
+                            <option value="60">1 час</option>
+                            <option value="180">3 часа</option>
+                            <option value="360">6 часов</option>
+                        </select>
+                        <span class="input-group-text">Интервал:</span>
+                        <select id="metricsIntervalSelect" class="form-select form-select-sm" style="width: auto;">
+                            <option value="3000">3 сек</option>
+                            <option value="5000" selected>5 сек</option>
+                            <option value="10000">10 сек</option>
+                            <option value="30000">30 сек</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="row g-3">

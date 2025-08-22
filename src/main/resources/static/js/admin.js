@@ -12,6 +12,7 @@
       heap: null,
     },
     series: {
+      timestamps: [],
       labels: [],
       rps: [],
       cpu: [],
@@ -25,8 +26,16 @@
       id: null,
       ms: 5000
     },
+    timeRange: 15, // minutes
     users: {
       statsIntervalId: null
+    },
+    // Store raw data for the max time range (6 hours)
+    rawData: {
+      timestamps: [],
+      rps: [],
+      cpu: [],
+      heap: []
     }
   };
 
@@ -95,9 +104,95 @@
     } catch(e){}
   }
 
-  function pushPoint(value, key){
-    const timeLabel = new Date().toLocaleTimeString();
-    // Only push one label per sampling cycle; ensure same length
+  function getMaxPoints() {
+    // Calculate max points based on time range and polling interval
+    const points = Math.ceil((state.timeRange * 60 * 1000) / state.poll.ms);
+    return Math.min(points, 1000); // Cap at 1000 points for performance
+  }
+
+  function filterDataForTimeRange() {
+    const now = Date.now();
+    const timeAgo = now - (state.timeRange * 60 * 1000);
+    
+    // Ensure we have data to process
+    if (state.rawData.timestamps.length === 0) return;
+    
+    // Find the index of the first point within the time range
+    const firstIndex = state.rawData.timestamps.findIndex(ts => ts >= timeAgo);
+    
+    // If no points in range, use empty arrays
+    if (firstIndex === -1) {
+      state.series = {
+        timestamps: [],
+        labels: [],
+        rps: [],
+        cpu: [],
+        heap: []
+      };
+      return;
+    }
+    
+    // Slice the data to only include points within the time range
+    state.series.timestamps = state.rawData.timestamps.slice(firstIndex);
+    state.series.labels = state.rawData.timestamps
+      .slice(firstIndex)
+      .map(ts => new Date(ts).toLocaleTimeString());
+    state.series.rps = state.rawData.rps.slice(firstIndex);
+    state.series.cpu = state.rawData.cpu.slice(firstIndex);
+    state.series.heap = state.rawData.heap.slice(firstIndex);
+    
+    // If we have too many points, downsample for better performance
+    const maxPoints = getMaxPoints();
+    if (state.series.timestamps.length > maxPoints) {
+      const step = Math.ceil(state.series.timestamps.length / maxPoints);
+      
+      const downsample = (arr) => {
+        const result = [];
+        for (let i = 0; i < arr.length; i += step) {
+          result.push(arr[i]);
+        }
+        return result;
+      };
+      
+      state.series.timestamps = downsample(state.series.timestamps);
+      state.series.labels = state.series.timestamps.map(ts => new Date(ts).toLocaleTimeString());
+      state.series.rps = downsample(state.series.rps);
+      state.series.cpu = downsample(state.series.cpu);
+      state.series.heap = downsample(state.series.heap);
+    }
+  }
+
+  function pushPoint(value, key) {
+    const now = Date.now();
+    const timeLabel = new Date(now).toLocaleTimeString();
+    
+    // Add to raw data (keeps all points for up to 6 hours)
+    state.rawData.timestamps.push(now);
+    if (key === 'rps') state.rawData.rps.push(value);
+    if (key === 'cpu') state.rawData.cpu.push(value);
+    if (key === 'heap') state.rawData.heap.push(value);
+    
+    // Clean up old data (older than 6 hours)
+    const sixHoursAgo = now - (360 * 60 * 1000);
+    const firstValidIndex = state.rawData.timestamps.findIndex(ts => ts >= sixHoursAgo);
+    
+    if (firstValidIndex > 0) {
+      state.rawData.timestamps = state.rawData.timestamps.slice(firstValidIndex);
+      state.rawData.rps = state.rawData.rps.slice(firstValidIndex);
+      state.rawData.cpu = state.rawData.cpu.slice(firstValidIndex);
+      state.rawData.heap = state.rawData.heap.slice(firstValidIndex);
+    }
+    
+    // Filter data for current time range
+    filterDataForTimeRange();
+    
+    // Only update the chart if it's the last point being added
+    if (key === 'heap') {
+      // Update all charts
+      updateChart('rps');
+      updateChart('cpu');
+      updateChart('heap');
+    }
     if(key === 'rps'){
       state.series.labels.push(timeLabel);
       if(state.series.labels.length > MAX_POINTS) state.series.labels.shift();
@@ -135,21 +230,92 @@
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { display: true },
-          y: { beginAtZero: true }
+          x: { 
+            display: true,
+            grid: { display: false }
+          },
+          y: { 
+            beginAtZero: true,
+            min: 0,
+            ticks: {
+              precision: 0
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          }
         },
-        plugins: { legend: { display: false } }
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        animation: {
+          duration: 200
+        },
+        elements: {
+          line: {
+            tension: 0.3 // Smooth the line a bit
+          },
+          point: {
+            radius: 2,
+            hoverRadius: 4
+          }
+        }
       }
     });
   }
 
-  function updateChart(key){
+  function updateChart(key) {
     const chart = state.charts[key];
     if(!chart) return;
-    chart.data.labels = state.series.labels;
-    if(key === 'rps') chart.data.datasets[0].data = state.series.rps;
-    if(key === 'cpu') chart.data.datasets[0].data = state.series.cpu;
-    if(key === 'heap') chart.data.datasets[0].data = state.series.heap;
+    
+    // Validate data before updating
+    const seriesData = state.series[key];
+    const labels = state.series.labels;
+    
+    // Ensure data and labels are in sync
+    if (seriesData.length !== labels.length) {
+      console.warn(`Data length mismatch for ${key}:`, {
+        dataPoints: seriesData.length,
+        labels: labels.length,
+        timestamps: state.series.timestamps.length
+      });
+      
+      // Truncate to the smallest array to maintain sync
+      const minLength = Math.min(seriesData.length, labels.length, state.series.timestamps.length);
+      seriesData.length = minLength;
+      labels.length = minLength;
+      state.series.timestamps.length = minLength;
+    }
+    
+    // Update chart data
+    const data = chart.data.datasets[0].data;
+    data.length = 0;
+    data.push(...seriesData);
+    
+    // Update chart labels
+    chart.data.labels = labels;
+    
+    // Calculate time span for debugging
+    if (seriesData.length > 1) {
+      const timeSpan = (state.series.timestamps[state.series.timestamps.length - 1] - state.series.timestamps[0]) / 1000;
+      const expectedTimeSpan = state.timeRange * 60;
+      const timeDrift = Math.abs(timeSpan - expectedTimeSpan);
+      
+      if (timeDrift > 5) { // More than 5 seconds drift
+        console.warn(`Time span drift detected for ${key}:`, {
+          actual: timeSpan.toFixed(1) + 's',
+          expected: expectedTimeSpan + 's',
+          drift: timeDrift.toFixed(1) + 's',
+          points: seriesData.length
+        });
+      }
+    }
+    
+    // Update chart with new data
     chart.update('none');
   }
 
@@ -160,14 +326,19 @@
   }
 
   function startSampling(ms){
-    if(state.poll.id){
-      clearInterval(state.poll.id);
-      state.poll.id = null;
-    }
+    if(state.poll.id) clearInterval(state.poll.id);
     state.poll.ms = ms;
-    // immediate sample on change
-    sampleMetrics();
-    state.poll.id = setInterval(sampleMetrics, state.poll.ms);
+    
+    // Clear existing data when changing intervals
+    state.rawData = { timestamps: [], rps: [], cpu: [], heap: [] };
+    state.series = { timestamps: [], labels: [], rps: [], cpu: [], heap: [] };
+    
+    sampleMetrics(); // immediate first sample
+    state.poll.id = setInterval(sampleMetrics, ms);
+    
+    // Also refresh user stats every 30s
+    if(state.users.statsIntervalId) clearInterval(state.users.statsIntervalId);
+    state.users.statsIntervalId = setInterval(loadUserStats, 30000);
   }
 
   function row(u){
@@ -200,7 +371,22 @@
     });
   }
 
-  function attachHandlers(){
+  function attachHandlers() {
+    // Handle time range change
+    document.getElementById('timeRangeSelect').addEventListener('change', (e) => {
+      state.timeRange = parseInt(e.target.value);
+      filterDataForTimeRange();
+      // Update all charts
+      updateChart('rps');
+      updateChart('cpu');
+      updateChart('heap');
+    });
+    
+    // Handle polling interval change
+    document.getElementById('metricsIntervalSelect').addEventListener('change', (e) => {
+      startSampling(parseInt(e.target.value));
+    });
+    
     const tbody = document.getElementById('usersTableBody');
     tbody.addEventListener('change', (e)=>{
       if(e.target.classList.contains('role-select')){
