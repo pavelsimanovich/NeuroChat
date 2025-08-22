@@ -39,14 +39,6 @@
                 <div class="col-md-3">
                     <div class="card">
                         <div class="card-body">
-                            <div class="text-muted small">Здоровье</div>
-                            <div id="healthStatus" class="fs-5 fw-bold">—</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card">
-                        <div class="card-body">
                             <div class="text-muted small">Аптайм (сек)</div>
                             <div id="uptime" class="fs-5 fw-bold">—</div>
                         </div>
@@ -140,6 +132,96 @@
                 </table>
             </div>
         </div>
+
+        <!-- Announcements Section -->
+        <div class="col-12 mt-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="mb-0">Управление объявлениями</h3>
+                <button id="newAnnouncementBtn" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Новое объявление
+                </button>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="announcementsTable">
+                            <thead>
+                                <tr>
+                                    <th>Заголовок</th>
+                                    <th style="width: 180px">Начало показа</th>
+                                    <th style="width: 180px">Окончание</th>
+                                    <th style="width: 120px">Статус</th>
+                                    <th style="width: 100px" class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Загрузка...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Announcement Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel">Новое объявление</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <!-- Update the form with proper name attributes -->
+            <form id="announcementForm">
+                <div class="modal-body">
+                    <input type="hidden" id="announcementId" name="id">
+                    <div class="mb-3">
+                        <label for="announcementTitle" class="form-label">Заголовок <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="announcementTitle" name="title" required>
+                        <div class="invalid-feedback">Пожалуйста, укажите заголовок</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="announcementContent" class="form-label">Содержание <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="announcementContent" name="content" rows="8" required></textarea>
+                        <div class="form-text">Поддерживается HTML-разметка</div>
+                        <div class="invalid-feedback">Пожалуйста, введите содержание</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="announcementStartDate" class="form-label">Дата начала</label>
+                            <input type="datetime-local" class="form-control" id="announcementStartDate" name="startDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableEndDate">
+                                <label class="form-check-label" for="enableEndDate">Установить дату окончания</label>
+                            </div>
+                            <div id="endDateGroup" style="display: none;">
+                                <label for="announcementEndDate" class="form-label">Дата окончания</label>
+                                <input type="datetime-local" class="form-control" id="announcementEndDate" name="endDate">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="announcementActive" name="active" checked>
+                        <label class="form-check-label" for="announcementActive">Активно</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -147,5 +229,6 @@
 <script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/js/admin.js"></script>
+<script src="/js/announcements.js"></script>
 </body>
 </html>
