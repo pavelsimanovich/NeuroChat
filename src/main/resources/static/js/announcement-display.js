@@ -107,10 +107,26 @@ class AnnouncementDisplay {
             // Update announcement bar
             if (this.announcementContent) {
                 this.announcementContent.innerHTML = announcementBarContent;
+                this.announcementContainer.classList.add('show');
                 
-                // Make the bar clickable to show full announcement
-                this.announcementContainer.style.cursor = 'pointer';
-                this.announcementContainer.onclick = () => this.showModal(announcement);
+                // Add click handler to the close button
+                const closeBtn = this.announcementContent.querySelector('.close-announcement');
+                if (closeBtn) {
+                    closeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.hideAnnouncement();
+                    };
+                }
+                
+                // Add click handler to the content
+                this.announcementContent.onclick = (e) => {
+                    if (!e.target.closest('.close-announcement')) {
+                        this.showModal(announcement);
+                    }
+                };
+                
+                // Add padding to the body to prevent content from being hidden
+                document.body.style.paddingTop = `${this.announcementContainer.offsetHeight}px`;
             }
             
             // Update modal content
@@ -187,20 +203,42 @@ class AnnouncementDisplay {
     showModal(announcement) {
         console.log('Showing modal for announcement:', announcement);
         
-        if (!this.announcementModal) {
-            console.error('Announcement modal not found');
+        const modalElement = document.getElementById('announcementModal');
+        if (!modalElement) {
+            console.error('Announcement modal element not found');
             return;
         }
         
         try {
+            // Ensure the modal is properly initialized
+            if (!this.announcementModal) {
+                this.announcementModal = new bootstrap.Modal(modalElement);
+            }
+            
+            // Update modal content
+            const hasMultiple = this.announcements && this.announcements.length > 1;
+            this.updateModalContent(announcement, hasMultiple, this.formatDate);
+            
             // Hide loading state if it exists
-            const loadingElement = document.querySelector('#announcementModal .announcement-loading');
+            const loadingElement = modalElement.querySelector('.announcement-loading');
             if (loadingElement) {
                 loadingElement.style.display = 'none';
             }
             
             // Show the modal
             this.announcementModal.show();
+            
+            // Ensure modal is visible
+            modalElement.style.display = 'block';
+            modalElement.classList.add('show');
+            document.body.classList.add('modal-open');
+            
+            // Add backdrop if it doesn't exist
+            if (!document.querySelector('.modal-backdrop')) {
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            }
             
             // Add keyboard navigation
             const handleKeyDown = (e) => {
@@ -215,16 +253,17 @@ class AnnouncementDisplay {
             
             document.addEventListener('keydown', handleKeyDown);
             
-            // Clean up event listener when modal is hidden
-            const modalElement = document.getElementById('announcementModal');
-            if (modalElement) {
-                const onModalHidden = () => {
-                    document.removeEventListener('keydown', handleKeyDown);
-                    modalElement.removeEventListener('hidden.bs.modal', onModalHidden);
-                };
-                
-                modalElement.addEventListener('hidden.bs.modal', onModalHidden, { once: true });
-            }
+            const onModalHidden = () => {
+                document.removeEventListener('keydown', handleKeyDown);
+                modalElement.removeEventListener('hidden.bs.modal', onModalHidden);
+                document.body.classList.remove('modal-open');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+            };
+            
+            modalElement.addEventListener('hidden.bs.modal', onModalHidden, { once: true });
             
         } catch (error) {
             console.error('Error showing modal:', error);
@@ -247,7 +286,8 @@ class AnnouncementDisplay {
     
     hideAnnouncement() {
         if (this.announcementContainer) {
-            this.announcementContainer.style.display = 'none';
+            this.announcementContainer.classList.remove('show');
+            document.body.style.paddingTop = '0';
         }
     }
     
