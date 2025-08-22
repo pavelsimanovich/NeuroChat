@@ -99,11 +99,12 @@
 
         <!-- Основная область чата -->
         <!-- Announcement Bar -->
-        <div id="announcementContainer" class="alert alert-info mb-0 rounded-0 d-none" style="border-radius: 0 !important;">
-            <div class="container">
-                <div id="announcementContent" class="d-flex align-items-center">
+        <div id="announcementContainer" class="announcement-bar d-none">
+            <div class="container d-flex align-items-center justify-content-between py-2">
+                <div id="announcementContent" class="d-flex align-items-center flex-grow-1">
                     <!-- Announcement content will be inserted here -->
                 </div>
+                <button type="button" class="btn-close ms-3" id="closeAnnouncement" aria-label="Close"></button>
             </div>
         </div>
         
@@ -463,17 +464,35 @@
 
 <!-- Announcement Modal -->
 <div class="modal fade" id="announcementModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Announcement</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-light">
+                <h5 class="modal-title d-flex align-items-center">
+                    <i class="bi bi-megaphone me-2"></i>
+                    <span id="announcementTitle">Объявление</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
-            <div class="modal-body" id="announcementContent">
+            <div class="modal-body" id="announcementModalContent">
                 <!-- Content will be loaded dynamically -->
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeAnnouncement">Close</button>
+            <div class="modal-footer bg-light">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <div class="announcement-navigation">
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="prevAnnouncement">
+                            <i class="bi bi-chevron-left"></i> Назад
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="nextAnnouncement">
+                            Вперед <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary me-2" id="announcementCounter">1/1</span>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-1"></i> Закрыть
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
