@@ -251,6 +251,17 @@
     overflow-y: auto;
 }
 
+/* Reading progress bar */
+#announcementReadingProgress {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bs-primary) var(--progress, 0%), transparent 0);
+    z-index: 2;
+}
+
 #announcementModal .modal-footer {
     padding: 1rem 2rem;
     background-color: #f8f9fa;
@@ -304,6 +315,16 @@
     font-size: 1.05rem;
 }
 
+#announcementModalContent .announcement-image {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    will-change: transform;
+}
+
+#announcementModalContent .announcement-image.zoomed {
+    transform: scale(1.3);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+}
+
 #announcementModalContent h1,
 #announcementModalContent h2,
 #announcementModalContent h3,
@@ -340,6 +361,15 @@
     background: rgba(0,0,0,0.04);
     border-radius: 10px;
     padding: 1rem;
+}
+
+/* CTA and actions spacing tweaks */
+#announcementModalContent .btn {
+    border-radius: 10px;
+}
+
+#announcementModalContent .btn.btn-success {
+    transition: background-color .2s ease, color .2s ease;
 }
 
 [data-bs-theme="dark"] #announcementModalContent code {

@@ -51,6 +51,9 @@ public class AnnouncementService {
                     existing.setActive(dto.isActive());
                     existing.setStartDate(dto.getStartDate());
                     existing.setEndDate(dto.getEndDate());
+                    existing.setImageUrl(dto.getImageUrl());
+                    existing.setAd(dto.isAd());
+                    existing.setAdTargetUrl(dto.getAdTargetUrl());
                     return AnnouncementDto.from(announcementRepository.save(existing));
                 })
                 .orElseThrow(() -> new RuntimeException("Announcement not found with id: " + id));
