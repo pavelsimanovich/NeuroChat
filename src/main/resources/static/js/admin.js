@@ -69,15 +69,13 @@
     try {
       const up = await fetchMetric('process.uptime');
       const upVal = up.measurements?.[0]?.value ?? 0;
-      console.log('Uptime raw value:', upVal);
-      
+
       const hours = Math.floor(upVal / 3600);
       const minutes = Math.floor((upVal % 3600) / 60);
       const seconds = Math.floor(upVal % 60);
       
       const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      console.log('Formatted uptime:', formattedTime);
-      
+
       const uptimeElement = document.getElementById('uptime');
       if (uptimeElement) {
         uptimeElement.textContent = formattedTime;
