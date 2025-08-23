@@ -1,6 +1,7 @@
 package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.User;
+import com.ps.ollamaai.dto.enums.Role;
 import com.ps.ollamaai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,7 @@ public class UserService {
     public void save(final User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
+        user.setRole(Role.USER.name());
         userRepository.save(user);
     }
 

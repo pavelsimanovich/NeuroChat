@@ -30,7 +30,6 @@ public class EmailService {
     @Value("${app.url}")
     private String appUrl;
 
-    @Async
     public void sendEmailWithTemplate(String to, String subject, String templateName, Map<String, Object> variables) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

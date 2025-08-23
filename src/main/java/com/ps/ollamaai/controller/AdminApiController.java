@@ -6,13 +6,18 @@ import com.ps.ollamaai.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.security.SecureRandom;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -25,7 +30,9 @@ public class AdminApiController {
     @GetMapping("/users")
     public List<AdminUserDto> listUsers(@RequestParam(value = "q", required = false) String q) {
         List<User> users = StringUtils.hasText(q) ? userService.search(q) : userService.findAll();
-        return users.stream().map(AdminUserDto::from).collect(Collectors.toList());
+        return users.stream()
+                .map(AdminUserDto::from)
+                .toList();
     }
 
     @GetMapping("/users/stats")

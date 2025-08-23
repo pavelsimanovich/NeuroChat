@@ -27,7 +27,7 @@ public class AdminUserDto {
                 u.getLastName(),
                 u.getRole(),
                 u.isEnabled(),
-                u.getCreatedAt()
+                u.getCreatedAt().withNano(0)
         );
     }
 }
