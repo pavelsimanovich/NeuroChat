@@ -46,7 +46,6 @@ public class WebSecurityConfig {
                                 "/reset-password",
                                 "/actuator/health")
                         .permitAll()
-                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                         .anyRequest()
                         .authenticated()
