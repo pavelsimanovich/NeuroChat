@@ -46,6 +46,19 @@ class AnnouncementDisplay {
                 }
             });
         }
+
+        // Keyboard access on announcement content
+        if (this.announcementContent) {
+            this.announcementContent.classList.add('clickable');
+            this.announcementContent.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (this.announcements && this.announcements.length > 0) {
+                        this.showModal(this.announcements[this.currentAnnouncementIndex]);
+                    }
+                }
+            });
+        }
     }
 
     async loadAnnouncements() {
@@ -101,6 +114,15 @@ class AnnouncementDisplay {
             if (this.announcementContent) {
                 this.announcementContent.innerHTML = announcementBarContent;
                 this.announcementContainer.classList.add('show');
+                this.announcementContent.title = 'Открыть объявление';
+                this.announcementContent.setAttribute('aria-label', 'Открыть объявление');
+                this.announcementContent.classList.add('clickable');
+                this.announcementContent.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.showModal(announcement);
+                    }
+                });
                 
                 // Add click handler to the close button
                 const closeBtn = this.announcementContent.querySelector('.close-announcement');
