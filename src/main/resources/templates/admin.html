@@ -21,161 +21,191 @@
     </div>
 </nav>
 <div class="container my-4">
-    <div class="row g-3">
-        <div class="col-12">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h3 class="mb-0">Мониторинг</h3>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="input-group input-group-sm" style="width: auto;">
-                        <span class="input-group-text">Период:</span>
-                        <select id="timeRangeSelect" class="form-select form-select-sm" style="width: auto;">
-                            <option value="5">5 мин</option>
-                            <option value="15" selected>15 мин</option>
-                            <option value="30">30 мин</option>
-                            <option value="60">1 час</option>
-                            <option value="180">3 часа</option>
-                            <option value="360">6 часов</option>
-                        </select>
-                        <span class="input-group-text">Интервал:</span>
-                        <select id="metricsIntervalSelect" class="form-select form-select-sm" style="width: auto;">
-                            <option value="3000">3 сек</option>
-                            <option value="5000" selected>5 сек</option>
-                            <option value="10000">10 сек</option>
-                            <option value="30000">30 сек</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted small">Время работы (ЧЧ:ММ:СС)</div>
-                            <div id="uptime" class="fs-5 fw-bold">—</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted small">HTTP req/s (посл. замер)</div>
-                            <div id="httpRps" class="fs-5 fw-bold">—</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Tabs header -->
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring" type="button" role="tab" aria-controls="monitoring" aria-selected="true">
+                Мониторинг
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">
+                Пользователи
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab" aria-controls="announcements" aria-selected="false">
+                Объявления
+            </button>
+        </li>
+    </ul>
 
-        <div class="col-12 mt-3">
+    <!-- Tabs content -->
+    <div class="tab-content pt-3" id="adminTabsContent">
+        <!-- Monitoring Pane -->
+        <div class="tab-pane fade show active" id="monitoring" role="tabpanel" aria-labelledby="monitoring-tab" tabindex="0">
             <div class="row g-3">
-                <div class="col-12 col-lg-6">
-                    <div class="card card-chart">
-                        <div class="card-header">HTTP Requests per second</div>
-                        <div class="card-body"><canvas id="rpsChart" height="120"></canvas></div>
-                    </div>
-                </div>
-                <div class="col-12 col-lg-6">
-                    <div class="card card-chart">
-                        <div class="card-header">CPU Usage (%)</div>
-                        <div class="card-body"><canvas id="cpuChart" height="120"></canvas></div>
-                    </div>
-                </div>
                 <div class="col-12">
-                    <div class="card card-chart">
-                        <div class="card-header">Heap Memory (MB)</div>
-                        <div class="card-body"><canvas id="heapChart" height="120"></canvas></div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h3 class="mb-0">Мониторинг</h3>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <span class="input-group-text">Период:</span>
+                                <select id="timeRangeSelect" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="5">5 мин</option>
+                                    <option value="15" selected>15 мин</option>
+                                    <option value="30">30 мин</option>
+                                    <option value="60">1 час</option>
+                                    <option value="180">3 часа</option>
+                                    <option value="360">6 часов</option>
+                                </select>
+                                <span class="input-group-text">Интервал:</span>
+                                <select id="metricsIntervalSelect" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="3000">3 сек</option>
+                                    <option value="5000" selected>5 сек</option>
+                                    <option value="10000">10 сек</option>
+                                    <option value="30000">30 сек</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="text-muted small">Время работы (ЧЧ:ММ:СС)</div>
+                                    <div id="uptime" class="fs-5 fw-bold">—</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="text-muted small">HTTP req/s (посл. замер)</div>
+                                    <div id="httpRps" class="fs-5 fw-bold">—</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-6">
+                            <div class="card card-chart">
+                                <div class="card-header">HTTP Requests per second</div>
+                                <div class="card-body"><canvas id="rpsChart" height="120"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <div class="card card-chart">
+                                <div class="card-header">CPU Usage (%)</div>
+                                <div class="card-body"><canvas id="cpuChart" height="120"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="card card-chart">
+                                <div class="card-header">Heap Memory (MB)</div>
+                                <div class="card-body"><canvas id="heapChart" height="120"></canvas></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-12 mt-4">
-            <h3 class="mb-3">Статистика пользователей</h3>
-            <div class="row g-3">
-                <div class="col-6 col-md-3 col-lg-2">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted small">Всего</div>
-                            <div id="userStatTotal" class="fs-5 fw-bold">—</div>
+        <!-- Users Pane -->
+        <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab" tabindex="0">
+            <div class="col-12 mt-4">
+                <h3 class="mb-3">Статистика пользователей</h3>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="text-muted small">Всего</div>
+                                <div id="userStatTotal" class="fs-5 fw-bold">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="text-muted small">Новые (24ч)</div>
+                                <div id="userStatNew24h" class="fs-5 fw-bold">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="text-muted small">Новые (7д)</div>
+                                <div id="userStatNew7d" class="fs-5 fw-bold">—</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3 col-lg-2">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted small">Новые (24ч)</div>
-                            <div id="userStatNew24h" class="fs-5 fw-bold">—</div>
-                        </div>
+            </div>
+
+            <div class="col-12 mt-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Пользователи</h3>
+                    <div class="input-group" style="max-width: 360px;">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input id="userSearch" type="text" class="form-control" placeholder="Поиск по email/имени">
                     </div>
                 </div>
-                <div class="col-6 col-md-3 col-lg-2">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted small">Новые (7д)</div>
-                            <div id="userStatNew7d" class="fs-5 fw-bold">—</div>
-                        </div>
-                    </div>
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm align-middle table-hover">
+                        <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Имя</th>
+                            <th>Роль</th>
+                            <th>Статус</th>
+                            <th>Создан</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <div class="col-12 mt-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="mb-0">Пользователи</h3>
-                <div class="input-group" style="max-width: 360px;">
-                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                    <input id="userSearch" type="text" class="form-control" placeholder="Поиск по email/имени">
+        <!-- Announcements Pane -->
+        <div class="tab-pane fade" id="announcements" role="tabpanel" aria-labelledby="announcements-tab" tabindex="0">
+            <div class="col-12 mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">Управление объявлениями</h3>
+                    <button id="newAnnouncementBtn" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i> Новое объявление
+                    </button>
                 </div>
-            </div>
-            <div class="table-responsive mt-3">
-                <table class="table table-sm align-middle table-hover">
-                    <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Имя</th>
-                        <th>Роль</th>
-                        <th>Статус</th>
-                        <th>Создан</th>
-                        <th class="text-end">Действия</th>
-                    </tr>
-                    </thead>
-                    <tbody id="usersTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Announcements Section -->
-        <div class="col-12 mt-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="mb-0">Управление объявлениями</h3>
-                <button id="newAnnouncementBtn" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i> Новое объявление
-                </button>
-            </div>
-            
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="announcementsTable">
-                            <thead>
-                                <tr>
-                                    <th>Заголовок</th>
-                                    <th style="width: 180px">Начало показа</th>
-                                    <th style="width: 180px">Окончание</th>
-                                    <th style="width: 120px">Статус</th>
-                                    <th style="width: 100px" class="text-end">Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="6" class="text-center py-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Загрузка...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="announcementsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Заголовок</th>
+                                        <th style="width: 180px">Начало показа</th>
+                                        <th style="width: 180px">Окончание</th>
+                                        <th style="width: 120px">Статус</th>
+                                        <th style="width: 100px" class="text-end">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Загрузка...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

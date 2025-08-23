@@ -30,11 +30,7 @@ public class Announcement {
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    // New: optional image for announcement content
     private String imageUrl;
-
-    // New: ad support
     private boolean isAd;
     private String adTargetUrl;
     
