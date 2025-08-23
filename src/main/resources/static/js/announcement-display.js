@@ -162,6 +162,8 @@ class AnnouncementDisplay {
             
             // Update modal content
             this.updateModalContent(announcement, hasMultiple);
+            // Inject quick actions into the announcement bar
+            this.injectActions(announcement);
             
         } catch (error) {
             console.error('Error displaying announcement:', error);
@@ -250,9 +252,9 @@ class AnnouncementDisplay {
                     <button type="button" class="btn btn-outline-warning btn-sm" id="annDismissTodayBtn" title="Скрыть до завтра">
                         <i class="bi bi-eye-slash"></i> До завтра
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="annDismissForeverBtn" title="Больше не показывать">
-                        <i class="bi bi-x-octagon"></i> Не показывать
-                    </button>
+<!--                    <button type="button" class="btn btn-outline-danger btn-sm" id="annDismissForeverBtn" title="Больше не показывать">-->
+<!--                        <i class="bi bi-x-octagon"></i> Не показывать-->
+<!--                    </button>-->
                 </div>
             </div>`;
 
@@ -296,6 +298,9 @@ class AnnouncementDisplay {
                 this.showNextAnnouncement();
             };
         }
+
+        //todo
+        // this.injectActions(announcement);
     }
     
     showModal(announcement) {
@@ -501,50 +506,50 @@ class AnnouncementDisplay {
         this.displayCurrentAnnouncement();
     }
 
-    injectActions(announcement) {
-        try {
-            const actions = document.querySelector('#announcementContainer .announcement-actions');
-            if (!actions) return;
-
-            // Remove previously injected buttons to avoid duplicates
-            actions.querySelectorAll('.ann-action').forEach(el => el.remove());
-
-            const createBtn = (cls, text, title) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `btn btn-sm ${cls} me-2 ann-action`;
-                btn.textContent = text;
-                if (title) btn.title = title;
-                return btn;
-            };
-
-            const btnHideToday = createBtn('btn-outline-secondary', 'Не показывать сегодня', 'Скрыть это объявление на сутки');
-            btnHideToday.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.dismissToday(announcement);
-            });
-            actions.insertBefore(btnHideToday, actions.firstChild);
-
-            const btnHideForever = createBtn('btn-outline-danger', 'Больше не показывать', 'Скрыть это объявление навсегда');
-            btnHideForever.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.dismissForever(announcement);
-            });
-            actions.insertBefore(btnHideForever, actions.firstChild);
-
-            if (announcement && announcement.url) {
-                const linkBtn = document.createElement('a');
-                linkBtn.href = announcement.url;
-                linkBtn.target = '_blank';
-                linkBtn.rel = 'noopener noreferrer';
-                linkBtn.className = 'btn btn-sm btn-outline-primary ann-action me-2';
-                linkBtn.textContent = 'Открыть ссылку';
-                actions.insertBefore(linkBtn, actions.firstChild);
-            }
-        } catch (e) {
-            console.error('Error injecting actions:', e);
-        }
-    }
+    // injectActions(announcement) {
+    //     try {
+    //         const actions = document.querySelector('#announcementContainer .announcement-actions');
+    //         if (!actions) return;
+    //
+    //         // Remove previously injected buttons to avoid duplicates
+    //         actions.querySelectorAll('.ann-action').forEach(el => el.remove());
+    //
+    //         const createBtn = (cls, text, title) => {
+    //             const btn = document.createElement('button');
+    //             btn.type = 'button';
+    //             btn.className = `btn btn-sm ${cls} me-2 ann-action`;
+    //             btn.textContent = text;
+    //             if (title) btn.title = title;
+    //             return btn;
+    //         };
+    //
+    //         const btnHideToday = createBtn('btn-outline-secondary', 'Не показывать сегодня', 'Скрыть это объявление на сутки');
+    //         btnHideToday.addEventListener('click', (e) => {
+    //             e.stopPropagation();
+    //             this.dismissToday(announcement);
+    //         });
+    //         actions.insertBefore(btnHideToday, actions.firstChild);
+    //
+    //         // const btnHideForever = createBtn('btn-outline-danger', 'Больше не показывать', 'Скрыть это объявление навсегда');
+    //         // btnHideForever.addEventListener('click', (e) => {
+    //         //     e.stopPropagation();
+    //         //     this.dismissForever(announcement);
+    //         // });
+    //         // actions.insertBefore(btnHideForever, actions.firstChild);
+    //
+    //         if (announcement && announcement.url) {
+    //             const linkBtn = document.createElement('a');
+    //             linkBtn.href = announcement.url;
+    //             linkBtn.target = '_blank';
+    //             linkBtn.rel = 'noopener noreferrer';
+    //             linkBtn.className = 'btn btn-sm btn-outline-primary ann-action me-2';
+    //             linkBtn.textContent = 'Открыть ссылку';
+    //             actions.insertBefore(linkBtn, actions.firstChild);
+    //         }
+    //     } catch (e) {
+    //         console.error('Error injecting actions:', e);
+    //     }
+    // }
 
     startAutoRotation() {
         this.stopAutoRotation();

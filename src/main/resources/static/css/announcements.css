@@ -186,9 +186,26 @@
     -webkit-backdrop-filter: blur(8px);
 }
 
-#announcementDetailsBtn:hover {
-    background: rgba(255, 255, 255, 0.1);
+#announcementDetailsBtn:hover,
+#announcementDetailsBtn:focus-visible {
+    background-color: rgba(var(--bs-primary-rgb), 0.10);
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
     transform: translateY(-1px);
+}
+
+#announcementDetailsBtn:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.18);
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] #announcementDetailsBtn:hover,
+[data-bs-theme="dark"] #announcementDetailsBtn:focus-visible {
+    background-color: rgba(var(--bs-primary-rgb), 0.25);
+}
+[data-bs-theme="dark"] #announcementDetailsBtn:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.35);
 }
 
 .announcement-loading {

@@ -291,15 +291,9 @@
     // Validate data before updating
     const seriesData = state.series[key];
     const labels = state.series.labels;
-    
+
     // Ensure data and labels are in sync
     if (seriesData.length !== labels.length) {
-      console.warn(`Data length mismatch for ${key}:`, {
-        dataPoints: seriesData.length,
-        labels: labels.length,
-        timestamps: state.series.timestamps.length
-      });
-      
       // Truncate to the smallest array to maintain sync
       const minLength = Math.min(seriesData.length, labels.length, state.series.timestamps.length);
       seriesData.length = minLength;
@@ -314,23 +308,6 @@
     
     // Update chart labels
     chart.data.labels = labels;
-    
-    // Calculate time span for debugging
-    if (seriesData.length > 1) {
-      const timeSpan = (state.series.timestamps[state.series.timestamps.length - 1] - state.series.timestamps[0]) / 1000;
-      const expectedTimeSpan = state.timeRange * 60;
-      const timeDrift = Math.abs(timeSpan - expectedTimeSpan);
-      
-      if (timeDrift > 5) { // More than 5 seconds drift
-        console.warn(`Time span drift detected for ${key}:`, {
-          actual: timeSpan.toFixed(1) + 's',
-          expected: expectedTimeSpan + 's',
-          drift: timeDrift.toFixed(1) + 's',
-          points: seriesData.length
-        });
-      }
-    }
-    
     // Update chart with new data
     chart.update('none');
   }
