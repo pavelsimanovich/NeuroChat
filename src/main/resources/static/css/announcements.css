@@ -4,19 +4,27 @@
     --announcement-text: #212529;
     --announcement-primary: #0d6efd;
     --announcement-border: rgba(0, 0, 0, 0.05);
+    --announcement-shadow: 0 8px 30px rgba(79, 70, 229, 0.4);
     
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1035; /* Above most content but below modals */
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    margin: 0 auto;
+    width: calc(100% - 2rem);
+    max-width: 1200px;
     background: var(--announcement-bg);
     color: var(--announcement-text);
-    border-bottom: 1px solid var(--announcement-border);
-    transform: translateY(-100%);
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    padding: 1rem 1.5rem;
+    z-index: 1050;
+    box-shadow: var(--announcement-shadow);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     opacity: 0;
+    transform: translateY(100px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: none;
+    backdrop-filter: blur(10px);
 }
 
 #announcementContainer.show {
@@ -129,7 +137,67 @@
 
 /* Hover effects */
 #announcementContainer:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(79, 70, 229, 0.4);
+}
+
+/* Content styles */
+.announcement-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.announcement-content {
+    flex: 1;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.announcement-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#announcementDetailsBtn {
+    /*border-color: rgba(255, 255, 255, 0.3);*/
+    /*color: white;*/
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+#announcementDetailsBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.announcement-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #announcementContainer {
+        width: calc(100% - 1rem);
+        padding: 0.75rem 1rem;
+        bottom: 0.5rem;
+    }
+    
+    .announcement-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .announcement-actions {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* Badge styles */

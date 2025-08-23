@@ -117,9 +117,6 @@ class AnnouncementDisplay {
                         this.showModal(announcement);
                     }
                 };
-                
-                // Add padding to the body to prevent content from being hidden
-                document.body.style.paddingTop = `${this.announcementContainer.offsetHeight}px`;
             }
             
             // Update modal content
