@@ -4,6 +4,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveUserSettingsBtn = document.getElementById('saveUserSettings');
     const systemPromptTextarea = document.getElementById('systemPrompt');
     const modelSelectElement = document.getElementById('modelSelect');
+    // TTS controls
+    const ttsAutoplayEl = document.getElementById('ttsAutoplay');
+    const ttsVoiceEl = document.getElementById('ttsVoice');
+    const ttsRateEl = document.getElementById('ttsRate');
+    const ttsPitchEl = document.getElementById('ttsPitch');
 
     // Profile tab elements
     const avatarInput = document.getElementById('avatarInput');
@@ -17,6 +22,21 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             avatarPreview.src = 'https://via.placeholder.com/160?text=Avatar';
         }
+    }
+
+    function populateTtsVoices() {
+        if (!window.tts || !window.tts.supported || !ttsVoiceEl) return;
+        const voices = window.tts.getVoices();
+        const current = (window.tts.settings && window.tts.settings.voiceURI) || '';
+        const selectedLangFirst = (a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
+        ttsVoiceEl.innerHTML = '<option value="">Определяется браузером...</option>';
+        voices.sort(selectedLangFirst).forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.voiceURI;
+            opt.textContent = `${v.name} (${v.lang})${v.default ? ' — по умолчанию' : ''}`;
+            if (current && v.voiceURI === current) opt.selected = true;
+            ttsVoiceEl.appendChild(opt);
+        });
     }
 
     // Show the modal
@@ -39,6 +59,31 @@ document.addEventListener('DOMContentLoaded', function () {
                         avatarFileIdHidden.value = '';
                         setAvatarPreview(null);
                     }
+                    // Load TTS settings from tts module/localStorage
+                    try {
+                        const ttsModule = window.tts;
+                        if (ttsAutoplayEl && ttsModule) {
+                            ttsAutoplayEl.checked = !!ttsModule.settings.autoplay;
+                        }
+                        if (ttsRateEl && ttsModule) {
+                            ttsRateEl.value = ttsModule.settings.rate || 1.0;
+                        }
+                        if (ttsPitchEl && ttsModule) {
+                            ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
+                        }
+                        populateTtsVoices();
+                        if (window.speechSynthesis) {
+                            // Refresh voices if they load later (chain existing handler)
+                            const prevVoicesChanged = window.speechSynthesis.onvoiceschanged;
+                            window.speechSynthesis.onvoiceschanged = (...args) => {
+                                try { if (typeof prevVoicesChanged === 'function') prevVoicesChanged.apply(window.speechSynthesis, args); } catch(e) { /* noop */ }
+                                populateTtsVoices();
+                            };
+                        }
+                    } catch (ex) {
+                        console.error(ex);
+                    }
+
                     userSettingsModal.show();
                 })
                 .catch(error => {
@@ -78,12 +123,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Save the settings (including avatar file id)
+    // Save the settings (including avatar file id and TTS)
     if (saveUserSettingsBtn) {
         saveUserSettingsBtn.addEventListener('click', () => {
             const systemPrompt = systemPromptTextarea.value;
             const preferredModel = modelSelectElement.value;
             const avatarFileId = avatarFileIdHidden ? avatarFileIdHidden.value : '';
+            // Collect TTS settings
+            let ttsSettingsPayload = null;
+            try {
+                if (window.tts) {
+                    ttsSettingsPayload = {
+                        autoplay: !!(ttsAutoplayEl && ttsAutoplayEl.checked),
+                        voiceURI: (ttsVoiceEl && ttsVoiceEl.value) || '',
+                        rate: ttsRateEl ? Number(ttsRateEl.value) : 1.0,
+                        pitch: ttsPitchEl ? Number(ttsPitchEl.value) : 1.0
+                    };
+                    window.tts.applySettings(ttsSettingsPayload);
+                }
+            } catch (e) {
+                console.warn('Unable to apply TTS settings:', e);
+            }
 
             fetch('/api/user/preferences', {
                 method: 'POST',
@@ -102,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: 'success',
                     title: 'Сохранено!',
-                    text: 'Ваши настройки были успешно обновлены.',
+                    text: 'Ваши настройки были успешно обновлены.' + (ttsSettingsPayload ? ' (Настройки TTS применены)' : ''),
                     timer: 1500,
                     showConfirmButton: false
                 });

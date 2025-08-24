@@ -86,12 +86,13 @@ https://huggingface.co/
     - Configurable rate limiting
 - **Image Analysis**
 - **Chat Export**
-- **Voice input**
+- **Voice input, Text-to-speach for response**
 - **User Settings**
   - Lite and Dark Mode
   - User can add a System Prompt
   - Users can choose an available Model from the list
 - **SSL Encryption**
+- **Announcements**
 
 ### P.S.
 - Project in development and can contain errors, some parts of code should be rewritten.

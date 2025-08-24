@@ -30,22 +30,64 @@ const tts = {
     currentUtterance: null,
     speakingMessageId: null,
     selectedVoice: null,
+    settings: {
+        voiceURI: '',
+        rate: 1.0,
+        pitch: 1.0,
+        autoplay: false
+    },
 
     init() {
         if (!this.supported) return;
+        // Load saved settings
+        try {
+            const saved = JSON.parse(localStorage.getItem('tts_settings') || '{}');
+            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, ...saved };
+        } catch (_) { /* noop */ }
         // Attempt to select a Russian voice if available
         const pickVoice = () => {
             const voices = window.speechSynthesis.getVoices();
             if (!voices || voices.length === 0) return;
-            this.selectedVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('ru'))
-                || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
-                || voices[0];
+            // If user selected a voice, try to match by voiceURI
+            if (this.settings.voiceURI) {
+                const byURI = voices.find(v => v.voiceURI === this.settings.voiceURI);
+                if (byURI) this.selectedVoice = byURI;
+            }
+            // Fallbacks
+            if (!this.selectedVoice) {
+                this.selectedVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('ru'))
+                    || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
+                    || voices[0];
+            }
         };
         pickVoice();
         // Voices may load asynchronously
         window.speechSynthesis.onvoiceschanged = () => pickVoice();
         // Stop TTS on page unload
         window.addEventListener('beforeunload', () => this.stop());
+    },
+
+    applySettings(newSettings = {}) {
+        // Update runtime settings and persist
+        this.settings = { ...this.settings, ...newSettings };
+        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (_) { /* noop */ }
+        // Update selected voice if voiceURI changed
+        if (this.supported) {
+            const voices = window.speechSynthesis.getVoices();
+            if (Array.isArray(voices) && voices.length) {
+                if (this.settings.voiceURI) {
+                    const v = voices.find(v => v.voiceURI === this.settings.voiceURI);
+                    if (v) this.selectedVoice = v;
+                }
+            }
+        }
+        // If currently speaking, update control states
+        this.updateControlsState();
+    },
+
+    getVoices() {
+        if (!this.supported) return [];
+        return window.speechSynthesis.getVoices() || [];
     },
 
     play(text, messageId, lang = 'ru-RU') {
@@ -58,8 +100,8 @@ const tts = {
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = this.selectedVoice?.lang || lang;
         if (this.selectedVoice) utter.voice = this.selectedVoice;
-        utter.rate = 1.0; // normal speed
-        utter.pitch = 1.0; // normal pitch
+        utter.rate = Number(this.settings.rate) || 1.0; // normal speed
+        utter.pitch = Number(this.settings.pitch) || 1.0; // normal pitch
         utter.onend = () => {
             this.currentUtterance = null;
             this.speakingMessageId = null;
@@ -126,6 +168,8 @@ const tts = {
 };
 
 tts.init();
+// Expose globally for settings module
+window.tts = tts;
 
 let eventSource = null;
 let chatConnections = {};
@@ -775,10 +819,18 @@ async function sendMessage() {
                 } else if (message.error === 'SERVER_ERROR') {
                     onErrorSendMessage(message.content, roomId, tempMessage);
                 } else {
-                    state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
+                    const finalMsg = getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant');
+                    state.messages.push(finalMsg);
                     window.dispatchEvent(new CustomEvent('messageSent'));
                     renderMessages();
                     scrollToBottom(true);
+                    // Autoplay TTS if enabled
+                    try {
+                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && finalMsg?.content) {
+                            const plainText = finalMsg.content.replace(/<[^>]*>/g, '');
+                            window.tts.play(plainText, finalMsg.id);
+                        }
+                    } catch (_) { /* noop */ }
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
