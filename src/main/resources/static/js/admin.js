@@ -280,6 +280,13 @@
         }
       }
     });
+
+    // Re-apply i18n to chart labels when language changes
+    window.addEventListener('i18n:changed', ()=>{
+      refreshChartI18nLabels();
+      loadUsers();
+      loadUserStats();
+    });
   }
 
   function updateChart(key) {
@@ -310,10 +317,44 @@
     chart.update('none');
   }
 
+  function i18nLabel(key, fallback){
+    if (window.i18n && typeof window.i18n.t === 'function') {
+      return window.i18n.t(key, fallback);
+    }
+    return fallback || key;
+  }
+
   function initCharts(){
-    state.charts.rps = createChart(document.getElementById('rpsChart'), 'RPS', '#0d6efd');
-    state.charts.cpu = createChart(document.getElementById('cpuChart'), 'CPU %', '#20c997');
-    state.charts.heap = createChart(document.getElementById('heapChart'), 'Heap MB', '#6f42c1');
+    state.charts.rps = createChart(
+      document.getElementById('rpsChart'),
+      i18nLabel('admin.monitoring.legend.rps', 'RPS'),
+      '#0d6efd'
+    );
+    state.charts.cpu = createChart(
+      document.getElementById('cpuChart'),
+      i18nLabel('admin.monitoring.legend.cpu', 'CPU %'),
+      '#20c997'
+    );
+    state.charts.heap = createChart(
+      document.getElementById('heapChart'),
+      i18nLabel('admin.monitoring.legend.heap', 'Heap MB'),
+      '#6f42c1'
+    );
+  }
+
+  function refreshChartI18nLabels(){
+    if(state.charts.rps){
+      state.charts.rps.data.datasets[0].label = i18nLabel('admin.monitoring.legend.rps', 'RPS');
+      state.charts.rps.update('none');
+    }
+    if(state.charts.cpu){
+      state.charts.cpu.data.datasets[0].label = i18nLabel('admin.monitoring.legend.cpu', 'CPU %');
+      state.charts.cpu.update('none');
+    }
+    if(state.charts.heap){
+      state.charts.heap.data.datasets[0].label = i18nLabel('admin.monitoring.legend.heap', 'Heap MB');
+      state.charts.heap.update('none');
+    }
   }
 
   function startSampling(ms){
@@ -334,7 +375,10 @@
 
   function row(u){
     const fullName = [u.firstName||'', u.lastName||''].join(' ').trim();
-    const enabledBadge = u.enabled ? '<span class="badge bg-success">Активен</span>' : '<span class="badge bg-secondary">Отключен</span>';
+    const badgeText = u.enabled ? i18n.t('admin.users.badge.active', 'Active') : i18n.t('admin.users.badge.disabled', 'Disabled');
+    const enabledBadge = `<span class="badge ${u.enabled?'bg-success':'bg-secondary'}">${badgeText}</span>`;
+    const toggleText = u.enabled ? i18n.t('admin.users.btn.disable', 'Disable') : i18n.t('admin.users.btn.enable', 'Enable');
+    const resetText = i18n.t('admin.users.btn.resetPass', 'Reset password');
     return `
       <tr data-id="${u.id}">
         <td>${u.email}</td>
@@ -348,8 +392,8 @@
         <td>${enabledBadge}</td>
         <td>${(u.createdAt||'').toString().replace('T',' ')}</td>
         <td class="text-end">
-          <button class="btn btn-sm btn-outline-secondary toggle-enabled">${u.enabled?'Отключить':'Включить'}</button>
-          <button class="btn btn-sm btn-outline-danger reset-pass">Сброс пароля</button>
+          <button class="btn btn-sm btn-outline-secondary toggle-enabled">${toggleText}</button>
+          <button class="btn btn-sm btn-outline-danger reset-pass">${resetText}</button>
         </td>
       </tr>`;
   }
