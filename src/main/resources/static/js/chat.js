@@ -30,6 +30,7 @@ const tts = {
     currentUtterance: null,
     speakingMessageId: null,
     selectedVoice: null,
+    isPaused: false,
     settings: {
         voiceURI: '',
         rate: 1.0,
@@ -102,19 +103,30 @@ const tts = {
         if (this.selectedVoice) utter.voice = this.selectedVoice;
         utter.rate = Number(this.settings.rate) || 1.0; // normal speed
         utter.pitch = Number(this.settings.pitch) || 1.0; // normal pitch
+        utter.onstart = () => {
+            this.isPaused = false;
+            this.updateControlsState();
+        };
+        utter.onpause = () => {
+            this.isPaused = true;
+            this.updateControlsState();
+        };
         utter.onend = () => {
             this.currentUtterance = null;
             this.speakingMessageId = null;
+            this.isPaused = false;
             this.updateControlsState();
         };
         utter.onerror = () => {
             this.currentUtterance = null;
             this.speakingMessageId = null;
+            this.isPaused = false;
             this.updateControlsState();
         };
 
         this.currentUtterance = utter;
         this.speakingMessageId = messageId;
+        this.isPaused = false;
         window.speechSynthesis.cancel(); // ensure queue is cleared
         window.speechSynthesis.speak(utter);
         this.updateControlsState();
@@ -125,6 +137,7 @@ const tts = {
         window.speechSynthesis.cancel();
         this.currentUtterance = null;
         this.speakingMessageId = null;
+        this.isPaused = false;
         this.updateControlsState();
     },
 
@@ -132,15 +145,20 @@ const tts = {
         if (!this.supported) return;
         if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
             window.speechSynthesis.pause();
+            this.isPaused = true;
             this.updateControlsState();
         }
     },
 
     resume() {
         if (!this.supported) return;
-        if (window.speechSynthesis.paused) {
+        // Use internal flag to handle browsers with unreliable paused state
+        if (this.currentUtterance && (this.isPaused || window.speechSynthesis.paused)) {
             window.speechSynthesis.resume();
+            this.isPaused = false;
+            // Some browsers need a small delay before state reflects correctly
             this.updateControlsState();
+            setTimeout(() => this.updateControlsState(), 60);
         }
     },
 
@@ -153,16 +171,18 @@ const tts = {
         // Update play/pause/stop buttons visual state
         document.querySelectorAll('.tts-controls').forEach(ctrl => {
             const mid = ctrl.getAttribute('data-message-id');
-            const isActive = this.speakingMessageId === mid && (window.speechSynthesis.speaking);
+            const isPaused = this.isPaused || window.speechSynthesis.paused;
+            const isSpeakingOrPaused = (window.speechSynthesis.speaking || this.isPaused);
+            const isActive = this.speakingMessageId === mid && isSpeakingOrPaused;
             ctrl.classList.toggle('tts-active', isActive);
             const playBtn = ctrl.querySelector('[data-tts="play"]');
             const pauseBtn = ctrl.querySelector('[data-tts="pause"]');
             const resumeBtn = ctrl.querySelector('[data-tts="resume"]');
             const stopBtn = ctrl.querySelector('[data-tts="stop"]');
             if (playBtn) playBtn.disabled = isActive; // disable play if currently playing this message
-            if (pauseBtn) pauseBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking && !window.speechSynthesis.paused);
-            if (resumeBtn) resumeBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.paused);
-            if (stopBtn) stopBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking);
+            if (pauseBtn) pauseBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking && !isPaused);
+            if (resumeBtn) resumeBtn.disabled = !(this.speakingMessageId === mid && isPaused);
+            if (stopBtn) stopBtn.disabled = !(this.speakingMessageId === mid && (window.speechSynthesis.speaking || isPaused));
         });
     }
 };
