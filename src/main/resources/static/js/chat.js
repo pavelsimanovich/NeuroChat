@@ -2437,7 +2437,7 @@ function setupChatSearch() {
     searchContainer.innerHTML = `
     <div class="search-box position-relative">
         <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
-        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" placeholder="Поиск чатов...">
+        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" data-i18n-attr="placeholder" data-i18n="search.room" placeholder="Поиск чатов...">
         <i id="clearSearchBtn" class="bi bi-x-circle position-absolute end-0 top-50 translate-middle-y me-3 text-muted d-none" style="cursor: pointer;"></i>
     </div>
 `;

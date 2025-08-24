@@ -130,6 +130,7 @@
             'search.results.count': 'результатов',
             'search.clear': 'Очистить поиск',
             'search.title': 'Поиск по сообщениям',
+            'search.room': 'Поиск чатов...',
 
             'welcome.title': 'Добро пожаловать в AI Чат-ассистент',
             'welcome.subtitle': 'Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!',
@@ -385,6 +386,7 @@
             'search.results.count': 'results',
             'search.clear': 'Clear search',
             'search.title': 'Search messages',
+            'search.room': 'Search room...',
 
             'welcome.title': 'Welcome to the AI Chat Assistant',
             'welcome.subtitle': 'Your intelligent assistant for any task. Ask questions, get advice, and find solutions now!',
