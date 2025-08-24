@@ -226,7 +226,7 @@ const elements = (function() {
             elements.stopButton.addEventListener('click', () => {
                 if (state.currentRoom && state.currentRoom.id) {
                     stopStream(state.currentRoom.id);
-                    showNotification('Генерация остановлена', 'info');
+                    showNotification(window.i18n?.t('notify.generationStopped', 'Генерация остановлена'), 'info');
                 }
             });
         }
@@ -273,6 +273,11 @@ const elements = (function() {
     return init();
 })();
 
+// Re-render rooms list when language changes to refresh group titles/empty state
+window.addEventListener('i18n:changed', () => {
+    try { renderRoomsList(); } catch (_) { /* noop */ }
+});
+
 async function switchToLastRoom() {
     if (!state.rooms?.length) {
         await createRoom('Новый чат');
@@ -303,7 +308,7 @@ async function loadRooms() {
         }
     } catch (error) {
         console.error('Error loading rooms:', error);
-        showNotification('Не удалось загрузить комнаты. Пожалуйста, обновите страницу.', 'error');
+        showNotification(window.i18n?.t('error.roomsLoad', 'Не удалось загрузить комнаты. Пожалуйста, обновите страницу.'), 'error');
     }
 }
 
@@ -313,7 +318,8 @@ function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
     if (!state.rooms?.length) {
-        elements.roomsList.innerHTML = '<div class="no-rooms">История чатов пуста</div>';
+        const empty = window.i18n?.t('rooms.empty', 'История чатов пуста');
+        elements.roomsList.innerHTML = `<div class="no-rooms">${empty}</div>`;
         hideInputs(true); // Прячем ввод и кнопку загрузки, если комнат нет
         return;
     }
@@ -325,24 +331,24 @@ function renderRoomsList() {
 
     // Отображение закрепленных чатов
     if (groupedRooms.pinned.length > 0) {
-        renderChatGroup('pinned', 'Закрепленные', groupedRooms.pinned, 'bi-pin-angle-fill');
+        renderChatGroup('pinned', window.i18n?.t('rooms.pinned', 'Закрепленные'), groupedRooms.pinned, 'bi-pin-angle-fill');
     }
 
     // Отображение групп по времени
     if (groupedRooms.today.length > 0) {
-        renderChatGroup('today', 'Сегодня', groupedRooms.today, 'bi-clock');
+        renderChatGroup('today', window.i18n?.t('rooms.today', 'Сегодня'), groupedRooms.today, 'bi-clock');
     }
 
     if (groupedRooms.yesterday.length > 0) {
-        renderChatGroup('yesterday', 'Вчера', groupedRooms.yesterday, 'bi-clock-history');
+        renderChatGroup('yesterday', window.i18n?.t('rooms.yesterday', 'Вчера'), groupedRooms.yesterday, 'bi-clock-history');
     }
 
     if (groupedRooms.thisWeek.length > 0) {
-        renderChatGroup('thisWeek', 'На этой неделе', groupedRooms.thisWeek, 'bi-calendar-week');
+        renderChatGroup('thisWeek', window.i18n?.t('rooms.thisWeek', 'На этой неделе'), groupedRooms.thisWeek, 'bi-calendar-week');
     }
 
     if (groupedRooms.older.length > 0) {
-        renderChatGroup('older', 'Ранее', groupedRooms.older, 'bi-archive');
+        renderChatGroup('older', window.i18n?.t('rooms.older', 'Ранее'), groupedRooms.older, 'bi-archive');
     }
 }
 
@@ -648,7 +654,7 @@ function setupScrollHandlers() {
 async function createRoom() {
     try {
         const response = await fetch(
-            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent('Новый чат')}`,
+            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent(window.i18n?.t('sidebar.newChat', 'Новый чат'))}`,
             {
                 method: 'GET',
                 headers: {

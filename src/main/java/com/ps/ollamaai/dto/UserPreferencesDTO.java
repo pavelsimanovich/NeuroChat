@@ -9,4 +9,5 @@ public class UserPreferencesDTO {
     private String systemPrompt;
     private String preferredModel;
     private String avatarFileId;
+    private String language;
 }

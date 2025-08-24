@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveUserSettingsBtn = document.getElementById('saveUserSettings');
     const systemPromptTextarea = document.getElementById('systemPrompt');
     const modelSelectElement = document.getElementById('modelSelect');
+    const languageSelectElement = document.getElementById('languageSelect');
     // TTS controls
     const ttsAutoplayEl = document.getElementById('ttsAutoplay');
     const ttsVoiceEl = document.getElementById('ttsVoice');
@@ -39,6 +40,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Load language preference early on page load and apply UI language
+    try {
+        fetch('/api/user/preferences')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data && typeof data.language === 'string' && data.language) {
+                    if (window.i18n) window.i18n.setLanguage(data.language);
+                    if (languageSelectElement) languageSelectElement.value = data.language;
+                }
+            })
+            .catch(() => {});
+    } catch (_) {}
+
     // Show the modal
     if (userSettingsBtn) {
         userSettingsBtn.addEventListener('click', () => {
@@ -58,6 +72,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         avatarFileIdHidden.value = '';
                         setAvatarPreview(null);
+                    }
+                    // Language
+                    if (languageSelectElement) {
+                        const currentLang = (data && typeof data.language === 'string' && data.language) || (window.i18n && window.i18n.getLanguage()) || 'ru';
+                        languageSelectElement.value = currentLang;
+                        // Optional: change UI immediately when select changes (persist on save)
+                        languageSelectElement.addEventListener('change', () => {
+                            try { if (window.i18n) window.i18n.setLanguage(languageSelectElement.value); } catch (e) {}
+                        }, { once: true });
                     }
                     // Load TTS settings from tts module/localStorage
                     try {
@@ -128,6 +151,7 @@ document.addEventListener('DOMContentLoaded', function () {
         saveUserSettingsBtn.addEventListener('click', () => {
             const systemPrompt = systemPromptTextarea.value;
             const preferredModel = modelSelectElement.value;
+            const language = languageSelectElement ? languageSelectElement.value : (window.i18n && window.i18n.getLanguage());
             const avatarFileId = avatarFileIdHidden ? avatarFileIdHidden.value : '';
             // Collect TTS settings
             let ttsSettingsPayload = null;
@@ -153,7 +177,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({ 
                     systemPrompt: systemPrompt,
                     preferredModel: preferredModel,
-                    avatarFileId: avatarFileId
+                    avatarFileId: avatarFileId,
+                    language: language
                 })
             })
             .then(response => response.json())
@@ -162,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: 'success',
                     title: 'Сохранено!',
-                    text: 'Ваши настройки были успешно обновлены.' + (ttsSettingsPayload ? ' (Настройки TTS применены)' : ''),
+                    text: 'Ваши настройки были успешно обновлены.',
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -175,6 +200,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         currentModelBadge.textContent = newModel;
                     }
                 }
+                // Apply language from server response if returned
+                try {
+                    const newLang = (data && data.language) || language;
+                    if (newLang && window.i18n) window.i18n.setLanguage(newLang);
+                } catch (_) {}
             })
             .catch(error => {
                 console.error('Error saving user preferences:', error);
