@@ -183,7 +183,29 @@
             'registration.lastName.placeholder': 'Ваша фамилия',
             'registration.submit': 'Зарегистрироваться',
             'registration.haveAccount': 'Уже есть аккаунт?',
-            'registration.login': 'Войти'
+            'registration.login': 'Войти',
+
+            // Forgot password page
+            'forgot.pageTitle': 'Восстановление пароля',
+            'forgot.heading': 'Восстановление пароля',
+            'forgot.intro': 'Введите email, указанный при регистрации, и мы отправим вам ссылку для сброса пароля.',
+            'forgot.email': 'Email',
+            'forgot.email.placeholder': 'Введите ваш email',
+            'forgot.submit': 'Отправить',
+            'forgot.backToLogin': 'Вернуться к входу',
+            'forgot.success': 'Email с инструкциями отправлен.',
+            'forgot.error': 'Произошла ошибка.',
+
+            // Reset password page
+            'reset.pageTitle': 'Изменение пароля',
+            'reset.heading': 'Создание нового пароля',
+            'reset.intro': 'Введите новый пароль для вашей учетной записи. Пароль должен содержать не менее 8 символов.',
+            'reset.newPassword': 'Новый пароль',
+            'reset.newPassword.placeholder': 'Введите новый пароль',
+            'reset.confirmPassword': 'Подтверждение пароля',
+            'reset.confirmPassword.placeholder': 'Подтвердите новый пароль',
+            'reset.submit': 'Изменить пароль',
+            'reset.backToLogin': 'Вернуться к входу'
         },
         en: {
             'app.title': 'AI Chat',
@@ -359,7 +381,29 @@
             'registration.lastName.placeholder': 'Your last name',
             'registration.submit': 'Register',
             'registration.haveAccount': 'Already have an account?',
-            'registration.login': 'Sign in'
+            'registration.login': 'Sign in',
+
+            // Forgot password page
+            'forgot.pageTitle': 'Password recovery',
+            'forgot.heading': 'Password recovery',
+            'forgot.intro': 'Enter the email you used to register and we will send you a password reset link.',
+            'forgot.email': 'Email',
+            'forgot.email.placeholder': 'Enter your email',
+            'forgot.submit': 'Send',
+            'forgot.backToLogin': 'Back to login',
+            'forgot.success': 'An email with instructions has been sent.',
+            'forgot.error': 'An error occurred.',
+
+            // Reset password page
+            'reset.pageTitle': 'Reset password',
+            'reset.heading': 'Create a new password',
+            'reset.intro': 'Enter a new password for your account. It must be at least 8 characters long.',
+            'reset.newPassword': 'New password',
+            'reset.newPassword.placeholder': 'Enter new password',
+            'reset.confirmPassword': 'Confirm password',
+            'reset.confirmPassword.placeholder': 'Confirm new password',
+            'reset.submit': 'Change password',
+            'reset.backToLogin': 'Back to login'
         }
     };
 
