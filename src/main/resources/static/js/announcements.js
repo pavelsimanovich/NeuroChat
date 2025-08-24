@@ -16,6 +16,12 @@ class AnnouncementManager {
         this.endDateInput = document.getElementById('announcementEndDate');
         this.enableEndDateCheckbox = document.getElementById('enableEndDate');
         this.endDateGroup = document.getElementById('endDateGroup');
+        this.imageInput = document.getElementById('announcementImage');
+        this.imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        this.imagePreview = document.getElementById('imagePreview');
+        this.isAdCheckbox = document.getElementById('announcementIsAd');
+        this.adTargetUrlInput = document.getElementById('announcementAdTargetUrl');
+        this.currentImageUrl = null;
 
         // Set default start date to now
         const now = new Date();
@@ -40,6 +46,18 @@ class AnnouncementManager {
         // Initialize end date state
         this.endDateInput.disabled = !this.enableEndDateCheckbox.checked;
         this.endDateGroup.style.display = this.enableEndDateCheckbox.checked ? 'block' : 'none';
+
+        // Image preview
+        if (this.imageInput) {
+            this.imageInput.addEventListener('change', () => {
+                const file = this.imageInput.files && this.imageInput.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    this.imagePreview.src = url;
+                    this.imagePreviewContainer.style.display = 'block';
+                }
+            });
+        }
 
         // Set up form validation
         this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
@@ -125,7 +143,11 @@ class AnnouncementManager {
         announcements.forEach(announcement => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${this.escapeHtml(announcement.title)}</td>
+                <td>
+                    ${announcement.isAd ? '<span class="badge bg-warning text-dark me-1">Реклама</span>' : ''}
+                    ${announcement.imageUrl ? '<i class="bi bi-image me-1" title="Изображение"></i>' : ''}
+                    ${this.escapeHtml(announcement.title)}
+                </td>
                 <td>${this.formatDate(announcement.startDate)}</td>
                 <td>${announcement.endDate ? this.formatDate(announcement.endDate) : '—'}</td>
                 <td>
@@ -164,6 +186,19 @@ class AnnouncementManager {
             this.titleInput.value = announcement.title || '';
             this.contentInput.value = announcement.content || '';
             this.activeCheckbox.checked = announcement.active !== false; // Default to true if undefined
+            this.isAdCheckbox.checked = announcement.isAd === true;
+            this.adTargetUrlInput.value = announcement.adTargetUrl || '';
+            this.currentImageUrl = announcement.imageUrl || null;
+        this.isAdCheckbox.checked = announcement.isAd === true;
+        this.adTargetUrlInput.value = announcement.adTargetUrl || '';
+        this.currentImageUrl = announcement.imageUrl || null;
+
+        if (this.currentImageUrl) {
+            this.imagePreview.src = this.currentImageUrl;
+            this.imagePreviewContainer.style.display = 'block';
+        } else {
+            this.imagePreviewContainer.style.display = 'none';
+        }
 
             // Set start date
             if (announcement.startDate) {
@@ -209,6 +244,22 @@ class AnnouncementManager {
         }
 
         try {
+            // Upload image via FileController if a new file is selected
+            let imageUrl = this.currentImageUrl;
+            const file = this.imageInput && this.imageInput.files && this.imageInput.files[0];
+            if (file) {
+                const fd = new FormData();
+                fd.append('file', file);
+                const uploadResp = await fetch('/api/files/upload', {
+                    method: 'POST',
+                    body: fd
+                });
+                if (!uploadResp.ok) throw new Error('Ошибка загрузки изображения');
+                const uploadData = await uploadResp.json();
+                if (!uploadData || !uploadData.id) throw new Error('Некорректный ответ загрузки');
+                imageUrl = `/api/files/${uploadData.id}/preview`;
+            }
+
             const formData = {
                 title: this.titleInput.value.trim(),
                 content: this.contentInput.value.trim(),
@@ -216,7 +267,10 @@ class AnnouncementManager {
                 startDate: this.startDateInput.value ? new Date(this.startDateInput.value).toISOString() : null,
                 endDate: this.enableEndDateCheckbox.checked && this.endDateInput.value
                     ? new Date(this.endDateInput.value).toISOString()
-                    : null
+                    : null,
+                imageUrl: imageUrl || null,
+                isAd: this.isAdCheckbox.checked,
+                adTargetUrl: this.adTargetUrlInput.value.trim() || null
             };
 
             const url = this.announcementId
@@ -256,6 +310,10 @@ class AnnouncementManager {
         this.endDateInput.disabled = true;
         this.titleInput.classList.remove('is-invalid');
         this.contentInput.classList.remove('is-invalid');
+        this.imageInput.value = '';
+        this.imagePreview.src = '';
+        this.imagePreviewContainer.style.display = 'none';
+        this.currentImageUrl = null;
 
         // Reset to default start date (now)
         const now = new Date();

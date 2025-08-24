@@ -19,17 +19,7 @@ services:
 #    image: ollama/ollama:latest
 #    ports:
 #      - 11434:11434
-#
-#  open-webui:
-#    image: ghcr.io/open-webui/open-webui:main
-#    container_name: open-webui
-#    ports:
-#      - 3005:8080
-#    environment:
-#      - 'OLLAMA_BASE_URL=http://host.docker.internal:11434'
-#    # Allow the container to access the host network
-#    extra_hosts:
-#      - host.docker.internal:host-gateway
+
 
 networks:
   mynetwork: {}

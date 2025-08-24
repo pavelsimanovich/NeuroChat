@@ -21,6 +21,9 @@ public class AnnouncementDto {
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String imageUrl;
+    private boolean isAd;
+    private String adTargetUrl;
 
     public static AnnouncementDto from(Announcement announcement) {
         return AnnouncementDto.builder()
@@ -32,6 +35,9 @@ public class AnnouncementDto {
                 .endDate(announcement.getEndDate())
                 .createdAt(announcement.getCreatedAt())
                 .updatedAt(announcement.getUpdatedAt())
+                .imageUrl(announcement.getImageUrl())
+                .isAd(announcement.isAd())
+                .adTargetUrl(announcement.getAdTargetUrl())
                 .build();
     }
 
@@ -43,6 +49,9 @@ public class AnnouncementDto {
                 .active(this.active)
                 .startDate(this.startDate)
                 .endDate(this.endDate)
+                .imageUrl(this.imageUrl)
+                .isAd(this.isAd)
+                .adTargetUrl(this.adTargetUrl)
                 .build();
     }
 }

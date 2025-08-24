@@ -4,25 +4,38 @@
     --announcement-text: #212529;
     --announcement-primary: #0d6efd;
     --announcement-border: rgba(0, 0, 0, 0.05);
+    --announcement-shadow: 0 8px 30px rgba(79, 70, 229, 0.4);
+    --announcement-accent: linear-gradient(135deg, rgba(13,110,253,0.3), rgba(67,97,238,0.25));
+    --announcement-glass-border: rgba(255, 255, 255, 0.25);
     
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1035; /* Above most content but below modals */
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    margin: 0 auto;
+    width: calc(100% - 2rem);
+    max-width: 1200px;
     background: var(--announcement-bg);
     color: var(--announcement-text);
-    border-bottom: 1px solid var(--announcement-border);
-    transform: translateY(-100%);
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    padding: 1rem 1.5rem;
+    z-index: 1050;
+    box-shadow: var(--announcement-shadow);
+    border-radius: 14px;
+    border: 1px solid var(--announcement-glass-border);
     opacity: 0;
+    transform: translateY(24px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     pointer-events: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow: hidden;
 }
 
 #announcementContainer.show {
     transform: translateY(0);
     opacity: 1;
     pointer-events: auto;
+    animation: slideUp 0.28s ease-out;
 }
 
 .announcement-container {
@@ -44,6 +57,14 @@
     padding-right: 1rem;
     line-height: 1.5;
     font-size: 0.95rem;
+    gap: .5rem;
+}
+
+.announcement-content.clickable { cursor: pointer; }
+.announcement-content:focus-visible {
+    outline: 2px solid var(--announcement-primary);
+    outline-offset: 2px;
+    border-radius: 8px;
 }
 
 .announcement-actions {
@@ -118,9 +139,11 @@
 
 /* Dark mode support */
 [data-bs-theme="dark"] #announcementContainer {
-    --announcement-bg: #1a1d20;
-    --announcement-text: #f8f9fa;
-    --announcement-border: rgba(255, 255, 255, 0.1);
+    --announcement-bg: #111418;
+    --announcement-text: #f1f3f5;
+    --announcement-border: rgba(255, 255, 255, 0.08);
+    --announcement-glass-border: rgba(255,255,255,0.08);
+    --announcement-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 
 [data-bs-theme="dark"] .btn-close {
@@ -129,7 +152,87 @@
 
 /* Hover effects */
 #announcementContainer:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 36px rgba(79, 70, 229, 0.45);
+}
+
+/* Content styles */
+.announcement-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.announcement-content {
+    flex: 1;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.announcement-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#announcementDetailsBtn {
+    /*border-color: rgba(255, 255, 255, 0.3);*/
+    /*color: white;*/
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+#announcementDetailsBtn:hover,
+#announcementDetailsBtn:focus-visible {
+    background-color: rgba(var(--bs-primary-rgb), 0.10);
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    transform: translateY(-1px);
+}
+
+#announcementDetailsBtn:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.18);
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] #announcementDetailsBtn:hover,
+[data-bs-theme="dark"] #announcementDetailsBtn:focus-visible {
+    background-color: rgba(var(--bs-primary-rgb), 0.25);
+}
+[data-bs-theme="dark"] #announcementDetailsBtn:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.35);
+}
+
+.announcement-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #announcementContainer {
+        width: calc(100% - 1rem);
+        padding: 0.75rem 1rem;
+        bottom: 0.5rem;
+    }
+    
+    .announcement-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .announcement-actions {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* Badge styles */
@@ -147,8 +250,9 @@
 #announcementModal .modal-content {
     border: none;
     box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     overflow: hidden;
+    background: var(--bs-body-bg);
 }
 
 #announcementModal .modal-header {
@@ -162,6 +266,17 @@
     padding: 0;
     max-height: 60vh;
     overflow-y: auto;
+}
+
+/* Reading progress bar */
+#announcementReadingProgress {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bs-primary) var(--progress, 0%), transparent 0);
+    z-index: 2;
 }
 
 #announcementModal .modal-footer {
@@ -217,6 +332,16 @@
     font-size: 1.05rem;
 }
 
+#announcementModalContent .announcement-image {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    will-change: transform;
+}
+
+#announcementModalContent .announcement-image.zoomed {
+    transform: scale(1.3);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+}
+
 #announcementModalContent h1,
 #announcementModalContent h2,
 #announcementModalContent h3,
@@ -240,6 +365,36 @@
 
 #announcementModalContent a:hover {
     text-decoration: underline;
+}
+
+/* Code blocks and inline code inside modal for dark/light */
+#announcementModalContent code {
+    background: rgba(0,0,0,0.06);
+    padding: 0.2em 0.4em;
+    border-radius: 6px;
+}
+
+#announcementModalContent pre {
+    background: rgba(0,0,0,0.04);
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+/* CTA and actions spacing tweaks */
+#announcementModalContent .btn {
+    border-radius: 10px;
+}
+
+#announcementModalContent .btn.btn-success {
+    transition: background-color .2s ease, color .2s ease;
+}
+
+[data-bs-theme="dark"] #announcementModalContent code {
+    background: rgba(255,255,255,0.08);
+}
+
+[data-bs-theme="dark"] #announcementModalContent pre {
+    background: rgba(255,255,255,0.06);
 }
 
 /* Responsive adjustments */
@@ -293,18 +448,14 @@
     }
 }
 
-/* Animation for announcement appearance */
-@keyframes slideDown {
+/* Animation for announcement appearance (slide up from bottom) */
+@keyframes slideUp {
     from {
-        transform: translateY(-100%);
+        transform: translateY(24px);
         opacity: 0;
     }
     to {
         transform: translateY(0);
         opacity: 1;
     }
-}
-
-#announcementContainer {
-    animation: slideDown 0.3s ease-out;
 }

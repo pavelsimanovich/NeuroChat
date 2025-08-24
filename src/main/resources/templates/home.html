@@ -99,9 +99,9 @@
 
         <!-- Основная область чата -->
         <!-- Announcement Bar -->
-        <div id="announcementContainer" class="announcement-bar d-none">
+        <div id="announcementContainer" class="announcement-bar d-none" aria-live="polite" aria-atomic="true">
             <div class="announcement-container">
-                <div class="announcement-content" id="announcementContent">
+                <div class="announcement-content" id="announcementContent" role="button" tabindex="0" aria-label="Открыть объявление" title="Открыть объявление">
                     <!-- Loading spinner -->
                     <div class="announcement-loading d-none">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
@@ -112,7 +112,7 @@
                     <!-- Content will be inserted here -->
                 </div>
                 <div class="announcement-actions">
-                    <button type="button" class="btn btn-sm btn-outline-primary me-2" id="announcementDetailsBtn">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2" id="announcementDetailsBtn" aria-controls="announcementModal" title="Подробнее об объявлении">
                         <i class="bi bi-arrows-angle-expand me-1"></i> Подробнее
                     </button>
                     <button type="button" class="btn-close" id="closeAnnouncement" aria-label="Скрыть"></button>

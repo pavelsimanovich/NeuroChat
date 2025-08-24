@@ -30,6 +30,9 @@ public class Announcement {
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String imageUrl;
+    private boolean isAd;
+    private String adTargetUrl;
     
     @PrePersist
     protected void onCreate() {
