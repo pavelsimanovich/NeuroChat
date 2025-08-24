@@ -166,7 +166,23 @@
             'index.google': 'Google',
             'index.facebook': 'Facebook',
             'index.noAccount': 'Ещё нет аккаунта?',
-            'index.register': 'Зарегистрируйтесь'
+            'index.register': 'Зарегистрируйтесь',
+
+            // Registration page
+            'registration.pageTitle': 'Регистрация в ИИ чат',
+            'registration.title': 'Регистрация',
+            'registration.subtitle': 'Заполните форму для регистрации',
+            'registration.email': 'Email',
+            'registration.email.placeholder': 'Введите ваш email',
+            'registration.password': 'Пароль',
+            'registration.password.placeholder': 'Введите пароль',
+            'registration.firstName': 'Имя',
+            'registration.firstName.placeholder': 'Ваше имя',
+            'registration.lastName': 'Фамилия',
+            'registration.lastName.placeholder': 'Ваша фамилия',
+            'registration.submit': 'Зарегистрироваться',
+            'registration.haveAccount': 'Уже есть аккаунт?',
+            'registration.login': 'Войти'
         },
         en: {
             'app.title': 'AI Chat',
@@ -325,7 +341,23 @@
             'index.google': 'Google',
             'index.facebook': 'Facebook',
             'index.noAccount': "Don't have an account?",
-            'index.register': 'Register'
+            'index.register': 'Register',
+
+            // Registration page
+            'registration.pageTitle': 'Sign up to AI Chat',
+            'registration.title': 'Sign up',
+            'registration.subtitle': 'Fill in the form to create your account',
+            'registration.email': 'Email',
+            'registration.email.placeholder': 'Enter your email',
+            'registration.password': 'Password',
+            'registration.password.placeholder': 'Enter password',
+            'registration.firstName': 'First name',
+            'registration.firstName.placeholder': 'Your first name',
+            'registration.lastName': 'Last name',
+            'registration.lastName.placeholder': 'Your last name',
+            'registration.submit': 'Register',
+            'registration.haveAccount': 'Already have an account?',
+            'registration.login': 'Sign in'
         }
     };
 
@@ -333,7 +365,11 @@
         lang: null,
         setLanguage(lang) {
             this.lang = dictionaries[lang] ? lang : DEFAULT_LANG;
-            try { localStorage.setItem(STORAGE_KEY, this.lang); } catch (_) {}
+            try {
+                localStorage.setItem(STORAGE_KEY, this.lang);
+            } catch (ex) {
+                console.error(ex);
+            }
             this.apply();
             document.documentElement.lang = this.lang;
             const event = new CustomEvent('i18n:changed', { detail: { lang: this.lang }});
@@ -347,7 +383,9 @@
                     this.lang = saved;
                     return this.lang;
                 }
-            } catch (_) {}
+            } catch (ex) {
+                console.error(ex);
+            }
             this.lang = DEFAULT_LANG;
             return this.lang;
         },

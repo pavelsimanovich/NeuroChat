@@ -11,6 +11,7 @@ public final class Prompts {
             
             """;
 
+    //TODO i18n
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
             Answer strictly in Russian.
             Make a greeting only if not yet.

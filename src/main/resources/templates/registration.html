@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация в ИИ чат</title>
+    <title data-i18n="registration.pageTitle">Регистрация в ИИ чат</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link th:href="@{/css/index.css}" rel="stylesheet" />
@@ -12,8 +12,8 @@
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-header">
-            <h1 class="auth-title">Регистрация</h1>
-            <p class="auth-subtitle">Заполните форму для регистрации</p>
+            <h1 class="auth-title" data-i18n="registration.title">Регистрация</h1>
+            <p class="auth-subtitle" data-i18n="registration.subtitle">Заполните форму для регистрации</p>
             <div th:if="${error}" class="error-message">
                 <i class="bi bi-exclamation-circle-fill"></i>
                 <span th:text="${error}"></span>
@@ -21,28 +21,30 @@
         </div>
         <form th:action="@{/saveUser}" method="post" th:object="${user}" class="auth-form">
             <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Введите ваш email" required>
+                <label for="email" class="form-label" data-i18n="registration.email">Email</label>
+                <input type="email" class="form-control" id="email" name="email" data-i18n-attr="placeholder" data-i18n="registration.email.placeholder" placeholder="Введите ваш email" required>
             </div>
             <div class="mb-3">
-                <label for="password" class="form-label">Пароль</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Введите пароль" required>
+                <label for="password" class="form-label" data-i18n="registration.password">Пароль</label>
+                <input type="password" class="form-control" id="password" name="password" data-i18n-attr="placeholder" data-i18n="registration.password.placeholder" placeholder="Введите пароль" required>
             </div>
             <div class="mb-3">
-                <label for="firstName" class="form-label">Имя</label>
-                <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Ваше имя" required>
+                <label for="firstName" class="form-label" data-i18n="registration.firstName">Имя</label>
+                <input type="text" class="form-control" id="firstName" name="firstName" data-i18n-attr="placeholder" data-i18n="registration.firstName.placeholder" placeholder="Ваше имя" required>
             </div>
             <div class="mb-3">
-                <label for="lastName" class="form-label">Фамилия</label>
-                <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Ваша фамилия" required>
+                <label for="lastName" class="form-label" data-i18n="registration.lastName">Фамилия</label>
+                <input type="text" class="form-control" id="lastName" name="lastName" data-i18n-attr="placeholder" data-i18n="registration.lastName.placeholder" placeholder="Ваша фамилия" required>
             </div>
-            <button type="submit" class="btn btn-primary mb-3">Зарегистрироваться</button>
+            <button type="submit" class="btn btn-primary mb-3" data-i18n="registration.submit">Зарегистрироваться</button>
         </form>
         <div class="auth-footer">
-            Уже есть аккаунт? <a href="/login">Войти</a>
+            <span data-i18n="registration.haveAccount">Уже есть аккаунт?</span> <a href="/login" data-i18n="registration.login">Войти</a>
         </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- i18n must load after DOM but before usage -->
+<script th:src="@{/js/i18n.js}"></script>
 </body>
 </html>
