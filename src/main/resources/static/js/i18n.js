@@ -167,6 +167,7 @@
             'index.facebook': 'Facebook',
             'index.noAccount': 'Ещё нет аккаунта?',
             'index.register': 'Зарегистрируйтесь',
+            'index.welcome': 'Добро пожаловать в NeuroChat',
 
             // Registration page
             'registration.pageTitle': 'Регистрация в ИИ чат',
@@ -342,6 +343,7 @@
             'index.facebook': 'Facebook',
             'index.noAccount': "Don't have an account?",
             'index.register': 'Register',
+            'index.welcome': 'Welcome to the NeuroChat',
 
             // Registration page
             'registration.pageTitle': 'Sign up to AI Chat',
