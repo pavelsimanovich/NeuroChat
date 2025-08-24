@@ -1240,6 +1240,29 @@ body {
     color: var(--text-muted);
 }
 
+/* TTS controls visibility and sizing */
+.tts-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.tts-controls .btn {
+    padding: 2px 8px;
+    line-height: 1;
+    border-radius: 6px;
+}
+.tts-controls .btn i {
+    font-size: 0.9rem;
+}
+[data-bs-theme="dark"] .tts-controls .btn.btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+.tts-controls.tts-active .btn[data-tts="play"] {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
 .message-status {
     color: var(--danger-color);
     font-style: italic;

@@ -24,6 +24,109 @@ const config = {
     }
 };
 
+// Text-to-Speech (TTS) functionality for AI messages
+const tts = {
+    supported: ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window),
+    currentUtterance: null,
+    speakingMessageId: null,
+    selectedVoice: null,
+
+    init() {
+        if (!this.supported) return;
+        // Attempt to select a Russian voice if available
+        const pickVoice = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return;
+            this.selectedVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('ru'))
+                || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
+                || voices[0];
+        };
+        pickVoice();
+        // Voices may load asynchronously
+        window.speechSynthesis.onvoiceschanged = () => pickVoice();
+        // Stop TTS on page unload
+        window.addEventListener('beforeunload', () => this.stop());
+    },
+
+    play(text, messageId, lang = 'ru-RU') {
+        if (!this.supported || !text) return;
+        // If already speaking another message, stop it first
+        if (this.isSpeaking() && this.speakingMessageId !== messageId) {
+            this.stop();
+        }
+
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = this.selectedVoice?.lang || lang;
+        if (this.selectedVoice) utter.voice = this.selectedVoice;
+        utter.rate = 1.0; // normal speed
+        utter.pitch = 1.0; // normal pitch
+        utter.onend = () => {
+            this.currentUtterance = null;
+            this.speakingMessageId = null;
+            this.updateControlsState();
+        };
+        utter.onerror = () => {
+            this.currentUtterance = null;
+            this.speakingMessageId = null;
+            this.updateControlsState();
+        };
+
+        this.currentUtterance = utter;
+        this.speakingMessageId = messageId;
+        window.speechSynthesis.cancel(); // ensure queue is cleared
+        window.speechSynthesis.speak(utter);
+        this.updateControlsState();
+    },
+
+    stop() {
+        if (!this.supported) return;
+        window.speechSynthesis.cancel();
+        this.currentUtterance = null;
+        this.speakingMessageId = null;
+        this.updateControlsState();
+    },
+
+    pause() {
+        if (!this.supported) return;
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+            window.speechSynthesis.pause();
+            this.updateControlsState();
+        }
+    },
+
+    resume() {
+        if (!this.supported) return;
+        if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+            this.updateControlsState();
+        }
+    },
+
+    isSpeaking() {
+        if (!this.supported) return false;
+        return window.speechSynthesis.speaking && !window.speechSynthesis.paused;
+    },
+
+    updateControlsState() {
+        // Update play/pause/stop buttons visual state
+        document.querySelectorAll('.tts-controls').forEach(ctrl => {
+            const mid = ctrl.getAttribute('data-message-id');
+            const isActive = this.speakingMessageId === mid && (window.speechSynthesis.speaking);
+            ctrl.classList.toggle('tts-active', isActive);
+            const playBtn = ctrl.querySelector('[data-tts="play"]');
+            const pauseBtn = ctrl.querySelector('[data-tts="pause"]');
+            const resumeBtn = ctrl.querySelector('[data-tts="resume"]');
+            const stopBtn = ctrl.querySelector('[data-tts="stop"]');
+            if (playBtn) playBtn.disabled = isActive; // disable play if currently playing this message
+            if (pauseBtn) pauseBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking && !window.speechSynthesis.paused);
+            if (resumeBtn) resumeBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.paused);
+            if (stopBtn) stopBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking);
+        });
+    }
+};
+
+tts.init();
+
 let eventSource = null;
 let chatConnections = {};
 // Используем глобальное состояние чата
@@ -674,7 +777,7 @@ async function sendMessage() {
                 } else {
                     state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
                     window.dispatchEvent(new CustomEvent('messageSent'));
-                    //renderMessages();
+                    renderMessages();
                     scrollToBottom(true);
                 }
                 elements.stopButton.classList.add('d-none');
@@ -2182,13 +2285,25 @@ function renderMessages() {
             filePreviews += '</div>';
         }
 
+        const isAI = message.userId !== elements.userId;
+        const disabledAttr = tts.supported ? '' : 'disabled title="TTS не поддерживается браузером"';
+        const ttsControls = (isAI && message.content) ? `
+            <div class="tts-controls d-inline-flex align-items-center gap-1" data-message-id="${message.id}" title="Озвучить ответ">
+                <button class="btn btn-sm btn-outline-secondary" data-tts="play" aria-label="Озвучить" ${disabledAttr}><i class="bi bi-volume-up"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" data-tts="pause" aria-label="Пауза" ${disabledAttr}><i class="bi bi-pause"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" data-tts="resume" aria-label="Продолжить" ${disabledAttr}><i class="bi bi-play"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" data-tts="stop" aria-label="Стоп" ${disabledAttr}><i class="bi bi-stop"></i></button>
+            </div>
+        ` : '';
+
         messageElement.innerHTML = `
-            <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
+            <div class="message-sender">${isAI ? 'AI' : 'Вы'}</div>
             ${filePreviews}
             <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
-            <div class="message-meta">
+            <div class="message-meta d-flex align-items-center gap-2">
                 <span class="message-time">${formatTime(message.timestamp)}</span>
                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
+                ${ttsControls}
             </div>
         `;
 
@@ -2198,6 +2313,36 @@ function renderMessages() {
         }
 
         elements.chatMessages.appendChild(messageElement);
+
+        // Bind TTS controls for AI messages
+        if (isAI && message.content) {
+            const ctrl = messageElement.querySelector('.tts-controls');
+            if (ctrl) {
+                const textToSpeak = message.content.replace(/<[^>]*>/g, '');
+                const playBtn = ctrl.querySelector('[data-tts="play"]');
+                const pauseBtn = ctrl.querySelector('[data-tts="pause"]');
+                const resumeBtn = ctrl.querySelector('[data-tts="resume"]');
+                const stopBtn = ctrl.querySelector('[data-tts="stop"]');
+                if (tts.supported) {
+                    if (playBtn) playBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.play(textToSpeak, message.id);
+                    });
+                    if (pauseBtn) pauseBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.pause();
+                    });
+                    if (resumeBtn) resumeBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.resume();
+                    });
+                    if (stopBtn) stopBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.stop();
+                    });
+                }
+            }
+        }
     });
 
     // Add click handlers for images
