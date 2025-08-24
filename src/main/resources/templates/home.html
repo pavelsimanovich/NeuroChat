@@ -353,12 +353,12 @@
                     <div class="col-12 col-md-9">
                         <div class="tab-content pt-2" id="userSettingsTabsContent">
                             <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
-                                <p class="text-muted">Эти настройки будут применяться ко всем новым чатам.</p>
+                                <p class="text-muted" data-i18n="settings.general.note">Эти настройки будут применяться ко всем новым чатам.</p>
                                 <div class="mb-4">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <label class="form-label mb-0"><strong>Тема интерфейса</strong></label>
-                                        <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" title="Переключить тему">
-                                            <i class="bi bi-moon-stars"></i> <span>Темная тема</span>
+                                        <label class="form-label mb-0"><strong data-i18n="settings.theme.label">Тема интерфейса</strong></label>
+                                        <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" data-i18n-title="settings.theme.toggle.title" title="Переключить тему">
+                                            <i class="bi bi-moon-stars"></i> <span data-i18n="settings.theme.toggle">Темная тема</span>
                                         </button>
                                     </div>
                                     <div class="border-bottom mb-4"></div>
@@ -368,46 +368,46 @@
                                             <option value="ru" data-i18n="lang.ru">Русский</option>
                                             <option value="en" data-i18n="lang.en">English</option>
                                         </select>
-                                        <div class="form-text">Выберите язык интерфейса приложения.</div>
+                                        <div class="form-text" data-i18n="settings.language.help">Выберите язык интерфейса приложения.</div>
                                     </div>
                                     <div class="border-bottom mb-4"></div>
                                     <div class="mb-3">
-                                        <label for="modelSelect" class="form-label"><strong>Модель ИИ</strong></label>
+                                        <label for="modelSelect" class="form-label"><strong data-i18n="settings.model.label">Модель ИИ</strong></label>
                                         <select class="form-select" id="modelSelect">
                                             <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
                                             <option value="gemma3:4b">Gemma 3 (4B)</option>
                                             <option value="gemma3:12b">Gemma 3 (12B)</option>
                                         </select>
-                                        <div class="form-text">Выберите предпочитаемую модель для ваших чатов.</div>
+                                        <div class="form-text" data-i18n="settings.model.help">Выберите предпочитаемую модель для ваших чатов.</div>
                                     </div>
                                     <div class="border-bottom mb-4"></div>
                                     <div class="mb-3">
-                                        <label for="systemPrompt" class="form-label"><strong>Системный промпт</strong></label>
-                                        <textarea class="form-control" id="systemPrompt" rows="5" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
-                                        <div class="form-text">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее больше 1000 символов.</div>
+                                        <label for="systemPrompt" class="form-label"><strong data-i18n="settings.systemPrompt.label">Системный промпт</strong></label>
+                                        <textarea class="form-control" id="systemPrompt" rows="5" data-i18n="settings.systemPrompt.placeholder" data-i18n-attr="placeholder" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
+                                        <div class="form-text" data-i18n="settings.systemPrompt.help">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее 1000 символов.</div>
                                     </div>
                                     <div class="border-bottom mb-4"></div>
                                     <div class="mb-3">
-                                        <label class="form-label"><strong>Озвучивание ответов (TTS)</strong></label>
+                                        <label class="form-label"><strong data-i18n="settings.tts.label">Озвучивание ответов (TTS)</strong></label>
                                         <div class="form-check form-switch mb-3">
                                             <input class="form-check-input" type="checkbox" id="ttsAutoplay">
-                                            <label class="form-check-label" for="ttsAutoplay">Автоматически озвучивать ответы</label>
+                                            <label class="form-check-label" for="ttsAutoplay" data-i18n="settings.tts.autoplay">Автоматически озвучивать ответы</label>
                                         </div>
                                         <div class="row g-3 align-items-end">
                                             <div class="col-md-6">
-                                                <label for="ttsVoice" class="form-label">Голос</label>
+                                                <label for="ttsVoice" class="form-label" data-i18n="settings.tts.voice.label">Голос</label>
                                                 <select id="ttsVoice" class="form-select">
                                                     <option value="">Определяется браузером...</option>
                                                 </select>
-                                                <div class="form-text">Список голосов зависит от браузера и ОС.</div>
+                                                <div class="form-text" data-i18n="settings.tts.voice.help">Список голосов зависит от браузера и ОС.</div>
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="ttsRate" class="form-label">Скорость</label>
+                                                <label for="ttsRate" class="form-label" data-i18n="settings.tts.rate">Скорость</label>
                                                 <input type="range" min="0.5" max="1.5" step="0.1" id="ttsRate" class="form-range">
                                                 <div class="d-flex justify-content-between small text-muted"><span>0.5</span><span>1.5</span></div>
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="ttsPitch" class="form-label">Высота</label>
+                                                <label for="ttsPitch" class="form-label" data-i18n="settings.tts.pitch">Высота</label>
                                                 <input type="range" min="0.5" max="1.5" step="0.1" id="ttsPitch" class="form-range">
                                                 <div class="d-flex justify-content-between small text-muted"><span>0.5</span><span>1.5</span></div>
                                             </div>
@@ -419,33 +419,33 @@
                                 <div class="row g-4">
                                     <div class="col-md-5 text-center">
                                         <div class="mb-3">
-                                            <img id="avatarPreview" src="" alt="Аватар" class="rounded-circle border" style="width: 160px; height: 160px; object-fit: cover;">
+                                            <img id="avatarPreview" src="" alt="Аватар" data-i18n-attr="alt" data-i18n="settings.profile.avatar.alt" class="rounded-circle border" style="width: 160px; height: 160px; object-fit: cover;">
                                         </div>
                                         <div class="d-grid gap-2">
                                             <input class="form-control" type="file" id="avatarInput" accept="image/*">
                                             <input type="hidden" id="avatarFileId">
-                                            <small class="text-muted">Загрузите изображение в формате JPG/PNG, до 10МБ.</small>
+                                            <small class="text-muted" data-i18n="settings.profile.avatar.help">Загрузите изображение в формате JPG/PNG, до 10МБ.</small>
                                         </div>
                                     </div>
                                     <div class="col-md-7">
                                         <div class="card">
                                             <div class="card-body">
-                                                <h6 class="card-title mb-3">Смена пароля</h6>
+                                                <h6 class="card-title mb-3" data-i18n="settings.profile.password.title">Смена пароля</h6>
                                                 <div class="mb-3">
-                                                    <label for="currentPassword" class="form-label">Текущий пароль</label>
+                                                    <label for="currentPassword" class="form-label" data-i18n="settings.profile.password.current">Текущий пароль</label>
                                                     <input type="password" class="form-control" id="currentPassword" autocomplete="current-password">
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="newPassword" class="form-label">Новый пароль</label>
+                                                    <label for="newPassword" class="form-label" data-i18n="settings.profile.password.new">Новый пароль</label>
                                                     <input type="password" class="form-control" id="newPassword" autocomplete="new-password">
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="confirmPassword" class="form-label">Подтверждение пароля</label>
+                                                    <label for="confirmPassword" class="form-label" data-i18n="settings.profile.password.confirm">Подтверждение пароля</label>
                                                     <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password">
                                                 </div>
                                                 <div class="d-grid">
                                                     <button type="button" class="btn btn-outline-primary" id="changePasswordBtn">
-                                                        <i class="bi bi-shield-lock"></i> Изменить пароль
+                                                        <i class="bi bi-shield-lock"></i> <span data-i18n="settings.profile.password.change">Изменить пароль</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -454,7 +454,7 @@
                                 </div>
                             </div>
                             <div class="tab-pane fade" id="about" role="tabpanel" aria-labelledby="about-tab">
-                                <p class="text-muted">О программе.</p>
+                                <p class="text-muted" data-i18n="settings.about.text">О программе.</p>
                             </div>
                         </div>
                     </div>
@@ -476,30 +476,31 @@
                 <div class="modal-icon">
                     <i class="bi bi-pencil"></i>
                 </div>
-                <h3 class="modal-title" data-i18n="context.rename">Переименовать чат</h3>
+                <h3 class="modal-title" data-i18n="rename.title">Переименовать чат</h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="form-group mb-4">
-                    <label for="renameRoomInput" class="form-label">Новое название</label>
+                    <label for="renameRoomInput" class="form-label" data-i18n="rename.label">Новое название</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-chat-square-text"></i></span>
                         <input type="text"
                                class="form-control"
                                id="renameRoomInput"
                                placeholder="Введите новое название"
+                               data-i18n="rename.placeholder" data-i18n-attr="placeholder"
                                maxlength="50"
                                required>
                     </div>
                     <div class="form-text text-end">
-                        <span id="renameCharCount">0</span>/50 символов
+                        <span id="renameCharCount">0</span>/50 <span data-i18n="rename.charcount.suffix">символов</span>
                     </div>
                 </div>
             </div>
             <input type="hidden" id="renamingRoomId">
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-lg me-1"></i> <span>Отмена</span>
+                    <i class="bi bi-x-lg me-1"></i> <span data-i18n="rename.cancel">Отмена</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="confirmRenameRoom">
                     <i class="bi bi-check-lg me-1"></i> <span data-i18n="modal.userSettings.save">Сохранить</span>

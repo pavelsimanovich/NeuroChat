@@ -145,12 +145,20 @@
             'notify.generationStopped': 'Генерация остановлена',
             'error.roomsLoad': 'Не удалось загрузить комнаты. Пожалуйста, обновите страницу.',
 
-            'modal.userSettings.title': 'Настройки пользователя',
-            'modal.userSettings.tabs.general': 'Общие',
-            'modal.userSettings.tabs.profile': 'Профиль',
-            'modal.userSettings.tabs.about': 'О программе',
-            'modal.userSettings.close': 'Закрыть',
-            'modal.userSettings.save': 'Сохранить',
+            // User settings notifications
+            'settings.load.error.title': 'Ошибка',
+            'settings.load.error.text': 'Не удалось загрузить настройки. Пожалуйста, попробуйте еще раз.',
+            'settings.avatar.upload.success.title': 'Аватар загружен',
+            'settings.avatar.upload.error.title': 'Ошибка загрузки',
+            'settings.avatar.upload.error.text': 'Не удалось загрузить аватар',
+            'settings.save.success.title': 'Сохранено!',
+            'settings.save.success.text': 'Ваши настройки были успешно обновлены.',
+            'settings.save.error.title': 'Ошибка',
+            'settings.save.error.text': 'Не удалось сохранить настройки. Пожалуйста, попробуйте еще раз.',
+            'settings.profile.password.fillAll': 'Заполните все поля',
+            'settings.profile.password.changed': 'Пароль изменен',
+            'settings.profile.password.error.title': 'Ошибка',
+            'settings.profile.password.error.generic': 'Не удалось изменить пароль',
 
             'index.title': 'Вход в ИИ чат',
             'index.subtitle': 'Войдите в свой аккаунт, чтобы продолжить',
@@ -205,7 +213,56 @@
             'reset.confirmPassword': 'Подтверждение пароля',
             'reset.confirmPassword.placeholder': 'Подтвердите новый пароль',
             'reset.submit': 'Изменить пароль',
-            'reset.backToLogin': 'Вернуться к входу'
+            'reset.backToLogin': 'Вернуться к входу',
+
+            // User Settings modal
+            'modal.userSettings.title': 'Настройки пользователя',
+            'modal.userSettings.tabs.general': 'Общие',
+            'modal.userSettings.tabs.profile': 'Профиль',
+            'modal.userSettings.tabs.about': 'О программе',
+            'modal.userSettings.close': 'Закрыть',
+            'modal.userSettings.save': 'Сохранить',
+
+            // General tab
+            'settings.general.note': 'Эти настройки будут применяться ко всем новым чатам.',
+            'settings.theme.label': 'Тема интерфейса',
+            'settings.theme.toggle': 'Тёмная тема',
+            'settings.theme.toggle.title': 'Переключить тему',
+            'settings.language.help': 'Выберите язык интерфейса приложения.',
+            'settings.model.label': 'Модель ИИ',
+            'settings.model.help': 'Выберите предпочитаемую модель для ваших чатов.',
+            'settings.systemPrompt.label': 'Системный промпт',
+            'settings.systemPrompt.placeholder': 'Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу.',
+            'settings.systemPrompt.help': 'Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее 1000 символов.',
+
+            // TTS
+            'settings.tts.label': 'Озвучивание ответов (TTS)',
+            'settings.tts.autoplay': 'Автоматически озвучивать ответы',
+            'settings.tts.voice.label': 'Голос',
+            'settings.tts.voice.help': 'Список голосов зависит от браузера и ОС.',
+            'settings.tts.voice.auto': 'Определяется браузером...',
+            'settings.tts.voice.defaultSuffix': ' — по умолчанию',
+            'settings.tts.rate': 'Скорость',
+            'settings.tts.pitch': 'Высота',
+
+            // Profile tab
+            'settings.profile.avatar.alt': 'Аватар',
+            'settings.profile.avatar.help': 'Загрузите изображение в формате JPG/PNG, до 10МБ.',
+            'settings.profile.password.title': 'Смена пароля',
+            'settings.profile.password.current': 'Текущий пароль',
+            'settings.profile.password.new': 'Новый пароль',
+            'settings.profile.password.confirm': 'Подтверждение пароля',
+            'settings.profile.password.change': 'Изменить пароль',
+
+            // About tab
+            'settings.about.text': 'О программе.',
+
+            // Rename room modal
+            'rename.title': 'Переименовать чат',
+            'rename.label': 'Новое название',
+            'rename.placeholder': 'Введите новое название',
+            'rename.charcount.suffix': 'символов',
+            'rename.cancel': 'Отмена'
         },
         en: {
             'app.title': 'AI Chat',
@@ -343,12 +400,20 @@
             'notify.generationStopped': 'Generation stopped',
             'error.roomsLoad': 'Failed to load rooms. Please refresh the page.',
 
-            'modal.userSettings.title': 'User settings',
-            'modal.userSettings.tabs.general': 'General',
-            'modal.userSettings.tabs.profile': 'Profile',
-            'modal.userSettings.tabs.about': 'About',
-            'modal.userSettings.close': 'Close',
-            'modal.userSettings.save': 'Save',
+            // User settings notifications
+            'settings.load.error.title': 'Error',
+            'settings.load.error.text': 'Failed to load settings. Please try again.',
+            'settings.avatar.upload.success.title': 'Avatar uploaded',
+            'settings.avatar.upload.error.title': 'Upload error',
+            'settings.avatar.upload.error.text': 'Failed to upload avatar',
+            'settings.save.success.title': 'Saved!',
+            'settings.save.success.text': 'Your settings have been updated successfully.',
+            'settings.save.error.title': 'Error',
+            'settings.save.error.text': 'Failed to save settings. Please try again.',
+            'settings.profile.password.fillAll': 'Fill in all fields',
+            'settings.profile.password.changed': 'Password changed',
+            'settings.profile.password.error.title': 'Error',
+            'settings.profile.password.error.generic': 'Failed to change password',
 
             'index.title': 'Sign in to AI Chat',
             'index.subtitle': 'Sign in to your account to continue',
@@ -403,7 +468,56 @@
             'reset.confirmPassword': 'Confirm password',
             'reset.confirmPassword.placeholder': 'Confirm new password',
             'reset.submit': 'Change password',
-            'reset.backToLogin': 'Back to login'
+            'reset.backToLogin': 'Back to login',
+
+            // User Settings modal
+            'modal.userSettings.title': 'User settings',
+            'modal.userSettings.tabs.general': 'General',
+            'modal.userSettings.tabs.profile': 'Profile',
+            'modal.userSettings.tabs.about': 'About',
+            'modal.userSettings.close': 'Close',
+            'modal.userSettings.save': 'Save',
+
+            // General tab
+            'settings.general.note': 'These settings will apply to all new chats.',
+            'settings.theme.label': 'Interface theme',
+            'settings.theme.toggle': 'Dark theme',
+            'settings.theme.toggle.title': 'Toggle theme',
+            'settings.language.help': 'Select the application interface language.',
+            'settings.model.label': 'AI model',
+            'settings.model.help': 'Choose your preferred model for chats.',
+            'settings.systemPrompt.label': 'System prompt',
+            'settings.systemPrompt.placeholder': 'Example: You are a friendly assistant that answers briefly and to the point.',
+            'settings.systemPrompt.help': 'Specify your system prompt so the AI adapts to your preferences. No longer than 1000 characters.',
+
+            // TTS
+            'settings.tts.label': 'Text-to-Speech (TTS)',
+            'settings.tts.autoplay': 'Autoplay responses',
+            'settings.tts.voice.label': 'Voice',
+            'settings.tts.voice.help': 'The list of voices depends on the browser and OS.',
+            'settings.tts.voice.auto': 'Determined by browser...',
+            'settings.tts.voice.defaultSuffix': ' — default',
+            'settings.tts.rate': 'Rate',
+            'settings.tts.pitch': 'Pitch',
+
+            // Profile tab
+            'settings.profile.avatar.alt': 'Avatar',
+            'settings.profile.avatar.help': 'Upload a JPG/PNG image up to 10MB.',
+            'settings.profile.password.title': 'Change password',
+            'settings.profile.password.current': 'Current password',
+            'settings.profile.password.new': 'New password',
+            'settings.profile.password.confirm': 'Confirm password',
+            'settings.profile.password.change': 'Change password',
+
+            // About tab
+            'settings.about.text': 'About the application.',
+
+            // Rename room modal
+            'rename.title': 'Rename chat',
+            'rename.label': 'New name',
+            'rename.placeholder': 'Enter a new name',
+            'rename.charcount.suffix': 'characters',
+            'rename.cancel': 'Cancel'
         }
     };
 
