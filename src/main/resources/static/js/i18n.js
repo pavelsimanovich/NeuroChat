@@ -102,6 +102,8 @@
             'admin.ann.modal.field.start': 'Дата начала',
             'admin.ann.modal.field.enableEnd': 'Установить дату окончания',
             'admin.ann.modal.field.active': 'Активно',
+            'admin.ann.status.active': 'Активно',
+            'admin.ann.status.inactive': 'Не активно',
 
             // Common
             'common.save': 'Сохранить',
@@ -264,6 +266,8 @@
             'admin.ann.modal.field.start': 'Start date',
             'admin.ann.modal.field.enableEnd': 'Set end date',
             'admin.ann.modal.field.active': 'Active',
+            'admin.ann.status.active': 'Active',
+            'admin.ann.status.inactive': 'Inactive',
 
             // Time ranges
             'time.5m': '5 min',
