@@ -1976,24 +1976,24 @@ function handleContextMenuAction(action) {
 function showRenameRoomModal(roomId, currentTitle) {
     // Unified SweetAlert2 dialog styled similarly to delete confirmation
     Swal.fire({
-        title: '<span class="rename-title">Переименовать чат</span>',
+        title: `<span class="rename-title">${window.i18n?.t('rename.title', 'Переименовать чат')}</span>`,
         input: 'text',
         inputValue: currentTitle || '',
         inputAttributes: {
             maxlength: '50',
             autocapitalize: 'off',
             autocorrect: 'off',
-            'aria-label': 'Новое название чата'
+            'aria-label': window.i18n?.t('rename.label', 'Новое название')
         },
         html: `<div class="rename-message">
                 <div class="rename-icon-container">
                     <i class="bi bi-pencil-square rename-icon-animated"></i>
                 </div>
-                <p class="text-muted mb-0">Введите новое название чата</p>
+                <p class="text-muted mb-0">${window.i18n?.t('rename.placeholder', 'Введите новое название чата')}</p>
                </div>`,
         showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Сохранить',
-        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+        confirmButtonText: `<i class="bi bi-check-lg me-1"></i> ${window.i18n?.t('common.save', 'Сохранить')}`,
+        cancelButtonText: `<i class="bi bi-x me-1"></i> ${window.i18n?.t('common.cancel', 'Отмена')}`,
         confirmButtonColor: '#0d6efd',
         cancelButtonColor: '#6c757d',
         reverseButtons: true,
@@ -2689,17 +2689,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (window.Swal && typeof window.Swal.fire === 'function') {
                 Swal.fire({
-                    title: '<span class="logout-title">Выйти из аккаунта?</span>',
+                    title: `<span class="logout-title">${window.i18n?.t('logout.confirm.title', 'Выйти из аккаунта?')}</span>`,
                     html: `<div class="logout-message">
                             <div class="logout-icon-container">
                                 <i class="bi bi-box-arrow-right logout-icon-animated"></i>
                             </div>
-                            <p class="text-muted mb-0">Вы сможете войти снова в любое время.</p>
+                            <p class="text-muted mb-0">${window.i18n?.t('logout.confirm.text', 'Вы уверены, что хотите выйти?')}</p>
                            </div>`,
                     icon: null,
                     showCancelButton: true,
-                    confirmButtonText: '<i class="bi bi-door-open me-1"></i> Выйти',
-                    cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+                    confirmButtonText: `<i class="bi bi-door-open me-1"></i> ${window.i18n?.t('logout.confirm.ok', 'Выйти')}`,
+                    cancelButtonText: `<i class="bi bi-x me-1"></i> ${window.i18n?.t('logout.confirm.cancel', 'Отмена')}`,
                     reverseButtons: true,
                     focusCancel: true,
                     confirmButtonColor: '#0d6efd',
@@ -2749,7 +2749,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else {
                 // Fallback на стандартное подтверждение, если SweetAlert2 недоступен
-                if (confirm('Выйти из аккаунта?')) {
+                if (confirm(window.i18n?.t('logout.confirm.title', 'Выйти из аккаунта?'))) {
                     form.submit();
                 }
             }

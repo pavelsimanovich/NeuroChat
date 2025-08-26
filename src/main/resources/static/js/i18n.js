@@ -154,6 +154,12 @@
             'delete.confirm.ok': 'Удалить',
             'delete.confirm.cancel': 'Отмена',
 
+            // Logout confirm dialog
+            'logout.confirm.title': 'Выйти из аккаунта?',
+            'logout.confirm.text': 'Вы уверены, что хотите выйти?',
+            'logout.confirm.ok': 'Выйти',
+            'logout.confirm.cancel': 'Отмена',
+
             'input.attach.title': 'Прикрепить файл',
             'input.voice.title': 'Голосовой ввод',
             'input.placeholder': 'Чем я могу помочь Вам сегодня?',
@@ -304,6 +310,10 @@
             'lang.en': 'English',
             'lang.select': 'Language',
 
+            'common.save': 'Save',
+            'common.cancel': 'Cancel',
+            'common.close': 'Close',
+
             'sidebar.newChat': 'New chat',
             'sidebar.userSettings.title': 'User settings',
             'sidebar.logout': 'Logout',
@@ -440,6 +450,12 @@
             'delete.confirm.warning': 'This action cannot be undone',
             'delete.confirm.ok': 'Delete',
             'delete.confirm.cancel': 'Cancel',
+
+            // Logout confirm dialog
+            'logout.confirm.title': 'Sign out?',
+            'logout.confirm.text': 'Are you sure you want to sign out?',
+            'logout.confirm.ok': 'Sign out',
+            'logout.confirm.cancel': 'Cancel',
 
             'input.attach.title': 'Attach file',
             'input.voice.title': 'Voice input',
