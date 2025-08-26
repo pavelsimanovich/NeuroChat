@@ -485,7 +485,7 @@ function createRoomElement(room) {
     const menuButton = document.createElement('button');
     menuButton.className = 'btn-menu';
     menuButton.innerHTML = '<i class="bi bi-three-dots-vertical"></i>';
-    menuButton.title = 'Действия';
+    menuButton.title = window.i18n?.t('room.actions', 'Действия');
     menuButton.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault(); // Предотвращаем любую стандартную обработку клика
@@ -533,10 +533,10 @@ function togglePin(roomId) {
 
     if (index > -1) {
         pinnedRooms.splice(index, 1);
-        showNotification('Чат откреплен', 'info');
+        showNotification(window.i18n?.t('notify.unpinned', 'Чат откреплен'), 'info');
     } else {
         pinnedRooms.push(roomId);
-        showNotification('Чат закреплен', 'success');
+        showNotification(window.i18n?.t('notify.pinned', 'Чат закреплен'), 'success');
     }
 
     localStorage.setItem('pinnedRooms', JSON.stringify(pinnedRooms));
@@ -561,7 +561,8 @@ async function switchRoom(room) {
         elements.messageInput.classList.toggle('grey-color', !room.active);
 
         if (!room.active && elements.limitMessages) {
-            elements.limitMessages.innerHTML = '<div class="limit-messages">Превышен лимит сообщений в комнате</div>';
+            const txt = window.i18n?.t('limit.exceeded', 'Превышен лимит сообщений в комнате');
+            elements.limitMessages.innerHTML = `<div class="limit-messages">${txt}</div>`;
         } else if (elements.limitMessages) {
             elements.limitMessages.innerHTML = '';
         }
@@ -573,7 +574,7 @@ async function switchRoom(room) {
         }
     } catch (error) {
         console.error('Error switching room:', error);
-        showNotification('Ошибка загрузки', 'error');
+        showNotification(window.i18n?.t('error.switchRoom', 'Ошибка загрузки'), 'error');
     }
 }
 
@@ -606,7 +607,7 @@ async function loadRoomMessages(roomId) {
         renderMessages();
     } catch (error) {
         console.error('Error loading messages:', error);
-        showNotification('Ошибка загрузки сообщений. Обновите страницу.', 'error');
+        showNotification(window.i18n?.t('error.messagesLoad', 'Ошибка загрузки сообщений. Обновите страницу.'), 'error');
     }
 }
 
@@ -670,7 +671,7 @@ async function createRoom() {
         return newRoom;
     } catch (error) {
         console.error('Error creating room:', error);
-        showNotification(`Не удалось создать комнату: ${error.message}`, 'error');
+        showNotification(`${window.i18n?.t('error.createRoom', 'Не удалось создать комнату')}: ${error.message}`, 'error');
         return null;
     }
 }
@@ -753,7 +754,7 @@ async function sendMessage() {
             fileData = await uploadFile(files[0]);
         } catch (error) {
             console.error('Error uploading file:', error);
-            showNotification('Ошибка при загрузке файла', 'error');
+            showNotification(window.i18n?.t('error.fileUpload', 'Ошибка при загрузке файла'), 'error');
             elements.sendButton.disabled = false;
             return;
         }
@@ -1487,7 +1488,7 @@ const uxFeatures = {
                     showNotification('Сообщение скопировано', 'success');
                 } catch (error) {
                     console.error('Failed to copy:', error);
-                    showNotification('Ошибка копирования', 'error');
+                    showNotification(window.i18n?.t('notify.copyError', 'Ошибка копирования'), 'error');
                 }
             });
 
@@ -1530,7 +1531,7 @@ async function handleDeleteRoom(roomId, title) {
             state.currentRoom = null;
             state.messages = [];
             elements.chatMessages.innerHTML = '';
-            elements.currentRoomTitle.textContent = 'Выберите или создайте чат';
+            elements.currentRoomTitle.textContent = window.i18n?.t('chat.header.selectOrCreate', 'Выберите или создайте чат');
         }
 
         renderRoomsList();
@@ -1553,72 +1554,75 @@ async function handleDeleteRoom(roomId, title) {
                 <div class="mb-4" style="width: 130px; height: 130px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);">
                     <i class="bi bi-robot" style="font-size: 3.5rem; color: white;"></i>
                 </div>
-                <h3 class="mb-3 fw-bold">Добро пожаловать в AI Чат-ассистент</h3>
-                <p class="text-muted mb-4 fs-5">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
+                <h3 class="mb-3 fw-bold" data-i18n="welcome.title">Добро пожаловать в AI Чат-ассистент</h3>
+                <p class="text-muted mb-4 fs-5" data-i18n="welcome.subtitle">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
                 <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm" onclick="createRoom()">
-                    <i class="bi bi-plus-lg me-2"></i>Начать новый диалог
+                    <i class="bi bi-plus-lg me-2"></i><span data-i18n="welcome.start">Начать новый диалог</span>
                 </button>
                 <div class="mt-5 pt-4 border-top w-100">
-                    <h5 class="mb-4">Что я могу для вас сделать:</h5>
+                    <h5 class="mb-4" data-i18n="welcome.section.title">Что я могу для вас сделать:</h5>
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.idea.text', 'Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-lightbulb-fill text-primary"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Идеи для разработки</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.idea.title">Идеи для разработки</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.idea.text">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.optimize.text', 'Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-code-square text-success"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Оптимизация кода</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.optimize.title">Оптимизация кода</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.optimize.text">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.arch.text', 'Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-gear-fill text-info"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Архитектура приложений</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.arch.title">Архитектура приложений</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.arch.text">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.examples.text', 'Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-file-earmark-code-fill text-warning"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Примеры кода</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.examples.title">Примеры кода</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.examples.text">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>`;
+
+            // Apply i18n to the newly created welcome screen
+            try { window.i18n?.apply(welcomeScreen); } catch (_) {}
 
             // Clear chat messages and append new welcome screen
             elements.chatMessages.innerHTML = '';
@@ -1633,10 +1637,10 @@ async function handleDeleteRoom(roomId, title) {
             localStorage.removeItem('lastRoomId');
         }
 
-        showNotification('Чат успешно удалён', 'success');
+        showNotification(window.i18n?.t('success.chatDeleted', 'Чат успешно удалён'), 'success');
     } catch (error) {
         console.error('Error deleting room:', error);
-        showNotification(`Не удалось удалить чат: ${error.message}`, 'error');
+        showNotification(`${window.i18n?.t('error.deleteChat', 'Не удалось удалить чат')}: ${error.message}`, 'error');
     } finally {
         // Restore button state
         if (deleteButton) {
@@ -1648,19 +1652,19 @@ async function handleDeleteRoom(roomId, title) {
 
 async function confirmDeleteChat(title) {
     const result = await Swal.fire({
-        title: '<span class="delete-title">Подтверждение удаления</span>',
+        title: `<span class="delete-title">${window.i18n?.t('delete.confirm.title', 'Подтверждение удаления')}</span>`,
         html: `<div class="delete-message">
                 <div class="delete-icon-container">
                     <i class="bi bi-trash-fill delete-icon-animated"></i>
                 </div>
-                <p>Вы уверены, что хотите удалить чат</p>
+                <p>${window.i18n?.t('delete.confirm.text', 'Вы уверены, что хотите удалить чат')}</p>
                 <p class="chat-title">«${title}»</p>
-                <p class="delete-warning">Это действие нельзя будет отменить</p>
+                <p class="delete-warning">${window.i18n?.t('delete.confirm.warning', 'Это действие нельзя будет отменить')}</p>
               </div>`,
         icon: null,
         showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-trash me-1"></i> Удалить',
-        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+        confirmButtonText: `<i class="bi bi-trash me-1"></i> ${window.i18n?.t('delete.confirm.ok', 'Удалить')}`,
+        cancelButtonText: `<i class="bi bi-x me-1"></i> ${window.i18n?.t('delete.confirm.cancel', 'Отмена')}`,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#6c757d',
         reverseButtons: true,

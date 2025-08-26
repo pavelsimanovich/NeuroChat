@@ -112,7 +112,7 @@
                     <!-- Content will be inserted here -->
                 </div>
                 <div class="announcement-actions">
-                    <button type="button" class="btn btn-sm btn-outline-primary me-2" id="announcementDetailsBtn" aria-controls="announcementModal" title="Подробнее об объявлении">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2" id="announcementDetailsBtn" aria-controls="announcementModal" data-i18n-title="announcement.details.title" title="Подробнее об объявлении">
                         <i class="bi bi-arrows-angle-expand me-1"></i> <span data-i18n="announcement.more">Подробнее</span>
                     </button>
                     <button type="button" class="btn-close" id="closeAnnouncement" data-i18n-attr="aria-label" data-i18n="announcement.hide" aria-label="Скрыть"></button>
@@ -126,7 +126,7 @@
                     <button id="sidebarToggleBtn" class="btn d-md-none">
                         <i class="bi bi-list" style="font-size: 1.5rem;"></i>
                     </button>
-                    <h4 id="currentRoomTitle" class="mb-0 flex-grow-1 text-truncate" th:text="${userName + ' выберите или создайте чат'}"></h4>
+                    <h4 id="currentRoomTitle" class="mb-0 flex-grow-1 text-truncate" data-i18n="chat.header.selectOrCreate">Выберите или создайте чат</h4>
                     <div class="model-badge d-flex align-items-center me-2 model-status">
                         <i class="bi bi-lightning-charge-fill me-1"></i>
                         <span class="model-name" th:text="${modelName}"></span>
@@ -197,61 +197,61 @@
                         <i class="bi bi-plus-lg me-2"></i><span data-i18n="welcome.start">Начать новый диалог</span>
                     </button>
                     <div class="mt-5 pt-4 border-top w-100">
-                        <h5 class="mb-4">Что я могу для вас сделать:</h5>
+                        <h5 class="mb-4" data-i18n="welcome.section.title">Что я могу для вас сделать:</h5>
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.idea.text', 'Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-lightbulb-fill text-primary"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Идеи для разработки</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.idea.title">Идеи для разработки</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.idea.text">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.optimize.text', 'Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-code-square text-success"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Оптимизация кода</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.optimize.title">Оптимизация кода</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.optimize.text">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.arch.text', 'Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-gear-fill text-info"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Архитектура приложений</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.arch.title">Архитектура приложений</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.arch.text">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.examples.text', 'Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-file-earmark-code-fill text-warning"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Примеры кода</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.examples.title">Примеры кода</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.examples.text">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
                                     </div>
                                 </div>
                             </div>
