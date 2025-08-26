@@ -2509,12 +2509,10 @@ function setupChatSearch() {
         });
     };
 
-// Обработчик ввода в поле поиска
     searchInput.addEventListener('input', () => {
         performSearch(searchInput.value);
     });
 
-// Обработчик кнопки очистки
     clearButton.addEventListener('click', clearSearch);
 
     // Функция очистки поиска
@@ -2523,20 +2521,6 @@ function setupChatSearch() {
         performSearch('');
         searchInput.focus();
     }
-
-// Обработчик горячих клавиш (Ctrl+F для поиска)
-    document.addEventListener('keydown', (e) => {
-        // Ctrl+F для фокуса на поиске
-        if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.activeElement !== elements.messageInput) {
-            e.preventDefault();
-            searchInput.focus();
-        }
-        // Escape для очистки и выхода из поиска
-        else if (e.key === 'Escape' && document.activeElement === searchInput) {
-            clearSearch();
-            searchInput.blur();
-        }
-    });
 }
 
 
