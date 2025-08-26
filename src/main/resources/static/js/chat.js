@@ -208,6 +208,7 @@ const elements = (function() {
         currentRoomTitle: document.getElementById('currentRoomTitle'),
         chatMessages: document.getElementById('chatMessages'),
         scrollTopBtn: document.getElementById('scrollTopBtn'),
+        scrollBottomBtn: document.getElementById('scrollBottomBtn'),
         messageInput: document.getElementById('messageInput'),
         sendButton: document.getElementById('sendMessageBtn'),
         stopButton: document.getElementById('stopGenerationBtn'),
@@ -276,6 +277,17 @@ const elements = (function() {
                     elements.chatMessages.scrollTo({ top: 0, behavior: 'smooth' });
                 } catch (_) {
                     elements.chatMessages.scrollTop = 0;
+                }
+            });
+        }
+        // Scroll-to-bottom button click handler
+        if (elements.scrollBottomBtn && elements.chatMessages) {
+            elements.scrollBottomBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                try {
+                    elements.chatMessages.scrollTo({ top: elements.chatMessages.scrollHeight, behavior: 'smooth' });
+                } catch (_) {
+                    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
                 }
             });
         }
@@ -651,17 +663,30 @@ function scrollToBottom(force = false) {
 function setupScrollHandlers() {
     if (!elements || !elements.chatMessages) return;
 
-    const updateTopBtn = () => {
-        if (!elements.scrollTopBtn) return;
-        const show = elements.chatMessages.scrollTop > 200;
-        elements.scrollTopBtn.classList.toggle('d-none', !show);
+    const updateScrollButtons = () => {
+        const sc = elements.chatMessages.scrollTop;
+        const max = elements.chatMessages.scrollHeight - elements.chatMessages.clientHeight;
+        const showTop = sc > 200;
+        const showBottom = max - sc > config.autoScroll.threshold; // not near bottom
+        // Mutual exclusivity: show only one button at the same fixed position
+        if (showBottom) {
+            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.remove('d-none');
+            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
+        } else if (showTop) {
+            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.remove('d-none');
+            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
+        } else {
+            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
+            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
+        }
     };
 
     elements.chatMessages.addEventListener('scroll', () => {
         userScrolledUp = !isNearBottom();
-        updateTopBtn();
+        updateScrollButtons();
     });
-    updateTopBtn();
+
+    updateScrollButtons();
 }
 
 async function createRoom() {

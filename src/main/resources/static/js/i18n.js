@@ -185,6 +185,7 @@
 
             // Chat UI
             'chat.scrollTop.title': 'Прокрутить вверх',
+            'chat.scrollBottom.title': 'Прокрутить вниз',
 
             // Empty chat container
             'emptyChat.title': 'Начните общение',
@@ -492,6 +493,7 @@
 
             // Chat UI
             'chat.scrollTop.title': 'Scroll to top',
+            'chat.scrollBottom.title': 'Scroll to bottom',
 
             // Empty chat container
             'emptyChat.title': 'Start chatting',
