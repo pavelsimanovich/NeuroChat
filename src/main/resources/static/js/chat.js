@@ -2299,17 +2299,22 @@ function renderMessages() {
     elements.chatMessages.innerHTML = '';
 
     if (!state.messages.length && state.currentRoom) {
+        const t = (k, f) => (window.i18n && typeof window.i18n.t === 'function') ? window.i18n.t(k, f) : (f || k);
+        const s1 = t('emptyChat.suggestion.1', 'Расскажи о себе');
+        const s2 = t('emptyChat.suggestion.2', 'Помоги мне с Java');
+        const s3 = t('emptyChat.suggestion.3', 'Что такое Spring Data JPA?');
+        const esc = (str) => String(str).replace(/'/g, "&#39;");
         elements.chatMessages.innerHTML = `
             <div class="empty-chat-container">
                 <div class="empty-chat-illustration">
                     <i class="bi bi-chat-dots"></i>
                 </div>
-                <h4>Начните общение</h4>
-                <p class="text-muted">Это начало вашего разговора с AI ассистентом.<br>Чем я могу вам помочь?</p>
+                <h4>${t('emptyChat.title', 'Начните общение')}</h4>
+                <p class="text-muted">${t('emptyChat.subtitle', 'Это начало вашего разговора с AI ассистентом. Чем я могу вам помочь?')}</p>
                 <div class="empty-chat-suggestions">
-                    <button class="suggestion-btn" onclick="setExampleQuestion('Расскажи о себе')">Расскажи о себе</button>
-                    <button class="suggestion-btn" onclick="setExampleQuestion('Помоги мне с Java')">Помоги мне с Java</button>
-                    <button class="suggestion-btn" onclick="setExampleQuestion('Что такое Spring Data JPA?')">Что такое Spring Data JPA?</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('${esc(s1)}')">${s1}</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('${esc(s2)}')">${s2}</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('${esc(s3)}')">${s3}</button>
                 </div>
             </div>`;
         return;

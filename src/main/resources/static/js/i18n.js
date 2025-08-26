@@ -183,6 +183,13 @@
 
             'limit.exceeded': 'Превышен лимит сообщений в комнате',
 
+            // Empty chat container
+            'emptyChat.title': 'Начните общение',
+            'emptyChat.subtitle': 'Это начало вашего разговора с AI ассистентом. Чем я могу вам помочь?',
+            'emptyChat.suggestion.1': 'Расскажи о себе',
+            'emptyChat.suggestion.2': 'Помоги мне с Java',
+            'emptyChat.suggestion.3': 'Что такое Spring Data JPA?',
+
             // User settings notifications
             'settings.load.error.title': 'Ошибка',
             'settings.load.error.text': 'Не удалось загрузить настройки. Пожалуйста, попробуйте еще раз.',
@@ -479,6 +486,13 @@
             'error.deleteChat': 'Failed to delete chat',
 
             'limit.exceeded': 'Room message limit exceeded',
+
+            // Empty chat container
+            'emptyChat.title': 'Start chatting',
+            'emptyChat.subtitle': 'This is the beginning of your conversation with the AI assistant. How can I help you?',
+            'emptyChat.suggestion.1': 'Tell me about yourself',
+            'emptyChat.suggestion.2': 'Help me with Java',
+            'emptyChat.suggestion.3': 'What is Spring Data JPA?',
 
             // User settings notifications
             'settings.load.error.title': 'Error',
