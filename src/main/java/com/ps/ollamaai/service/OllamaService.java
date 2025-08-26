@@ -20,6 +20,7 @@ public class OllamaService {
         return ollamaChatModel.getDefaultOptions().getModel();
     }
 
+    //todo i18n
     public String generateChatName(String context) {
         final String promptText = """
             Ты — нейросетевая модель, которая генерирует название чата на основе его последнего сообщения .

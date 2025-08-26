@@ -6,6 +6,7 @@ class AnnouncementManager {
         this.initForm();
         this.initializeEventListeners();
         this.loadAnnouncements();
+        window.addEventListener('i18n:changed', () => this.loadAnnouncements());
     }
 
     initForm() {
@@ -141,19 +142,20 @@ class AnnouncementManager {
         }
 
         announcements.forEach(announcement => {
+            const statusText = (window.i18n && i18n.t)
+                ? (announcement.active ? i18n.t('admin.ann.status.active', 'Active') : i18n.t('admin.ann.status.inactive', 'Inactive'))
+                : (announcement.active ? 'Active' : 'Inactive');
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
-                    ${announcement.isAd ? '<span class="badge bg-warning text-dark me-1">Реклама</span>' : ''}
-                    ${announcement.imageUrl ? '<i class="bi bi-image me-1" title="Изображение"></i>' : ''}
+                    ${announcement.isAd ? `<span class="badge bg-warning text-dark me-1">${(window.i18n&&i18n.t)?i18n.t('admin.ann.modal.field.isAd','Ad'):'Ad'}</span>` : ''}
+                    ${announcement.imageUrl ? `<i class="bi bi-image me-1" title="${(window.i18n&&i18n.t)?i18n.t('admin.ann.modal.field.image','Image'):'Image'}"></i>` : ''}
                     ${this.escapeHtml(announcement.title)}
                 </td>
                 <td>${this.formatDate(announcement.startDate)}</td>
                 <td>${announcement.endDate ? this.formatDate(announcement.endDate) : '—'}</td>
                 <td>
-                    <span class="badge ${announcement.active ? 'bg-success' : 'bg-secondary'}">
-                        ${announcement.active ? 'Активно' : 'Не активно'}
-                    </span>
+                    <span class="badge ${announcement.active ? 'bg-success' : 'bg-secondary'}">${statusText}</span>
                 </td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-primary edit-announcement" data-id="${announcement.id}">
@@ -363,7 +365,9 @@ class AnnouncementManager {
     formatDate(dateString) {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return date.toLocaleString('ru-RU', {
+        const lang = (window.i18n && typeof i18n.getLanguage === 'function') ? i18n.getLanguage() : 'ru';
+        const locale = lang === 'en' ? 'en-US' : 'ru-RU';
+        return date.toLocaleString(locale, {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',

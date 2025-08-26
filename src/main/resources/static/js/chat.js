@@ -1,18 +1,17 @@
-// Экспортируем состояние чата в глобальную область видимости
 window.chatState = {
     currentRoom: null,
     rooms: [],
     messages: []
 };
 
-// Конфигурация
+// Config
 const config = {
     // Auto-scroll configuration
     autoScroll: {
         enabled: true,
         threshold: 100 // pixels from bottom to consider user at the bottom
     },
-    apiBaseUrl: '/api/chat', // Относительный URL для работы на всех устройствах,
+    apiBaseUrl: '/api/chat',
     theme: {
         LIGHT: 'light',
         DARK: 'dark',
@@ -226,7 +225,7 @@ const elements = (function() {
             elements.stopButton.addEventListener('click', () => {
                 if (state.currentRoom && state.currentRoom.id) {
                     stopStream(state.currentRoom.id);
-                    showNotification('Генерация остановлена', 'info');
+                    showNotification(window.i18n?.t('notify.generationStopped', 'Генерация остановлена'), 'info');
                 }
             });
         }
@@ -273,6 +272,11 @@ const elements = (function() {
     return init();
 })();
 
+// Re-render rooms list when language changes to refresh group titles/empty state
+window.addEventListener('i18n:changed', () => {
+    try { renderRoomsList(); } catch (_) { /* noop */ }
+});
+
 async function switchToLastRoom() {
     if (!state.rooms?.length) {
         await createRoom('Новый чат');
@@ -303,7 +307,7 @@ async function loadRooms() {
         }
     } catch (error) {
         console.error('Error loading rooms:', error);
-        showNotification('Не удалось загрузить комнаты. Пожалуйста, обновите страницу.', 'error');
+        showNotification(window.i18n?.t('error.roomsLoad', 'Не удалось загрузить комнаты. Пожалуйста, обновите страницу.'), 'error');
     }
 }
 
@@ -313,36 +317,35 @@ function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
     if (!state.rooms?.length) {
-        elements.roomsList.innerHTML = '<div class="no-rooms">История чатов пуста</div>';
-        hideInputs(true); // Прячем ввод и кнопку загрузки, если комнат нет
+        const empty = window.i18n?.t('rooms.empty', 'История чатов пуста');
+        elements.roomsList.innerHTML = `<div class="no-rooms">${empty}</div>`;
+        hideInputs(true);
         return;
     }
 
-    hideInputs(false); // Показываем ввод и кнопку загрузки, если комнаты есть
+    hideInputs(false);
 
-    // Группировка чатов
     const groupedRooms = groupRoomsByDate(state.rooms);
 
-    // Отображение закрепленных чатов
     if (groupedRooms.pinned.length > 0) {
-        renderChatGroup('pinned', 'Закрепленные', groupedRooms.pinned, 'bi-pin-angle-fill');
+        renderChatGroup('pinned', window.i18n?.t('rooms.pinned', 'Закрепленные'), groupedRooms.pinned, 'bi-pin-angle-fill');
     }
 
     // Отображение групп по времени
     if (groupedRooms.today.length > 0) {
-        renderChatGroup('today', 'Сегодня', groupedRooms.today, 'bi-clock');
+        renderChatGroup('today', window.i18n?.t('rooms.today', 'Сегодня'), groupedRooms.today, 'bi-clock');
     }
 
     if (groupedRooms.yesterday.length > 0) {
-        renderChatGroup('yesterday', 'Вчера', groupedRooms.yesterday, 'bi-clock-history');
+        renderChatGroup('yesterday', window.i18n?.t('rooms.yesterday', 'Вчера'), groupedRooms.yesterday, 'bi-clock-history');
     }
 
     if (groupedRooms.thisWeek.length > 0) {
-        renderChatGroup('thisWeek', 'На этой неделе', groupedRooms.thisWeek, 'bi-calendar-week');
+        renderChatGroup('thisWeek', window.i18n?.t('rooms.thisWeek', 'На этой неделе'), groupedRooms.thisWeek, 'bi-calendar-week');
     }
 
     if (groupedRooms.older.length > 0) {
-        renderChatGroup('older', 'Ранее', groupedRooms.older, 'bi-archive');
+        renderChatGroup('older', window.i18n?.t('rooms.older', 'Ранее'), groupedRooms.older, 'bi-archive');
     }
 }
 
@@ -362,7 +365,6 @@ function groupRoomsByDate(rooms) {
         older: []
     };
 
-    // Сортируем комнаты по дате создания (новые сверху)
     const sortedRooms = [...rooms].sort((a, b) =>
         new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
@@ -370,7 +372,6 @@ function groupRoomsByDate(rooms) {
     sortedRooms.forEach(room => {
         if (!room?.id || !room?.title) return;
 
-        // Проверяем, закреплен ли чат
         if (isPinned(room.id)) {
             groups.pinned.push(room);
             return;
@@ -408,7 +409,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         }
     } catch (e) {}
 
-    // Заголовок группы
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
     headerElement.setAttribute('role', 'button');
@@ -422,7 +422,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         <i class="bi bi-chevron-down group-chevron" aria-hidden="true"></i>
     `;
 
-    // Обработчики для сворачивания/разворачивания конкретной группы
     const toggleGroup = () => {
         const willCollapse = !groupElement.classList.contains('collapsed');
         groupElement.classList.toggle('collapsed');
@@ -450,7 +449,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         }
     });
 
-    // Контент группы
     const contentElement = document.createElement('div');
     contentElement.className = 'chat-group-content';
 
@@ -648,7 +646,7 @@ function setupScrollHandlers() {
 async function createRoom() {
     try {
         const response = await fetch(
-            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent('Новый чат')}`,
+            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent(window.i18n?.t('sidebar.newChat', 'Новый чат'))}`,
             {
                 method: 'GET',
                 headers: {
@@ -1057,7 +1055,6 @@ function removeFile(index) {
     showFilePreviews(files);
 }
 
-// Утилита для debouncing
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -1129,7 +1126,7 @@ const showFilePreviews = debounce((files) => {
     });
 
     updateSendButtonState();
-}, 100); // Задержка 100 мс
+}, 100);
 
 function attachRemoveHandler(previewElement, index) {
     const removeBtn = previewElement.querySelector('.file-preview-remove');
@@ -1897,7 +1894,9 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
             pinIcon.className = isPinned ? 'bi bi-pin-angle-fill' : 'bi bi-pin-angle';
         }
         if (pinText) {
-            pinText.textContent = isPinned ? 'Открепить' : 'Закрепить';
+            pinText.textContent = isPinned
+                ? window.i18n?.t('context.unpin', 'Открепить')
+                : window.i18n?.t('context.pin', 'Закрепить');
         }
     }
 
@@ -2438,7 +2437,7 @@ function setupChatSearch() {
     searchContainer.innerHTML = `
     <div class="search-box position-relative">
         <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
-        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" placeholder="Поиск чатов...">
+        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" data-i18n-attr="placeholder" data-i18n="search.room" placeholder="Поиск чатов...">
         <i id="clearSearchBtn" class="bi bi-x-circle position-absolute end-0 top-50 translate-middle-y me-3 text-muted d-none" style="cursor: pointer;"></i>
     </div>
 `;

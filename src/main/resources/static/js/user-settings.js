@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveUserSettingsBtn = document.getElementById('saveUserSettings');
     const systemPromptTextarea = document.getElementById('systemPrompt');
     const modelSelectElement = document.getElementById('modelSelect');
+    const languageSelectElement = document.getElementById('languageSelect');
     // TTS controls
     const ttsAutoplayEl = document.getElementById('ttsAutoplay');
     const ttsRateEl = document.getElementById('ttsRate');
@@ -22,6 +23,20 @@ document.addEventListener('DOMContentLoaded', function () {
             avatarPreview.src = 'https://via.placeholder.com/160?text=Avatar';
         }
     }
+
+    // Load language preference early on page load and apply UI language
+    try {
+        fetch('/api/user/preferences')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data && typeof data.language === 'string' && data.language) {
+                    if (window.i18n) window.i18n.setLanguage(data.language);
+                    if (languageSelectElement) languageSelectElement.value = data.language;
+                }
+            })
+            .catch(() => {});
+    } catch (_) {}
+
 
     // Show the modal
     if (userSettingsBtn) {
@@ -43,6 +58,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         avatarFileIdHidden.value = '';
                         setAvatarPreview(null);
                     }
+                    // Language
+                    if (languageSelectElement) {
+                        const currentLang = (data && typeof data.language === 'string' && data.language) || (window.i18n && window.i18n.getLanguage()) || 'ru';
+                        languageSelectElement.value = currentLang;
+                        // Optional: change UI immediately when select changes (persist on save)
+                        languageSelectElement.addEventListener('change', () => {
+                            try { if (window.i18n) window.i18n.setLanguage(languageSelectElement.value); } catch (e) {}
+                        }, { once: true });
+                    }
                     // Load TTS settings from tts module/localStorage
                     try {
                         const ttsModule = window.tts;
@@ -55,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (ttsPitchEl && ttsModule) {
                             ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
                         }
-                        // No voice list to populate
                     } catch (ex) {
                         console.error(ex);
                     }
@@ -66,8 +89,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error('Error fetching user preferences:', error);
                     Swal.fire({
                         icon: 'error',
-                        title: 'Ошибка',
-                        text: 'Не удалось загрузить настройки. Пожалуйста, попробуйте еще раз.'
+                        title: (window.i18n && window.i18n.t('settings.load.error.title')) || 'Ошибка',
+                        text: (window.i18n && window.i18n.t('settings.load.error.text')) || 'Не удалось загрузить настройки. Пожалуйста, попробуйте еще раз.'
                     });
                 });
         });
@@ -90,11 +113,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data && data.id) {
                     avatarFileIdHidden.value = data.id;
                     setAvatarPreview(data.id);
-                    Swal.fire({ icon: 'success', title: 'Аватар загружен', timer: 1200, showConfirmButton: false });
+                    Swal.fire({ icon: 'success', title: (window.i18n && window.i18n.t('settings.avatar.upload.success.title')) || 'Аватар загружен', timer: 1200, showConfirmButton: false });
                 }
             } catch (err) {
                 console.error('Avatar upload error', err);
-                Swal.fire({ icon: 'error', title: 'Ошибка загрузки', text: 'Не удалось загрузить аватар' });
+                Swal.fire({
+                    icon: 'error',
+                    title: (window.i18n && window.i18n.t('settings.avatar.upload.error.title')) || 'Ошибка загрузки',
+                    text: (window.i18n && window.i18n.t('settings.avatar.upload.error.text')) || 'Не удалось загрузить аватар'
+                });
             }
         });
     }
@@ -104,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
         saveUserSettingsBtn.addEventListener('click', () => {
             const systemPrompt = systemPromptTextarea.value;
             const preferredModel = modelSelectElement.value;
+            const language = languageSelectElement ? languageSelectElement.value : (window.i18n && window.i18n.getLanguage());
             const avatarFileId = avatarFileIdHidden ? avatarFileIdHidden.value : '';
             // Collect TTS settings
             let ttsSettingsPayload = null;
@@ -128,7 +156,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({ 
                     systemPrompt: systemPrompt,
                     preferredModel: preferredModel,
-                    avatarFileId: avatarFileId
+                    avatarFileId: avatarFileId,
+                    language: language
                 })
             })
             .then(response => response.json())
@@ -136,8 +165,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 userSettingsModal.hide();
                 Swal.fire({
                     icon: 'success',
-                    title: 'Сохранено!',
-                    text: 'Ваши настройки были успешно обновлены.' + (ttsSettingsPayload ? ' (Настройки TTS применены)' : ''),
+                    title: (window.i18n && window.i18n.t('settings.save.success.title')) || 'Сохранено!',
+                    text: (window.i18n && window.i18n.t('settings.save.success.text')) || 'Ваши настройки были успешно обновлены.',
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -150,13 +179,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         currentModelBadge.textContent = newModel;
                     }
                 }
+                // Apply language from server response if returned
+                try {
+                    const newLang = (data && data.language) || language;
+                    if (newLang && window.i18n) window.i18n.setLanguage(newLang);
+                } catch (_) {}
             })
             .catch(error => {
                 console.error('Error saving user preferences:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Ошибка',
-                    text: 'Не удалось сохранить настройки. Пожалуйста, попробуйте еще раз.'
+                    title: (window.i18n && window.i18n.t('settings.save.error.title')) || 'Ошибка',
+                    text: (window.i18n && window.i18n.t('settings.save.error.text')) || 'Не удалось сохранить настройки. Пожалуйста, попробуйте еще раз.'
                 });
             });
         });
@@ -169,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             if (!currentPassword || !newPassword || !confirmPassword) {
-                Swal.fire({ icon: 'warning', title: 'Заполните все поля' });
+                Swal.fire({ icon: 'warning', title: (window.i18n && window.i18n.t('settings.profile.password.fillAll')) || 'Заполните все поля' });
                 return;
             }
             try {
@@ -180,14 +214,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 const data = await resp.json().catch(() => ({}));
                 if (!resp.ok) {
-                    throw new Error(data?.message || 'Не удалось изменить пароль');
+                    throw new Error(data?.message || (window.i18n && window.i18n.t('settings.profile.password.error.generic')) || 'Не удалось изменить пароль');
                 }
-                Swal.fire({ icon: 'success', title: 'Пароль изменен' });
+                Swal.fire({ icon: 'success', title: (window.i18n && window.i18n.t('settings.profile.password.changed')) || 'Пароль изменен' });
                 document.getElementById('currentPassword').value = '';
                 document.getElementById('newPassword').value = '';
                 document.getElementById('confirmPassword').value = '';
             } catch (e) {
-                Swal.fire({ icon: 'error', title: 'Ошибка', text: e.message });
+                Swal.fire({ icon: 'error', title: (window.i18n && window.i18n.t('settings.profile.password.error.title')) || 'Ошибка', text: e.message });
             }
         });
     }

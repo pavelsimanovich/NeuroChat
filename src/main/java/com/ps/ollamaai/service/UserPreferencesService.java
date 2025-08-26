@@ -71,6 +71,7 @@ public class UserPreferencesService {
         dto.setSystemPrompt(entity.getUserSystemPrompt());
         dto.setPreferredModel(entity.getModel());
         dto.setAvatarFileId(entity.getAvatarFileId());
+        dto.setLanguage(entity.getLanguage());
         return dto;
     }
 
@@ -87,6 +88,10 @@ public class UserPreferencesService {
         }
         if (StringUtils.hasText(dto.getAvatarFileId())) {
             entity.setAvatarFileId(dto.getAvatarFileId());
+        }
+        // Language (simple string, no validation list here)
+        if (StringUtils.hasText(dto.getLanguage())) {
+            entity.setLanguage(dto.getLanguage());
         }
     }
 }
