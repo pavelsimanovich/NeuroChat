@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const languageSelectElement = document.getElementById('languageSelect');
     // TTS controls
     const ttsAutoplayEl = document.getElementById('ttsAutoplay');
-    const ttsVoiceEl = document.getElementById('ttsVoice');
     const ttsRateEl = document.getElementById('ttsRate');
     const ttsPitchEl = document.getElementById('ttsPitch');
 
@@ -25,23 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function populateTtsVoices() {
-        if (!window.tts || !window.tts.supported || !ttsVoiceEl) return;
-        const voices = window.tts.getVoices();
-        const current = (window.tts.settings && window.tts.settings.voiceURI) || '';
-        const selectedLangFirst = (a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
-        const autoText = (window.i18n && window.i18n.t('settings.tts.voice.auto')) || 'Определяется браузером...';
-        ttsVoiceEl.innerHTML = `<option value="">${autoText}</option>`;
-        voices.sort(selectedLangFirst).forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.voiceURI;
-            const defSuf = (window.i18n && window.i18n.t('settings.tts.voice.defaultSuffix')) || ' — по умолчанию';
-            opt.textContent = `${v.name} (${v.lang})${v.default ? defSuf : ''}`;
-            if (current && v.voiceURI === current) opt.selected = true;
-            ttsVoiceEl.appendChild(opt);
-        });
-    }
-
     // Load language preference early on page load and apply UI language
     try {
         fetch('/api/user/preferences')
@@ -54,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(() => {});
     } catch (_) {}
+
 
     // Show the modal
     if (userSettingsBtn) {
@@ -96,15 +79,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (ttsPitchEl && ttsModule) {
                             ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
                         }
-                        populateTtsVoices();
-                        if (window.speechSynthesis) {
-                            // Refresh voices if they load later (chain existing handler)
-                            const prevVoicesChanged = window.speechSynthesis.onvoiceschanged;
-                            window.speechSynthesis.onvoiceschanged = (...args) => {
-                                try { if (typeof prevVoicesChanged === 'function') prevVoicesChanged.apply(window.speechSynthesis, args); } catch(e) { /* noop */ }
-                                populateTtsVoices();
-                            };
-                        }
                     } catch (ex) {
                         console.error(ex);
                     }
@@ -143,10 +117,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } catch (err) {
                 console.error('Avatar upload error', err);
-                Swal.fire({ 
-                    icon: 'error', 
-                    title: (window.i18n && window.i18n.t('settings.avatar.upload.error.title')) || 'Ошибка загрузки', 
-                    text: (window.i18n && window.i18n.t('settings.avatar.upload.error.text')) || 'Не удалось загрузить аватар' 
+                Swal.fire({
+                    icon: 'error',
+                    title: (window.i18n && window.i18n.t('settings.avatar.upload.error.title')) || 'Ошибка загрузки',
+                    text: (window.i18n && window.i18n.t('settings.avatar.upload.error.text')) || 'Не удалось загрузить аватар'
                 });
             }
         });
@@ -165,7 +139,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (window.tts) {
                     ttsSettingsPayload = {
                         autoplay: !!(ttsAutoplayEl && ttsAutoplayEl.checked),
-                        voiceURI: (ttsVoiceEl && ttsVoiceEl.value) || '',
                         rate: ttsRateEl ? Number(ttsRateEl.value) : 1.0,
                         pitch: ttsPitchEl ? Number(ttsPitchEl.value) : 1.0
                     };
