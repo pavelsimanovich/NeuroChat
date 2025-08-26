@@ -183,6 +183,9 @@
 
             'limit.exceeded': 'Превышен лимит сообщений в комнате',
 
+            // Chat UI
+            'chat.scrollTop.title': 'Прокрутить вверх',
+
             // Empty chat container
             'emptyChat.title': 'Начните общение',
             'emptyChat.subtitle': 'Это начало вашего разговора с AI ассистентом. Чем я могу вам помочь?',
@@ -486,6 +489,9 @@
             'error.deleteChat': 'Failed to delete chat',
 
             'limit.exceeded': 'Room message limit exceeded',
+
+            // Chat UI
+            'chat.scrollTop.title': 'Scroll to top',
 
             // Empty chat container
             'emptyChat.title': 'Start chatting',

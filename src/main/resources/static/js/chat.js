@@ -207,6 +207,7 @@ const elements = (function() {
         roomsList: document.getElementById('roomsList'),
         currentRoomTitle: document.getElementById('currentRoomTitle'),
         chatMessages: document.getElementById('chatMessages'),
+        scrollTopBtn: document.getElementById('scrollTopBtn'),
         messageInput: document.getElementById('messageInput'),
         sendButton: document.getElementById('sendMessageBtn'),
         stopButton: document.getElementById('stopGenerationBtn'),
@@ -266,6 +267,17 @@ const elements = (function() {
                     }
                 });
             }
+        }
+        // Scroll-to-top button click handler
+        if (elements.scrollTopBtn && elements.chatMessages) {
+            elements.scrollTopBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                try {
+                    elements.chatMessages.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch (_) {
+                    elements.chatMessages.scrollTop = 0;
+                }
+            });
         }
         return elements;
     }
@@ -639,9 +651,17 @@ function scrollToBottom(force = false) {
 function setupScrollHandlers() {
     if (!elements || !elements.chatMessages) return;
 
+    const updateTopBtn = () => {
+        if (!elements.scrollTopBtn) return;
+        const show = elements.chatMessages.scrollTop > 200;
+        elements.scrollTopBtn.classList.toggle('d-none', !show);
+    };
+
     elements.chatMessages.addEventListener('scroll', () => {
         userScrolledUp = !isNearBottom();
+        updateTopBtn();
     });
+    updateTopBtn();
 }
 
 async function createRoom() {
