@@ -31,11 +31,13 @@
             'rooms.thisWeek': 'На этой неделе',
             'rooms.older': 'Ранее',
             'rooms.empty': 'История чатов пуста',
+            'room.actions': 'Действия',
 
             'announcement.loading': 'Загрузка объявлений...',
             'announcement.loading.sr': 'Загрузка...',
             'announcement.more': 'Подробнее',
             'announcement.hide': 'Скрыть',
+            'announcement.details.title': 'Подробнее об объявлении',
 
             'chat.header.selectOrCreate': 'выберите или создайте чат',
             'chat.model.admin': 'Админ',
@@ -135,6 +137,28 @@
             'welcome.title': 'Добро пожаловать в AI Чат-ассистент',
             'welcome.subtitle': 'Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!',
             'welcome.start': 'Начать новый диалог',
+            'welcome.section.title': 'Что я могу для вас сделать:',
+            'welcome.cards.idea.title': 'Идеи для разработки',
+            'welcome.cards.idea.text': 'Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?',
+            'welcome.cards.optimize.title': 'Оптимизация кода',
+            'welcome.cards.optimize.text': 'Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?',
+            'welcome.cards.arch.title': 'Архитектура приложений',
+            'welcome.cards.arch.text': 'Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?',
+            'welcome.cards.examples.title': 'Примеры кода',
+            'welcome.cards.examples.text': 'Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория',
+
+            // Delete confirm dialog
+            'delete.confirm.title': 'Подтверждение удаления',
+            'delete.confirm.text': 'Вы уверены, что хотите удалить чат',
+            'delete.confirm.warning': 'Это действие нельзя будет отменить',
+            'delete.confirm.ok': 'Удалить',
+            'delete.confirm.cancel': 'Отмена',
+
+            // Logout confirm dialog
+            'logout.confirm.title': 'Выйти из аккаунта?',
+            'logout.confirm.text': 'Вы уверены, что хотите выйти?',
+            'logout.confirm.ok': 'Выйти',
+            'logout.confirm.cancel': 'Отмена',
 
             'input.attach.title': 'Прикрепить файл',
             'input.voice.title': 'Голосовой ввод',
@@ -144,7 +168,27 @@
 
             // Notifications / errors
             'notify.generationStopped': 'Генерация остановлена',
+            'notify.unpinned': 'Чат откреплен',
+            'notify.pinned': 'Чат закреплен',
+            'notify.copyError': 'Ошибка копирования',
+
+            'success.chatDeleted': 'Чат успешно удалён',
+
             'error.roomsLoad': 'Не удалось загрузить комнаты. Пожалуйста, обновите страницу.',
+            'error.switchRoom': 'Ошибка загрузки',
+            'error.messagesLoad': 'Ошибка загрузки сообщений. Обновите страницу.',
+            'error.createRoom': 'Не удалось создать комнату',
+            'error.fileUpload': 'Ошибка при загрузке файла',
+            'error.deleteChat': 'Не удалось удалить чат',
+
+            'limit.exceeded': 'Превышен лимит сообщений в комнате',
+
+            // Empty chat container
+            'emptyChat.title': 'Начните общение',
+            'emptyChat.subtitle': 'Это начало вашего разговора с AI ассистентом. Чем я могу вам помочь?',
+            'emptyChat.suggestion.1': 'Расскажи о себе',
+            'emptyChat.suggestion.2': 'Помоги мне с Java',
+            'emptyChat.suggestion.3': 'Что такое Spring Data JPA?',
 
             // User settings notifications
             'settings.load.error.title': 'Ошибка',
@@ -273,6 +317,10 @@
             'lang.en': 'English',
             'lang.select': 'Language',
 
+            'common.save': 'Save',
+            'common.cancel': 'Cancel',
+            'common.close': 'Close',
+
             'sidebar.newChat': 'New chat',
             'sidebar.userSettings.title': 'User settings',
             'sidebar.logout': 'Logout',
@@ -292,11 +340,13 @@
             'rooms.thisWeek': 'This week',
             'rooms.older': 'Earlier',
             'rooms.empty': 'No chat history',
+            'room.actions': 'Actions',
 
             'announcement.loading': 'Loading announcements...',
             'announcement.loading.sr': 'Loading...',
             'announcement.more': 'Details',
             'announcement.hide': 'Hide',
+            'announcement.details.title': 'Announcement details',
 
             'chat.header.selectOrCreate': 'select or create a chat',
             'chat.model.admin': 'Admin',
@@ -391,6 +441,28 @@
             'welcome.title': 'Welcome to the AI Chat Assistant',
             'welcome.subtitle': 'Your intelligent assistant for any task. Ask questions, get advice, and find solutions now!',
             'welcome.start': 'Start a new conversation',
+            'welcome.section.title': 'What I can do for you:',
+            'welcome.cards.idea.title': 'Development ideas',
+            'welcome.cards.idea.text': 'What are some interesting ideas for a Spring Boot and Jakarta EE web app?',
+            'welcome.cards.optimize.title': 'Code optimization',
+            'welcome.cards.optimize.text': 'How to optimize an SQL query with multiple JOINs and subqueries?',
+            'welcome.cards.arch.title': 'Application architecture',
+            'welcome.cards.arch.text': 'How to build a RESTful API with Jakarta EE and document it with OpenAPI?',
+            'welcome.cards.examples.title': 'Code examples',
+            'welcome.cards.examples.text': 'Write an example using Spring Data JPA with Lombok to create an entity and repository',
+
+            // Delete confirm dialog
+            'delete.confirm.title': 'Delete confirmation',
+            'delete.confirm.text': 'Are you sure you want to delete the chat',
+            'delete.confirm.warning': 'This action cannot be undone',
+            'delete.confirm.ok': 'Delete',
+            'delete.confirm.cancel': 'Cancel',
+
+            // Logout confirm dialog
+            'logout.confirm.title': 'Sign out?',
+            'logout.confirm.text': 'Are you sure you want to sign out?',
+            'logout.confirm.ok': 'Sign out',
+            'logout.confirm.cancel': 'Cancel',
 
             'input.attach.title': 'Attach file',
             'input.voice.title': 'Voice input',
@@ -400,7 +472,27 @@
 
             // Notifications / errors
             'notify.generationStopped': 'Generation stopped',
+            'notify.unpinned': 'Chat unpinned',
+            'notify.pinned': 'Chat pinned',
+            'notify.copyError': 'Copy failed',
+
+            'success.chatDeleted': 'Chat deleted successfully',
+
             'error.roomsLoad': 'Failed to load rooms. Please refresh the page.',
+            'error.switchRoom': 'Failed to load',
+            'error.messagesLoad': 'Failed to load messages. Please refresh the page.',
+            'error.createRoom': 'Failed to create room',
+            'error.fileUpload': 'File upload failed',
+            'error.deleteChat': 'Failed to delete chat',
+
+            'limit.exceeded': 'Room message limit exceeded',
+
+            // Empty chat container
+            'emptyChat.title': 'Start chatting',
+            'emptyChat.subtitle': 'This is the beginning of your conversation with the AI assistant. How can I help you?',
+            'emptyChat.suggestion.1': 'Tell me about yourself',
+            'emptyChat.suggestion.2': 'Help me with Java',
+            'emptyChat.suggestion.3': 'What is Spring Data JPA?',
 
             // User settings notifications
             'settings.load.error.title': 'Error',
