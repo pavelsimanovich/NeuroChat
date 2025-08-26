@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const modelSelectElement = document.getElementById('modelSelect');
     // TTS controls
     const ttsAutoplayEl = document.getElementById('ttsAutoplay');
-    const ttsVoiceEl = document.getElementById('ttsVoice');
     const ttsRateEl = document.getElementById('ttsRate');
     const ttsPitchEl = document.getElementById('ttsPitch');
 
@@ -22,21 +21,6 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             avatarPreview.src = 'https://via.placeholder.com/160?text=Avatar';
         }
-    }
-
-    function populateTtsVoices() {
-        if (!window.tts || !window.tts.supported || !ttsVoiceEl) return;
-        const voices = window.tts.getVoices();
-        const current = (window.tts.settings && window.tts.settings.voiceURI) || '';
-        const selectedLangFirst = (a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
-        ttsVoiceEl.innerHTML = '<option value="">Определяется браузером...</option>';
-        voices.sort(selectedLangFirst).forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.voiceURI;
-            opt.textContent = `${v.name} (${v.lang})${v.default ? ' — по умолчанию' : ''}`;
-            if (current && v.voiceURI === current) opt.selected = true;
-            ttsVoiceEl.appendChild(opt);
-        });
     }
 
     // Show the modal
@@ -71,15 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (ttsPitchEl && ttsModule) {
                             ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
                         }
-                        populateTtsVoices();
-                        if (window.speechSynthesis) {
-                            // Refresh voices if they load later (chain existing handler)
-                            const prevVoicesChanged = window.speechSynthesis.onvoiceschanged;
-                            window.speechSynthesis.onvoiceschanged = (...args) => {
-                                try { if (typeof prevVoicesChanged === 'function') prevVoicesChanged.apply(window.speechSynthesis, args); } catch(e) { /* noop */ }
-                                populateTtsVoices();
-                            };
-                        }
+                        // No voice list to populate
                     } catch (ex) {
                         console.error(ex);
                     }
@@ -135,7 +111,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (window.tts) {
                     ttsSettingsPayload = {
                         autoplay: !!(ttsAutoplayEl && ttsAutoplayEl.checked),
-                        voiceURI: (ttsVoiceEl && ttsVoiceEl.value) || '',
                         rate: ttsRateEl ? Number(ttsRateEl.value) : 1.0,
                         pitch: ttsPitchEl ? Number(ttsPitchEl.value) : 1.0
                     };
