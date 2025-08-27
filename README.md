@@ -55,12 +55,12 @@ https://huggingface.co/
     │   │   │   ├── config/       # Spring configs
     │   │   │   ├── constants/    # Constants
     │   │   │   ├── controller/   # REST and FLUX endpoints
-    │   │   │   ├── domaim/       # DB entities
+    │   │   │   ├── domain/       # DB entities
     │   │   │   ├── dto/          # DTO
     │   │   │   ├── exceptions/   # Exceptions
     │   │   │   ├── llm/          # Utility objects for llm
     │   │   │   ├── repository/   # DAO layer
-    │   │   │   └── service/      # Business logic
+    │   │   │   ├── service/      # Business logic
     │   │   │   └── userdetails/  # Custom user details
     │   │   └── resources/
     │   │       ├── static/       # JS/CSS
@@ -86,13 +86,23 @@ https://huggingface.co/
     - Configurable rate limiting
 - **Image Analysis**
 - **Chat Export**
-- **Voice input, Text-to-speach for response**
+- **Voice input, Text-to-speech for response**
 - **User Settings**
   - Lite and Dark Mode
   - User can add a System Prompt
   - Users can choose an available Model from the list
 - **SSL Encryption**
 - **Announcements**
+- **Eng/Rus languages**
 
 ### P.S.
 - Project in development and can contain errors, some parts of code should be rewritten.
+
+## 📄 License
+
+This project is distributed under a Personal Use License. You may use it for personal, non‑commercial purposes only. 
+For any commercial use, redistribution of modified versions, or uses not expressly permitted, you must obtain prior written permission from the authors.
+
+See the full text in [LICENSE](LICENSE).
+
+Contact: open an issue in this repository or email paul.simanovich@gmail.com
