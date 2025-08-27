@@ -19,22 +19,31 @@
                 <span th:text="${error}"></span>
             </div>
         </div>
-        <form th:action="@{/saveUser}" method="post" th:object="${user}" class="auth-form">
+        <form th:action="@{/saveUser}" method="post" th:object="${registrationRequest}" class="auth-form">
             <div class="mb-3">
                 <label for="email" class="form-label" data-i18n="registration.email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" data-i18n-attr="placeholder" data-i18n="registration.email.placeholder" placeholder="Введите ваш email" required>
+                <input type="email" class="form-control" id="email" th:field="*{email}" data-i18n-attr="placeholder" data-i18n="registration.email.placeholder" placeholder="Введите ваш email" required>
+                <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label" data-i18n="registration.password">Пароль</label>
-                <input type="password" class="form-control" id="password" name="password" data-i18n-attr="placeholder" data-i18n="registration.password.placeholder" placeholder="Введите пароль" required>
+                <input type="password" class="form-control" id="password" th:field="*{password}" data-i18n-attr="placeholder" data-i18n="registration.password.placeholder" placeholder="Введите пароль" required>
+                <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+            </div>
+            <div class="mb-3">
+                <label for="confirmPassword" class="form-label" data-i18n="registration.confirmPassword">Подтверждение пароля</label>
+                <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}" placeholder="Повторите пароль" required>
+                <div class="text-danger small" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
             </div>
             <div class="mb-3">
                 <label for="firstName" class="form-label" data-i18n="registration.firstName">Имя</label>
-                <input type="text" class="form-control" id="firstName" name="firstName" data-i18n-attr="placeholder" data-i18n="registration.firstName.placeholder" placeholder="Ваше имя" required>
+                <input type="text" class="form-control" id="firstName" th:field="*{firstName}" data-i18n-attr="placeholder" data-i18n="registration.firstName.placeholder" placeholder="Ваше имя" required>
+                <div class="text-danger small" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
             </div>
             <div class="mb-3">
                 <label for="lastName" class="form-label" data-i18n="registration.lastName">Фамилия</label>
-                <input type="text" class="form-control" id="lastName" name="lastName" data-i18n-attr="placeholder" data-i18n="registration.lastName.placeholder" placeholder="Ваша фамилия" required>
+                <input type="text" class="form-control" id="lastName" th:field="*{lastName}" data-i18n-attr="placeholder" data-i18n="registration.lastName.placeholder" placeholder="Ваша фамилия" required>
+                <div class="text-danger small" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
             </div>
             <button type="submit" class="btn btn-primary mb-3" data-i18n="registration.submit">Зарегистрироваться</button>
         </form>
