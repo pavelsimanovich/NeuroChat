@@ -378,6 +378,7 @@
     const badgeText = u.enabled ? i18n.t('admin.users.badge.active', 'Active') : i18n.t('admin.users.badge.disabled', 'Disabled');
     const enabledBadge = `<span class="badge ${u.enabled?'bg-success':'bg-secondary'}">${badgeText}</span>`;
     const toggleText = u.enabled ? i18n.t('admin.users.btn.disable', 'Disable') : i18n.t('admin.users.btn.enable', 'Enable');
+    const resetText = i18n.t('admin.users.btn.resetPass', 'Reset password');
     return `
       <tr data-id="${u.id}">
         <td>${u.email}</td>
@@ -392,7 +393,7 @@
         <td>${(u.createdAt||'').toString().replace('T',' ')}</td>
         <td class="text-end">
           <button class="btn btn-sm btn-outline-secondary toggle-enabled">${toggleText}</button>
-          <button class="btn btn-sm btn-outline-primary quota-btn">Quota</button>
+          <button class="btn btn-sm btn-outline-danger reset-pass">${resetText}</button>
         </td>
       </tr>`;
   }
@@ -444,46 +445,14 @@
           body: JSON.stringify({enabled: !enabledNow})
         }).then(()=>loadUsers());
       }
-      if(e.target.classList.contains('quota-btn')){
-        // open modal and load quota
-        fetchJSON(`/api/admin/users/${id}/quota`).then(data=>{
-          document.getElementById('quotaUserId').value = id;
-          const limitEl = document.getElementById('monthlyTokenLimit');
-          limitEl.value = (data.monthlyTokenLimit ?? '').toString();
-          document.getElementById('tokenUsedInPeriod').textContent = (data.tokenUsedInPeriod ?? '—');
-          document.getElementById('periodStart').textContent = (data.periodStart ?? '—');
-          const modal = new bootstrap.Modal(document.getElementById('quotaModal'));
-          modal.show();
-          // attach once handlers for save/reset within modal context
-          const saveBtn = document.getElementById('saveQuotaBtn');
-          const resetBtn = document.getElementById('resetQuotaBtn');
-          // remove previous listeners if any
-          saveBtn.onclick = null;
-          resetBtn.onclick = null;
-          saveBtn.onclick = ()=>{
-            const val = limitEl.value.trim();
-            const payload = { monthlyTokenLimit: val === '' ? null : Number(val) };
-            fetchJSON(`/api/admin/users/${id}/quota`, { method: 'POST', body: JSON.stringify(payload) })
-              .then(()=>{
-                // refresh the quota display
-                return fetchJSON(`/api/admin/users/${id}/quota`);
-              })
-              .then(q=>{
-                document.getElementById('tokenUsedInPeriod').textContent = (q.tokenUsedInPeriod ?? '—');
-                document.getElementById('periodStart').textContent = (q.periodStart ?? '—');
-              });
-          };
-          resetBtn.onclick = ()=>{
-            fetchJSON(`/api/admin/users/${id}/quota/reset`, { method: 'POST' })
-              .then(()=>fetchJSON(`/api/admin/users/${id}/quota`))
-              .then(q=>{
-                document.getElementById('tokenUsedInPeriod').textContent = (q.tokenUsedInPeriod ?? '—');
-                document.getElementById('periodStart').textContent = (q.periodStart ?? '—');
-              });
-          };
-        });
+      if(e.target.classList.contains('reset-pass')){
+        if(confirm('Сгенерировать временный пароль и сбросить?')){
+          fetchJSON(`/api/admin/users/${id}/reset-password`, {method: 'POST'})
+            .then(res=>{
+              alert('Новый пароль: ' + res.newPassword);
+            });
+        }
       }
-      // reset password functionality removed
     });
 
     document.getElementById('userSearch').addEventListener('input', ()=>{

@@ -81,8 +81,4 @@ public class UserService {
                 "new7d", new7d
         );
     }
-
-    public User findById(String id) {
-        return userRepository.findById(id).orElse(null);
-    }
 }
