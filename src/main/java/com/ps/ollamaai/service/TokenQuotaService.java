@@ -1,6 +1,7 @@
 package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.UserPreferencies;
+import com.ps.ollamaai.exceptions.LimitExceededException;
 import com.ps.ollamaai.repository.UserPreferenciesRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -52,9 +53,8 @@ public class TokenQuotaService {
         long used = prefs.getTokenUsedInPeriod() == null ? 0L : prefs.getTokenUsedInPeriod();
         long remaining = Math.max(0, (long) limit - used);
         if (estimatedTokens > remaining) {
-            throw new com.ps.ollamaai.exceptions.LimitExceededException("Превышен месячный лимит токенов. Доступно: " + remaining + ", требуется: " + estimatedTokens);
+            throw new LimitExceededException("Превышен месячный лимит токенов. Доступно: " + remaining + ", требуется: " + estimatedTokens);
         }
-        // We don't strictly reserve here to avoid overcounting if request fails; just validate.
         userPreferenciesRepository.save(prefs);
     }
 

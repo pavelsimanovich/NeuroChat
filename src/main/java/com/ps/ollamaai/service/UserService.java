@@ -6,12 +6,13 @@ import com.ps.ollamaai.dto.enums.Role;
 import com.ps.ollamaai.dto.enums.SupportedLanguages;
 import com.ps.ollamaai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +20,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserPreferencesService userPreferencesService;
+
+    @Value("${app.user-token-limits}")
+    private int userTokenLimits;
 
     public void save(final User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -29,7 +33,7 @@ public class UserService {
         UserPreferencies userPreferences = new UserPreferencies();
         userPreferences.setUserId(save.getId());
         userPreferences.setLanguage(SupportedLanguages.EN.getLanguage());
-        userPreferences.setMonthlyTokenLimit(100_000);
+        userPreferences.setMonthlyTokenLimit(userTokenLimits);
         userPreferencesService.save(userPreferences);
     }
 

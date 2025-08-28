@@ -63,6 +63,7 @@ spring:
 
 app:
   use-token-limits: true
+  user-token-limits: 100_000
   chat-limit: 100
   url: http://localhost:8443
   security:
