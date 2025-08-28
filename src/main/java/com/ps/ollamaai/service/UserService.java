@@ -28,7 +28,7 @@ public class UserService {
 
         UserPreferencies userPreferences = new UserPreferencies();
         userPreferences.setUserId(save.getId());
-        userPreferences.setLanguage(SupportedLanguages.EN.name());
+        userPreferences.setLanguage(SupportedLanguages.EN.getLanguage());
         userPreferences.setMonthlyTokenLimit(100_000);
         userPreferencesService.save(userPreferences);
     }
