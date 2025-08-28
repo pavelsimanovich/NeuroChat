@@ -85,11 +85,6 @@ const tts = {
         this.updateControlsState();
     },
 
-    getVoices() {
-        if (!this.supported) return [];
-        return window.speechSynthesis.getVoices() || [];
-    },
-
     play(text, messageId, lang = 'ru-RU') {
         if (!this.supported || !text) return;
         // If already speaking another message, stop it first
