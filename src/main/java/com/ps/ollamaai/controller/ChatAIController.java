@@ -72,12 +72,8 @@ public class ChatAIController {
                             String systemPrompt = resolveSystemPrompt(prefs);
                             String preferredModel = prefs.getPreferredModel();
 
-                            // Quota pre-check (includes expected assistant answer by heuristic)
-                            try {
-                                estimateAndCheckQuota(username, systemPrompt, question);
-                            } catch (LimitExceededException ex) {
-                                return Mono.just(new ChunkResponseDTO(ex.getMessage(), true, LIMIT_EXCEEDED.name())).flux();
-                            }
+                            Flux<ChunkResponseDTO> ex = estimate(question, username, systemPrompt);
+                            if (ex != null) return ex;
 
                             List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
                             Prompt prompt = new Prompt(messages);
@@ -104,6 +100,16 @@ public class ChatAIController {
                     log.error("Error processing chat message", e);
                     return Mono.just(new ChunkResponseDTO(e.getLocalizedMessage(), true, SERVER_ERROR.name()));
                 });
+    }
+
+    private Flux<ChunkResponseDTO> estimate(String question, String username, String systemPrompt) {
+        // Quota pre-check (includes expected assistant answer by heuristic)
+        try {
+            estimateAndCheckQuota(username, systemPrompt, question);
+        } catch (LimitExceededException ex) {
+            return Mono.just(new ChunkResponseDTO(ex.getMessage(), true, LIMIT_EXCEEDED.name())).flux();
+        }
+        return null;
     }
 
     private String resolveSystemPrompt(UserPreferencesDTO prefs) {
