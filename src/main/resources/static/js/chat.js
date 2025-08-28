@@ -929,7 +929,7 @@ function handleLimitExceeded(uuid) {
     const limitMessages = document.getElementById('limitMessages');
     limitMessages.innerHTML = `
       <div class="limit-messages">
-        Превышен лимит сообщений в комнате, пожалуйста создайте новую.
+        Превышен лимит сообщений в комнате, пожалуйста создайте новую. Или закончилось количество доступных токенов
       </div>
     `;
 }

@@ -74,9 +74,9 @@ public class ChatAIController {
                                     : PROMPT_GENERAL_INSTRUCTIONS;
                             String preferredModel = prefs.getPreferredModel();
 
-                            // Check quota before sending
+                            // Check quota before sending (include expected assistant answer)
                             try {
-                                int estimate = TokenQuotaService.estimateTokensForMessages(systemPrompt, question);
+                                int estimate = TokenQuotaService.estimateTokensForTurn(systemPrompt, question, null);
                                 tokenQuotaService.checkAndReserveTokens(username, estimate);
                             } catch (LimitExceededException ex) {
                                 return Mono.just(new ChunkResponseDTO(ex.getMessage(), true, LIMIT_EXCEEDED.name())).flux();

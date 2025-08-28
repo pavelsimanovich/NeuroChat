@@ -79,6 +79,23 @@ public class TokenQuotaService {
         return estimateTokens(systemPrompt) + estimateTokens(question);
     }
 
+    /**
+     * Estimate total tokens for a single chat turn: system + user question + assistant answer (expected).
+     * Uses a heuristic when expectedAnswerTokens is not provided by caller.
+     */
+    public static int estimateTokensForTurn(String systemPrompt, String question, Integer expectedAnswerTokens) {
+        int base = estimateTokensForMessages(systemPrompt, question);
+        int answerEstimate;
+        if (expectedAnswerTokens != null && expectedAnswerTokens > 0) {
+            answerEstimate = expectedAnswerTokens;
+        } else {
+            // Heuristic: answer roughly up to 2x question tokens, bounded to [128, 1024]
+            int questionTok = estimateTokens(question);
+            answerEstimate = Math.max(128, Math.min(questionTok * 2, 1024));
+        }
+        return base + answerEstimate;
+    }
+
     private boolean isDifferentMonth(LocalDateTime a, LocalDateTime b) {
         if (a == null || b == null) return true;
         LocalDate da = a.toLocalDate();
