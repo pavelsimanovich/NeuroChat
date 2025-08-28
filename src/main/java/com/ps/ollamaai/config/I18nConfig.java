@@ -1,5 +1,6 @@
 package com.ps.ollamaai.config;
 
+import com.ps.ollamaai.domain.UserPreferencies;
 import com.ps.ollamaai.service.UserPreferencesService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -74,7 +75,7 @@ public class I18nConfig implements WebMvcConfigurer {
             String username = getCurrentUsername();
             if (StringUtils.hasText(username)) {
                 String lang = userPreferencesService.findByUserId(username)
-                        .map(pref -> pref.getLanguage())
+                        .map(UserPreferencies::getLanguage)
                         .filter(StringUtils::hasText)
                         .orElse(null);
                 if (StringUtils.hasText(lang)) {
@@ -92,7 +93,6 @@ public class I18nConfig implements WebMvcConfigurer {
 
         private Locale toLocaleSafe(String tag) {
             try {
-                // supports both ru and ru-RU
                 return Locale.forLanguageTag(tag);
             } catch (Exception ignored) {
                 return Locale.ENGLISH;

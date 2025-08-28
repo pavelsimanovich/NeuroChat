@@ -57,11 +57,13 @@ spring:
       "mail.smtp.writetimeout": 5000
   session:
     cookie:
-      secure: true # Куки только через HTTPS
-      http-only: true # Защита от XSS
-      same-site: strict # Защита от CSRF
+      secure: true # Cookies only throw HTTPS
+      http-only: true # Protection from XSS
+      same-site: strict # Protection from CSRF
 
 app:
+  use-token-limits: true
+  user-token-limits: 100_000
   chat-limit: 100
   url: http://localhost:8443
   security:
@@ -72,7 +74,7 @@ server:
     port: 8080
   http2:
     enabled: true
-  port: 8443 #8080 если ssl.enabled = false
+  port: 8443 #8080 if ssl.enabled = false
   forward-headers-strategy: native
   servlet:
     session:

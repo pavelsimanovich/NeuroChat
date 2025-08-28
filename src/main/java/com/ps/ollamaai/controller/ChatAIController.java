@@ -9,6 +9,7 @@ import com.ps.ollamaai.service.ChatRoomService;
 import com.ps.ollamaai.service.FileStorageService;
 import com.ps.ollamaai.service.ReactiveService;
 import com.ps.ollamaai.service.UserPreferencesService;
+import com.ps.ollamaai.service.TokenQuotaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,6 +21,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
 import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
@@ -53,6 +55,10 @@ public class ChatAIController {
     private final ReactiveService reactiveService;
     private final FileStorageService fileStorageService;
     private final UserPreferencesService userPreferencesService;
+    private final TokenQuotaService tokenQuotaService;
+
+    @Value("${app.use-token-limits}")
+    private boolean useTokenLimits;
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChunkResponseDTO> streamChat(
@@ -67,36 +73,25 @@ public class ChatAIController {
         return reactiveService.processChatMessageReactive(question, chatId, username, fileData)
                 .flatMapMany(currentHistory -> loadUserPreferences(username)
                         .flatMapMany(prefs -> {
-                            String systemPrompt = StringUtils.hasText(prefs.getSystemPrompt())
-                                    ? prefs.getSystemPrompt()
-                                    : PROMPT_GENERAL_INSTRUCTIONS;
+                            String systemPrompt = resolveSystemPrompt(prefs);
                             String preferredModel = prefs.getPreferredModel();
+
+                            if (useTokenLimits) {
+                                Flux<ChunkResponseDTO> ex = estimate(question, username);
+                                if (ex != null) return ex;
+                            }
 
                             List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
                             Prompt prompt = new Prompt(messages);
 
-                            var spec = chatClient
-                                    .prompt(prompt)
-                                    .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
-
-                            if (StringUtils.hasText(preferredModel)) {
-                                var options = OllamaOptions.builder()
-                                        .model(preferredModel)
-                                        .build();
-                                spec = spec.options(options);
-                            }
+                            var spec = buildRequestSpec(prompt, chatId, preferredModel);
 
                             return spec
                                     .stream()
                                     .content()
                                     .map(chunk -> new ChunkResponseDTO(chunk, false, null))
                                     .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
-                                    .doOnComplete(() -> {
-                                        String response = chatMessageService.saveAiResponse(chatId);
-                                        // Extend in-memory history for next turn
-                                        currentHistory.add(new UserMessage(question));
-                                        currentHistory.add(new AssistantMessage(response));
-                                    })
+                                    .doOnComplete(() -> onCompletionUpdate(username, chatId, question, currentHistory))
                                     .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
                         }))
                 .publishOn(Schedulers.boundedElastic())
@@ -111,6 +106,55 @@ public class ChatAIController {
                     log.error("Error processing chat message", e);
                     return Mono.just(new ChunkResponseDTO(e.getLocalizedMessage(), true, SERVER_ERROR.name()));
                 });
+    }
+
+    private Flux<ChunkResponseDTO> estimate(String question, String username) {
+        // Quota pre-check (includes expected assistant answer by heuristic)
+        try {
+            estimateAndCheckQuota(username, question);
+        } catch (LimitExceededException ex) {
+            return Mono.just(new ChunkResponseDTO(ex.getMessage(), true, LIMIT_EXCEEDED.name())).flux();
+        }
+        return null;
+    }
+
+    private String resolveSystemPrompt(UserPreferencesDTO prefs) {
+        return StringUtils.hasText(prefs.getSystemPrompt())
+                ? prefs.getSystemPrompt()
+                : PROMPT_GENERAL_INSTRUCTIONS;
+    }
+
+    private void estimateAndCheckQuota(String username, String question) {
+        int estimate = TokenQuotaService.estimateTokensForTurn(question, null);
+        tokenQuotaService.checkAndReserveTokens(username, estimate);
+    }
+
+    private ChatClient.ChatClientRequestSpec buildRequestSpec(Prompt prompt, String chatId, String preferredModel) {
+        var spec = chatClient
+                .prompt(prompt)
+                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
+
+        if (StringUtils.hasText(preferredModel)) {
+            var options = OllamaOptions.builder()
+                    .model(preferredModel)
+                    .build();
+            spec = spec.options(options);
+        }
+        return spec;
+    }
+
+    private void onCompletionUpdate(String username,
+                                    String chatId,
+                                    String question,
+                                    List<Message> currentHistory) {
+        String response = chatMessageService.saveAiResponse(chatId);
+        // Extend in-memory history for next turn
+        currentHistory.add(new UserMessage(question));
+        currentHistory.add(new AssistantMessage(response));
+        // Add usage (approx): system + question + response
+        int used = TokenQuotaService.estimateTokensForMessages(question)
+                + tokenQuotaService.estimateTokensForText(response);
+        tokenQuotaService.addUsage(username, used);
     }
 
     private Mono<UserPreferencesDTO> loadUserPreferences(String username) {

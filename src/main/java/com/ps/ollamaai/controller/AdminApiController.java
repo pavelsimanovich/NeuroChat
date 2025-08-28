@@ -2,7 +2,9 @@ package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.User;
 import com.ps.ollamaai.dto.AdminUserDto;
+import com.ps.ollamaai.dto.UserPreferencesDTO;
 import com.ps.ollamaai.service.UserService;
+import com.ps.ollamaai.service.UserPreferencesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.SecureRandom;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +25,8 @@ import java.util.Map;
 public class AdminApiController {
 
     private final UserService userService;
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private final UserPreferencesService userPreferencesService;
+    
 
     @GetMapping("/users")
     public List<AdminUserDto> listUsers(@RequestParam(value = "q", required = false) String q) {
@@ -54,16 +55,41 @@ public class AdminApiController {
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
 
-    @PostMapping("/users/{id}/reset-password")
-    public ResponseEntity<?> resetPassword(@PathVariable("id") String id) {
-        String newPassword = generateTempPassword();
-        userService.resetPassword(id, newPassword);
-        return ResponseEntity.ok(Map.of("status", "ok", "newPassword", newPassword));
+    
+
+    @GetMapping("/users/{id}/quota")
+    public ResponseEntity<?> getUserQuota(@PathVariable("id") String id) {
+        User u = userService.findById(id);
+        if (u == null) return ResponseEntity.notFound().build();
+        UserPreferencesDTO prefs = userPreferencesService.getUserPreferencesOrDefault(u.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "monthlyTokenLimit", prefs.getMonthlyTokenLimit(),
+                "tokenUsedInPeriod", prefs.getTokenUsedInPeriod(),
+                "periodStart", prefs.getPeriodStart()
+        ));
     }
 
-    private String generateTempPassword() {
-        byte[] bytes = new byte[9];
-        RANDOM.nextBytes(bytes);
-        return HexFormat.of().formatHex(bytes);
+    @PostMapping("/users/{id}/quota")
+    public ResponseEntity<?> setUserQuota(@PathVariable("id") String id, @RequestBody Map<String, Object> payload) {
+        User u = userService.findById(id);
+        if (u == null) return ResponseEntity.notFound().build();
+        Integer limit = null;
+        Object val = payload.get("monthlyTokenLimit");
+        if (val instanceof Number n) {
+            limit = n.intValue();
+        } else if (val instanceof String s && StringUtils.hasText(s)) {
+            try { limit = Integer.parseInt(s.trim()); } catch (Exception ignored) {}
+        }
+        userPreferencesService.setMonthlyLimit(u.getEmail(), limit);
+        return ResponseEntity.ok(Map.of("status", "ok"));
     }
+
+    @PostMapping("/users/{id}/quota/reset")
+    public ResponseEntity<?> resetUserQuota(@PathVariable("id") String id) {
+        User u = userService.findById(id);
+        if (u == null) return ResponseEntity.notFound().build();
+        userPreferencesService.resetQuotaPeriod(u.getEmail());
+        return ResponseEntity.ok(Map.of("status", "ok"));
+    }
+
 }

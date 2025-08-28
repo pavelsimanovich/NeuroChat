@@ -1,27 +1,40 @@
 package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.User;
+import com.ps.ollamaai.domain.UserPreferencies;
 import com.ps.ollamaai.dto.enums.Role;
+import com.ps.ollamaai.dto.enums.SupportedLanguages;
 import com.ps.ollamaai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserPreferencesService userPreferencesService;
+
+    @Value("${app.user-token-limits}")
+    private int userTokenLimits;
 
     public void save(final User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
         user.setRole(Role.USER.name());
-        userRepository.save(user);
+        User save = userRepository.save(user);
+
+        UserPreferencies userPreferences = new UserPreferencies();
+        userPreferences.setUserId(save.getId());
+        userPreferences.setLanguage(SupportedLanguages.EN.getLanguage());
+        userPreferences.setMonthlyTokenLimit(userTokenLimits);
+        userPreferencesService.save(userPreferences);
     }
 
     public User findByEmail(final String email) {
@@ -55,13 +68,6 @@ public class UserService {
         });
     }
 
-    public void resetPassword(String userId, String newPassword) {
-        userRepository.findById(userId).ifPresent(u -> {
-            u.setPassword(passwordEncoder.encode(newPassword));
-            userRepository.save(u);
-        });
-    }
-
     public long countAll() {
         return userRepository.count();
     }
@@ -80,5 +86,9 @@ public class UserService {
                 "new24h", new24h,
                 "new7d", new7d
         );
+    }
+
+    public User findById(String id) {
+        return userRepository.findById(id).orElse(null);
     }
 }
