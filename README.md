@@ -84,7 +84,7 @@ https://huggingface.co/
     - Persistent message storage
     - Conversation continuity across sessions
 - **Usage Controls**:
-    - Configurable rate limiting
+    - Configurable rate limiting for chat and limits tokens for users (4 chars = 1 token)
 - **Image Analysis**
 - **Syntax highlighting for code snippets**
 - **Chat Export**

@@ -72,7 +72,6 @@ public class EmailService {
         variables.put("resetUrl", resetUrl);
         variables.put("expiryHours", 24);
 
-        // Локализуем тему письма через MessageSource
         Locale locale = resolveLocaleForUser(to);
         String subject = messageSource.getMessage("email.reset.title", null, "Password reset", locale);
 

@@ -55,8 +55,6 @@ public class AdminApiController {
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
 
-    
-
     @GetMapping("/users/{id}/quota")
     public ResponseEntity<?> getUserQuota(@PathVariable("id") String id) {
         User u = userService.findById(id);
