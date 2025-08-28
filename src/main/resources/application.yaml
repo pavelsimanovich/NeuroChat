@@ -92,12 +92,8 @@ logging:
     org.springframework.web: debug
     org.hibernate: error
 
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health,info,metrics,prometheus
-    endpoint:
-      health:
-        show-details: when_authorized
-        roles: ADMIN
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

@@ -1240,6 +1240,29 @@ body {
     color: var(--text-muted);
 }
 
+/* TTS controls visibility and sizing */
+.tts-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.tts-controls .btn {
+    padding: 2px 8px;
+    line-height: 1;
+    border-radius: 6px;
+}
+.tts-controls .btn i {
+    font-size: 0.9rem;
+}
+[data-bs-theme="dark"] .tts-controls .btn.btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+.tts-controls.tts-active .btn[data-tts="play"] {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
 .message-status {
     color: var(--danger-color);
     font-style: italic;
@@ -2193,6 +2216,10 @@ border-color: rgba(255, 193, 7, 0.15);
     transition: all 0.3s ease;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
+    /* Fixed height for static-sized modal */
+    height: 750px;
+    display: flex;
+    flex-direction: column;
 }
 
 #userSettingsModal .modal-header {
@@ -2243,6 +2270,9 @@ border-color: rgba(255, 193, 7, 0.15);
 #userSettingsModal .modal-body {
     padding: 1.5rem;
     color: var(--text-primary);
+    /* Make the body scrollable within fixed-height modal */
+    flex: 1 1 auto;
+    overflow: auto;
 }
 
 #userSettingsModal .modal-footer {
@@ -2321,6 +2351,22 @@ border-color: rgba(255, 193, 7, 0.15);
     color: var(--text-primary);
     padding: 1.25rem;
     border-top: 1px solid var(--border-color);
+}
+
+/* Fixed width for static-sized modal */
+#userSettingsModal .modal-dialog {
+    max-width: none; /* override bootstrap size limits */
+    width: 900px;
+}
+
+/* Safety: keep usable on very small screens */
+@media (max-width: 768px) {
+    #userSettingsModal .modal-dialog {
+        width: 92vw;
+    }
+    #userSettingsModal .modal-content {
+        height: 90vh;
+    }
 }
 
 /* Dark theme adjustments */

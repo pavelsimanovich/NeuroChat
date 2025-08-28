@@ -12,7 +12,7 @@ public final class Prompts {
             """;
 
     public static final String PROMPT_GENERAL_INSTRUCTIONS = """
-            Answer strictly in Russian.
+            Answer strictly in the language in which the question was asked.
             Make a greeting only if not yet.
             Identify the subject area addressed in user_main_prompt and respond as an expert in that field,
             providing a comprehensive answer with detailed explanations.

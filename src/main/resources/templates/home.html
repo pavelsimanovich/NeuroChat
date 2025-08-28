@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Чат</title>
+    <title data-i18n="app.title">AI Чат</title>
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
     <link th:href="@{/css/lib/prism.css}" rel="stylesheet"/>
     <link th:href="@{/css/chat.css}" rel="stylesheet"/>
@@ -22,10 +22,66 @@
             .cursor-pointer {
                 cursor: pointer;
             }
+
+            /* Scroll-to-top floating button */
+            .scroll-top-btn {
+                position: fixed;
+                right: 24px;
+                bottom: 120px; /* keep above input area */
+                width: 44px;
+                height: 44px;
+                border: none;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #0d6efd; /* Bootstrap primary */
+                color: #fff;
+                box-shadow: 0 8px 20px rgba(13, 110, 253, 0.35);
+                z-index: 1050; /* above chat content */
+                transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+                opacity: 0.95;
+            }
+            .scroll-top-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 24px rgba(13, 110, 253, 0.45);
+                opacity: 1;
+            }
+            .scroll-top-btn i { font-size: 1.2rem; }
+            /* Scroll-to-bottom floating button (same position as top button) */
+            .scroll-bottom-btn {
+                position: fixed;
+                right: 24px;
+                bottom: 120px; /* same as .scroll-top-btn to overlap */
+                width: 44px;
+                height: 44px;
+                border: none;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #6c757d; /* Bootstrap secondary */
+                color: #fff;
+                box-shadow: 0 8px 20px rgba(108, 117, 125, 0.35);
+                z-index: 1050;
+                transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+                opacity: 0.95;
+            }
+            .scroll-bottom-btn:hover {
+                transform: translateY(2px);
+                box-shadow: 0 10px 24px rgba(108, 117, 125, 0.45);
+                opacity: 1;
+            }
+            .scroll-bottom-btn i { font-size: 1.2rem; }
+            @media (max-width: 768px) {
+                .scroll-top-btn { right: 16px; bottom: 140px; }
+                .scroll-bottom-btn { right: 16px; bottom: 140px; }
+            }
         </style>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link th:href="@{/css/announcements.css}" rel="stylesheet"/>
 </head>
 <body>
 
@@ -40,14 +96,14 @@
         <div class="sidebar" id="mobileSidebar">
             <div class="sidebar-header">
                 <div class="d-flex justify-content-between align-items-center w-100">
-                    <h4 class="mb-0">AI Assistant</h4>
+                    <h4 class="mb-0" data-i18n="brand.name">NeuroChat</h4>
                     <div class="d-flex gap-2 align-items-center">
                         <button id="createRoomBtn" class="btn btn-primary btn-sm">
                             <i class="bi bi-plus-lg"></i>
-                            <span>Новый чат</span>
+                            <span data-i18n="sidebar.newChat">Новый чат</span>
                         </button>
                         <button id="userSettingsBtn" class="btn btn-sm btn-outline-secondary"
-                                title="Настройки пользователя">
+                                data-i18n-title="sidebar.userSettings.title" title="Настройки пользователя">
                             <i class="bi bi-gear"></i>
                         </button>
                     </div>
@@ -60,17 +116,17 @@
             <!-- Context Menu for Chat Rooms -->
             <div id="roomContextMenu" class="context-menu d-none">
                 <div class="context-menu-item" data-action="pin">
-                    <i class="bi bi-pin-angle"></i> <span class="pin-text">Закрепить</span>
+                    <i class="bi bi-pin-angle"></i> <span class="pin-text" data-i18n="context.pin">Закрепить</span>
                 </div>
                 <div class="context-menu-item" data-action="rename">
-                    <i class="bi bi-pencil"></i> Переименовать
+                    <i class="bi bi-pencil"></i> <span data-i18n="context.rename">Переименовать</span>
                 </div>
                 <div class="context-menu-item" data-action="export">
-                    <i class="bi bi-filetype-txt"></i> Экспортировать историю TXT
+                    <i class="bi bi-filetype-txt"></i> <span data-i18n="context.exportTxt">Экспортировать историю TXT</span>
                 </div>
                 <div class="divider"></div>
                 <div class="context-menu-item text-danger" data-action="delete">
-                    <i class="bi bi-trash"></i> Удалить чат
+                    <i class="bi bi-trash"></i> <span data-i18n="context.delete">Удалить чат</span>
                 </div>
             </div>
 
@@ -83,8 +139,8 @@
                     <span class="user-name text-truncate" style="max-width: 140px;" th:text="${userName}"></span>
                 </div>
                 <form th:action="@{/logout}" method="post" class="m-0">
-                    <button type="button" id="logoutBtn" class="btn btn-link" title="Выйти из аккаунта" aria-label="Выйти">
-                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i> <span>Выход</span>
+                    <button type="button" id="logoutBtn" class="btn btn-link" data-i18n-title="sidebar.logout.title" title="Выйти из аккаунта" aria-label="Выйти">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i> <span data-i18n="sidebar.logout">Выход</span>
                     </button>
                 </form>
             </div>
@@ -92,25 +148,51 @@
         </div>
 
         <!-- Разделитель для изменения размера (ресайзер) -->
-        <div id="sidebarResizer" class="sidebar-resizer" title="Изменить размер панели">
+        <div id="sidebarResizer" class="sidebar-resizer" data-i18n-title="sidebar.resize.title" title="Изменить размер панели">
             <div class="resizer-handle"></div>
         </div>
 
         <!-- Основная область чата -->
+        <!-- Announcement Bar -->
+        <div id="announcementContainer" class="announcement-bar d-none" aria-live="polite" aria-atomic="true">
+            <div class="announcement-container">
+                <div class="announcement-content" id="announcementContent" role="button" tabindex="0" aria-label="Открыть объявление" title="Открыть объявление">
+                    <!-- Loading spinner -->
+                    <div class="announcement-loading d-none">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden" data-i18n="announcement.loading.sr">Загрузка...</span>
+                        </div>
+                        <span data-i18n="announcement.loading">Загрузка объявлений...</span>
+                    </div>
+                    <!-- Content will be inserted here -->
+                </div>
+                <div class="announcement-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-2" id="announcementDetailsBtn" aria-controls="announcementModal" data-i18n-title="announcement.details.title" title="Подробнее об объявлении">
+                        <i class="bi bi-arrows-angle-expand me-1"></i> <span data-i18n="announcement.more">Подробнее</span>
+                    </button>
+                    <button type="button" class="btn-close" id="closeAnnouncement" data-i18n-attr="aria-label" data-i18n="announcement.hide" aria-label="Скрыть"></button>
+                </div>
+            </div>
+        </div>
+        
         <div class="chat-area">
             <div class="chat-header d-flex justify-content-between align-items-center">
                 <div class="w-100 d-flex align-items-center">
                     <button id="sidebarToggleBtn" class="btn d-md-none">
                         <i class="bi bi-list" style="font-size: 1.5rem;"></i>
                     </button>
-                    <h4 id="currentRoomTitle" class="mb-0 flex-grow-1 text-truncate" th:text="${userName + ' выберите или создайте чат'}"></h4>
+                    <h4 id="currentRoomTitle" class="mb-0 flex-grow-1 text-truncate" data-i18n="chat.header.selectOrCreate">Выберите или создайте чат</h4>
                     <div class="model-badge d-flex align-items-center me-2 model-status">
                         <i class="bi bi-lightning-charge-fill me-1"></i>
                         <span class="model-name" th:text="${modelName}"></span>
                     </div>
-                    <button id="toggleSearch" class="btn btn-link text-decoration-none p-1 ms-2" title="Поиск по сообщениям">
+                    <button id="toggleSearch" class="btn btn-link text-decoration-none p-1 ms-2" data-i18n-title="search.title" title="Поиск по сообщениям">
                         <i class="bi bi-search"></i>
                     </button>
+                    <a sec:authorize="hasRole('ADMIN')" href="/admin" class="btn btn-outline-secondary btn-sm ms-2" data-i18n-title="chat.model.admin.title" title="Админ-панель">
+                        <i class="bi bi-shield-lock"></i>
+                        <span class="d-none d-md-inline" data-i18n="chat.model.admin">Админ</span>
+                    </a>
                 </div>
             </div>
 
@@ -122,24 +204,24 @@
                             <i class="bi bi-search"></i>
                         </span>
                         <input type="text" id="searchInput" class="form-control border-start-0" 
-                               placeholder="Поиск по содержимому сообщений..." autocomplete="off">
+                               data-i18n-attr="placeholder" data-i18n="search.placeholder" placeholder="Поиск по содержимому сообщений..." autocomplete="off">
                         <button id="clearSearchBtn" class="btn btn-link position-absolute end-0 d-none" 
-                                style="z-index: 5; top: 0; height: 100%; opacity: 0.7;" title="Очистить поиск">
+                                style="z-index: 5; top: 0; height: 100%; opacity: 0.7;" data-i18n-title="search.clear" title="Очистить поиск">
                             <i class="bi bi-x-lg"></i>
                         </button>
                         <button id="searchButton" class="btn btn-primary" type="button">
-                            Найти
+                            <span data-i18n="search.find">Найти</span>
                         </button>
                     </div>
                     <div id="searchInfo" class="small text-muted mt-1 ps-1 d-none">
-                        <span id="searchResultsCount">0</span> результатов
+                        <span id="searchResultsCount">0</span> <span data-i18n="search.results.count">результатов</span>
                     </div>
                 </div>
 
                 <!-- Контейнер результатов поиска с анимацией -->
                 <div class="search-results d-none shadow" id="searchResults">
                     <div class="search-results-header d-flex justify-content-between align-items-center p-2 border-bottom bg-light">
-                        <div class="fw-bold">Результаты поиска</div>
+                        <div class="fw-bold" data-i18n="search.results">Результаты поиска</div>
                         <button id="closeSearchResults" class="btn btn-sm btn-link p-0 text-muted">
                             <i class="bi bi-x-lg"></i>
                         </button>
@@ -164,67 +246,67 @@
                          style="width: 130px; height: 130px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);">
                         <i class="bi bi-robot" style="font-size: 3.5rem; color: white;"></i>
                     </div>
-                    <h3 class="mb-3 fw-bold">Добро пожаловать в AI Чат-ассистент</h3>
-                    <p class="text-muted mb-4 fs-5">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
+                    <h3 class="mb-3 fw-bold" data-i18n="welcome.title">Добро пожаловать в AI Чат-ассистент</h3>
+                    <p class="text-muted mb-4 fs-5" data-i18n="welcome.subtitle">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
                     <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm" onclick="createRoom()">
-                        <i class="bi bi-plus-lg me-2"></i>Начать новый диалог
+                        <i class="bi bi-plus-lg me-2"></i><span data-i18n="welcome.start">Начать новый диалог</span>
                     </button>
                     <div class="mt-5 pt-4 border-top w-100">
-                        <h5 class="mb-4">Что я могу для вас сделать:</h5>
+                        <h5 class="mb-4" data-i18n="welcome.section.title">Что я могу для вас сделать:</h5>
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.idea.text', 'Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-lightbulb-fill text-primary"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Идеи для разработки</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.idea.title">Идеи для разработки</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.idea.text">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.optimize.text', 'Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-code-square text-success"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Оптимизация кода</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.optimize.title">Оптимизация кода</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.optimize.text">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.arch.text', 'Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-gear-fill text-info"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Архитектура приложений</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.arch.title">Архитектура приложений</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.arch.text">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                     onclick="setExampleQuestion('Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория')">
+                                     onclick="setExampleQuestion(window.i18n?.t('welcome.cards.examples.text', 'Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория'))">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
                                                 <i class="bi bi-file-earmark-code-fill text-warning"></i>
                                             </div>
-                                            <h6 class="mb-0 fw-bold">Примеры кода</h6>
+                                            <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.examples.title">Примеры кода</h6>
                                         </div>
-                                        <p class="text-muted mb-0">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
+                                        <p class="text-muted mb-0" data-i18n="welcome.cards.examples.text">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
                                     </div>
                                 </div>
                             </div>
@@ -233,6 +315,14 @@
                 </div>
                 <!-- Сообщения будут отображаться здесь -->
             </div>
+            <!-- Scroll to Top Button -->
+            <button id="scrollTopBtn" class="scroll-top-btn d-none" data-i18n-title="chat.scrollTop.title" title="Прокрутить вверх" aria-label="Scroll to top">
+                <i class="bi bi-arrow-up"></i>
+            </button>
+            <!-- Scroll to Bottom Button -->
+            <button id="scrollBottomBtn" class="scroll-bottom-btn d-none" data-i18n-title="chat.scrollBottom.title" title="Прокрутить вниз" aria-label="Scroll to bottom">
+                <i class="bi bi-arrow-down"></i>
+            </button>
             <div id="limitMessages"></div>
             <div id="typingIndicatorContainer" style="display: none; min-height: 40px; padding-top: 15px">
                 <div class="typing-indicator">
@@ -257,7 +347,7 @@
                         <input type="file" id="fileInput" multiple>
 
                         <!-- Upload button -->
-                        <button type="button" id="uploadButton" title="Прикрепить файл">
+                        <button type="button" id="uploadButton" data-i18n-title="input.attach.title" title="Прикрепить файл">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                                  class="bi bi-paperclip" viewBox="0 0 16 16">
                                 <path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z"/>
@@ -265,7 +355,7 @@
                         </button>
 
                         <!-- Voice input button -->
-                        <button type="button" id="voiceInputBtn" title="Голосовой ввод">
+                        <button type="button" id="voiceInputBtn" data-i18n-title="input.voice.title" title="Голосовой ввод">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                                  class="bi bi-mic" viewBox="0 0 16 16">
                                 <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
@@ -274,10 +364,10 @@
                         </button>
 
                         <!-- Text input -->
-                        <textarea id="messageInput" placeholder="Чем я могу помочь Вам сегодня?" rows="1"></textarea>
+                        <textarea id="messageInput" data-i18n-attr="placeholder" data-i18n="input.placeholder" placeholder="Чем я могу помочь Вам сегодня?" rows="1"></textarea>
 
                         <!-- Send button -->
-                        <button type="button" id="sendMessageBtn" title="Отправить сообщение">
+                        <button type="button" id="sendMessageBtn" data-i18n-title="input.send.title" title="Отправить сообщение">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                                  class="bi bi-send" viewBox="0 0 16 16">
                                 <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11zM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493z"/>
@@ -285,7 +375,7 @@
                         </button>
 
                         <!-- Stop generation button -->
-                        <button type="button" id="stopGenerationBtn" title="Остановить генерацию">
+                        <button type="button" id="stopGenerationBtn" data-i18n-title="input.stop.title" title="Остановить генерацию">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                                  class="bi bi-stop-circle" viewBox="0 0 16 16">
                                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
@@ -305,8 +395,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="userSettingsModalLabel"><i class="bi bi-gear-wide-connected me-2"></i>Настройки
-                    пользователя</h5>
+                <h5 class="modal-title" id="userSettingsModalLabel"><i class="bi bi-gear-wide-connected me-2"></i><span data-i18n="modal.userSettings.title">Настройки пользователя</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -314,39 +403,71 @@
                     <div class="col-12 col-md-3 border-end">
                         <div class="nav flex-column nav-pills gap-2" id="userSettingsTabs" role="tablist" aria-orientation="vertical">
                             <button class="nav-link active d-flex align-items-center" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
-                                <i class="bi bi-sliders me-2"></i> <span>Общие</span>
+                                <i class="bi bi-sliders me-2"></i> <span data-i18n="modal.userSettings.tabs.general">Общие</span>
                             </button>
                             <button class="nav-link d-flex align-items-center" id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">
-                                <i class="bi bi-person-circle me-2"></i> <span>Профиль</span>
+                                <i class="bi bi-person-circle me-2"></i> <span data-i18n="modal.userSettings.tabs.profile">Профиль</span>
+                            </button>
+                            <button class="nav-link d-flex align-items-center" id="about-tab" data-bs-toggle="pill" data-bs-target="#about" type="button" role="tab" aria-controls="about" aria-selected="false">
+                                <i class="bi bi-info-circle me-2"></i> <span data-i18n="modal.userSettings.tabs.about">О программе</span>
                             </button>
                         </div>
                     </div>
                     <div class="col-12 col-md-9">
                         <div class="tab-content pt-2" id="userSettingsTabsContent">
                             <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
-                                <p class="text-muted">Эти настройки будут применяться ко всем новым чатам.</p>
+                                <p class="text-muted" data-i18n="settings.general.note">Эти настройки будут применяться ко всем новым чатам.</p>
                                 <div class="mb-4">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <label class="form-label mb-0"><strong>Тема интерфейса</strong></label>
-                                        <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" title="Переключить тему">
-                                            <i class="bi bi-moon-stars"></i> <span>Темная тема</span>
+                                        <label class="form-label mb-0"><strong data-i18n="settings.theme.label">Тема интерфейса</strong></label>
+                                        <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" data-i18n-title="settings.theme.toggle.title" title="Переключить тему">
+                                            <i class="bi bi-moon-stars"></i> <span data-i18n="settings.theme.toggle">Темная тема</span>
                                         </button>
                                     </div>
                                     <div class="border-bottom mb-4"></div>
                                     <div class="mb-3">
-                                        <label for="modelSelect" class="form-label"><strong>Модель ИИ</strong></label>
+                                        <label for="languageSelect" class="form-label"><strong data-i18n="lang.select">Язык</strong></label>
+                                        <select class="form-select" id="languageSelect">
+                                            <option value="ru" data-i18n="lang.ru">Русский</option>
+                                            <option value="en" data-i18n="lang.en">English</option>
+                                        </select>
+                                        <div class="form-text" data-i18n="settings.language.help">Выберите язык интерфейса приложения.</div>
+                                    </div>
+                                    <div class="border-bottom mb-4"></div>
+                                    <div class="mb-3">
+                                        <label for="modelSelect" class="form-label"><strong data-i18n="settings.model.label">Модель ИИ</strong></label>
                                         <select class="form-select" id="modelSelect">
                                             <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
                                             <option value="gemma3:4b">Gemma 3 (4B)</option>
                                             <option value="gemma3:12b">Gemma 3 (12B)</option>
                                         </select>
-                                        <div class="form-text">Выберите предпочитаемую модель для ваших чатов.</div>
+                                        <div class="form-text" data-i18n="settings.model.help">Выберите предпочитаемую модель для ваших чатов.</div>
                                     </div>
                                     <div class="border-bottom mb-4"></div>
                                     <div class="mb-3">
-                                        <label for="systemPrompt" class="form-label"><strong>Системный промпт</strong></label>
-                                        <textarea class="form-control" id="systemPrompt" rows="5" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
-                                        <div class="form-text">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее больше 1000 символов.</div>
+                                        <label for="systemPrompt" class="form-label"><strong data-i18n="settings.systemPrompt.label">Системный промпт</strong></label>
+                                        <textarea class="form-control" id="systemPrompt" rows="5" data-i18n="settings.systemPrompt.placeholder" data-i18n-attr="placeholder" placeholder="Пример: Ты — дружелюбный ассистент, который отвечает кратко и по делу."></textarea>
+                                        <div class="form-text" data-i18n="settings.systemPrompt.help">Укажите свой системный промпт, чтобы ИИ адаптировался к вашим предпочтениям. Не длиннее 1000 символов.</div>
+                                    </div>
+                                    <div class="border-bottom mb-4"></div>
+                                    <div class="mb-3">
+                                        <label class="form-label"><strong data-i18n="settings.tts.label">Озвучивание ответов (TTS)</strong></label>
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="ttsAutoplay">
+                                            <label class="form-check-label" for="ttsAutoplay" data-i18n="settings.tts.autoplay">Автоматически озвучивать ответы</label>
+                                        </div>
+                                        <div class="row g-3 align-items-end">
+                                            <div class="col-md-6">
+                                                <label for="ttsRate" class="form-label" data-i18n="settings.tts.rate">Скорость</label>
+                                                <input type="range" min="0.5" max="1.5" step="0.1" id="ttsRate" class="form-range">
+                                                <div class="d-flex justify-content-between small text-muted"><span>0.5</span><span>1.5</span></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="ttsPitch" class="form-label" data-i18n="settings.tts.pitch">Высота</label>
+                                                <input type="range" min="0.5" max="1.5" step="0.1" id="ttsPitch" class="form-range">
+                                                <div class="d-flex justify-content-between small text-muted"><span>0.5</span><span>1.5</span></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -354,33 +475,33 @@
                                 <div class="row g-4">
                                     <div class="col-md-5 text-center">
                                         <div class="mb-3">
-                                            <img id="avatarPreview" src="" alt="Аватар" class="rounded-circle border" style="width: 160px; height: 160px; object-fit: cover;">
+                                            <img id="avatarPreview" src="" alt="Аватар" data-i18n-attr="alt" data-i18n="settings.profile.avatar.alt" class="rounded-circle border" style="width: 160px; height: 160px; object-fit: cover;">
                                         </div>
                                         <div class="d-grid gap-2">
                                             <input class="form-control" type="file" id="avatarInput" accept="image/*">
                                             <input type="hidden" id="avatarFileId">
-                                            <small class="text-muted">Загрузите изображение в формате JPG/PNG, до 10МБ.</small>
+                                            <small class="text-muted" data-i18n="settings.profile.avatar.help">Загрузите изображение в формате JPG/PNG, до 10МБ.</small>
                                         </div>
                                     </div>
                                     <div class="col-md-7">
                                         <div class="card">
                                             <div class="card-body">
-                                                <h6 class="card-title mb-3">Смена пароля</h6>
+                                                <h6 class="card-title mb-3" data-i18n="settings.profile.password.title">Смена пароля</h6>
                                                 <div class="mb-3">
-                                                    <label for="currentPassword" class="form-label">Текущий пароль</label>
+                                                    <label for="currentPassword" class="form-label" data-i18n="settings.profile.password.current">Текущий пароль</label>
                                                     <input type="password" class="form-control" id="currentPassword" autocomplete="current-password">
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="newPassword" class="form-label">Новый пароль</label>
+                                                    <label for="newPassword" class="form-label" data-i18n="settings.profile.password.new">Новый пароль</label>
                                                     <input type="password" class="form-control" id="newPassword" autocomplete="new-password">
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="confirmPassword" class="form-label">Подтверждение пароля</label>
+                                                    <label for="confirmPassword" class="form-label" data-i18n="settings.profile.password.confirm">Подтверждение пароля</label>
                                                     <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password">
                                                 </div>
                                                 <div class="d-grid">
                                                     <button type="button" class="btn btn-outline-primary" id="changePasswordBtn">
-                                                        <i class="bi bi-shield-lock"></i> Изменить пароль
+                                                        <i class="bi bi-shield-lock"></i> <span data-i18n="settings.profile.password.change">Изменить пароль</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -388,13 +509,16 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="tab-pane fade" id="about" role="tabpanel" aria-labelledby="about-tab">
+                                <p class="text-muted" data-i18n="settings.about.text"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    <button type="button" class="btn btn-primary" id="saveUserSettings">Сохранить</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-i18n="modal.userSettings.close" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" id="saveUserSettings" data-i18n="modal.userSettings.save">Сохранить</button>
             </div>
         </div>
     </div>
@@ -408,49 +532,90 @@
                 <div class="modal-icon">
                     <i class="bi bi-pencil"></i>
                 </div>
-                <h3 class="modal-title">Переименовать чат</h3>
+                <h3 class="modal-title" data-i18n="rename.title">Переименовать чат</h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="form-group mb-4">
-                    <label for="renameRoomInput" class="form-label">Новое название</label>
+                    <label for="renameRoomInput" class="form-label" data-i18n="rename.label">Новое название</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-chat-square-text"></i></span>
                         <input type="text"
                                class="form-control"
                                id="renameRoomInput"
                                placeholder="Введите новое название"
+                               data-i18n="rename.placeholder" data-i18n-attr="placeholder"
                                maxlength="50"
                                required>
                     </div>
                     <div class="form-text text-end">
-                        <span id="renameCharCount">0</span>/50 символов
+                        <span id="renameCharCount">0</span>/50 <span data-i18n="rename.charcount.suffix">символов</span>
                     </div>
                 </div>
             </div>
             <input type="hidden" id="renamingRoomId">
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-lg me-1"></i> Отмена
+                    <i class="bi bi-x-lg me-1"></i> <span data-i18n="rename.cancel">Отмена</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="confirmRenameRoom">
-                    <i class="bi bi-check-lg me-1"></i> Сохранить
+                    <i class="bi bi-check-lg me-1"></i> <span data-i18n="modal.userSettings.save">Сохранить</span>
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!--JS libraries-->
-<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+<!-- Announcement Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-megaphone-fill me-2 fs-4"></i>
+                    <h5 class="modal-title mb-0" id="announcementTitle" data-i18n="announcement.loading">Загрузка...</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="announcement-loading p-5 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-3 text-muted" data-i18n="announcement.loading">Загрузка содержимого...</p>
+                </div>
+                <div id="announcementModalContent" class="p-4">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between align-items-center bg-light">
+                <div class="text-muted small" id="announcementDate"></div>
+                <div class="d-flex align-items-center">
+                    <span id="announcementCounter" class="badge bg-secondary me-3">0/0</span>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary" id="prevAnnouncement" disabled>
+                            <i class="bi bi-chevron-left"></i> <span>Назад</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="nextAnnouncement" disabled>
+                            <span>Вперед</span> <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS libraries -->
+<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- i18n must load before app scripts -->
+<script th:src="@{/js/i18n.js}" type="text/javascript"></script>
 <script th:src="@{/js/lib/marked.min.js}" type="text/javascript"></script>
 <script th:src="@{/js/lib/prism.js}" type="text/javascript"></script>
-
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>-->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!--User scripts-->
-<script type="text/javascript" th:src="@{/js/chat.js}"></script>
+<script th:src="@{/js/announcements.js}" type="module"></script>
+<script th:src="@{/js/announcement-display.js}" defer></script>
+<script th:src="@{/js/chat.js}" type="module"></script>
 <script type="text/javascript" th:src="@{/js/search.js}"></script>
 <script type="text/javascript" th:src="@{/js/theme-toggle.js}"></script>
 <script type="text/javascript" th:src="@{/js/user-settings.js}"></script>

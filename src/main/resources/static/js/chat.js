@@ -1,11 +1,17 @@
-// Конфигурация
+window.chatState = {
+    currentRoom: null,
+    rooms: [],
+    messages: []
+};
+
+// Config
 const config = {
     // Auto-scroll configuration
     autoScroll: {
         enabled: true,
         threshold: 100 // pixels from bottom to consider user at the bottom
     },
-    apiBaseUrl: '/api/chat', // Относительный URL для работы на всех устройствах,
+    apiBaseUrl: '/api/chat',
     theme: {
         LIGHT: 'light',
         DARK: 'dark',
@@ -16,6 +22,178 @@ const config = {
         }
     }
 };
+
+// Text-to-Speech (TTS) functionality for AI messages
+const tts = {
+    supported: ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window),
+    currentUtterance: null,
+    speakingMessageId: null,
+    selectedVoice: null,
+    isPaused: false,
+    settings: {
+        voiceURI: '',
+        rate: 1.0,
+        pitch: 1.0,
+        autoplay: false
+    },
+
+    init() {
+        if (!this.supported) return;
+        // Load saved settings
+        try {
+            const saved = JSON.parse(localStorage.getItem('tts_settings') || '{}');
+            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, ...saved };
+        } catch (_) { /* noop */ }
+        // Attempt to select a Russian voice if available
+        const pickVoice = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return;
+            // If user selected a voice, try to match by voiceURI
+            if (this.settings.voiceURI) {
+                const byURI = voices.find(v => v.voiceURI === this.settings.voiceURI);
+                if (byURI) this.selectedVoice = byURI;
+            }
+            // Fallbacks
+            if (!this.selectedVoice) {
+                this.selectedVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('ru'))
+                    || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
+                    || voices[0];
+            }
+        };
+        pickVoice();
+        // Voices may load asynchronously
+        window.speechSynthesis.onvoiceschanged = () => pickVoice();
+        // Stop TTS on page unload
+        window.addEventListener('beforeunload', () => this.stop());
+    },
+
+    applySettings(newSettings = {}) {
+        // Update runtime settings and persist
+        this.settings = { ...this.settings, ...newSettings };
+        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (_) { /* noop */ }
+        // Update selected voice if voiceURI changed
+        if (this.supported) {
+            const voices = window.speechSynthesis.getVoices();
+            if (Array.isArray(voices) && voices.length) {
+                if (this.settings.voiceURI) {
+                    const v = voices.find(v => v.voiceURI === this.settings.voiceURI);
+                    if (v) this.selectedVoice = v;
+                }
+            }
+        }
+        // If currently speaking, update control states
+        this.updateControlsState();
+    },
+
+    getVoices() {
+        if (!this.supported) return [];
+        return window.speechSynthesis.getVoices() || [];
+    },
+
+    play(text, messageId, lang = 'ru-RU') {
+        if (!this.supported || !text) return;
+        // If already speaking another message, stop it first
+        if (this.isSpeaking() && this.speakingMessageId !== messageId) {
+            this.stop();
+        }
+
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = this.selectedVoice?.lang || lang;
+        if (this.selectedVoice) utter.voice = this.selectedVoice;
+        utter.rate = Number(this.settings.rate) || 1.0; // normal speed
+        utter.pitch = Number(this.settings.pitch) || 1.0; // normal pitch
+        utter.onstart = () => {
+            this.isPaused = false;
+            this.updateControlsState();
+        };
+        utter.onpause = () => {
+            this.isPaused = true;
+            this.updateControlsState();
+        };
+        utter.onend = () => {
+            this.currentUtterance = null;
+            this.speakingMessageId = null;
+            this.isPaused = false;
+            this.updateControlsState();
+        };
+        utter.onerror = () => {
+            this.currentUtterance = null;
+            this.speakingMessageId = null;
+            this.isPaused = false;
+            this.updateControlsState();
+        };
+
+        this.currentUtterance = utter;
+        this.speakingMessageId = messageId;
+        this.isPaused = false;
+        window.speechSynthesis.cancel(); // ensure queue is cleared
+        window.speechSynthesis.speak(utter);
+        this.updateControlsState();
+    },
+
+    stop() {
+        if (!this.supported) return;
+        window.speechSynthesis.cancel();
+        this.currentUtterance = null;
+        this.speakingMessageId = null;
+        this.isPaused = false;
+        this.updateControlsState();
+    },
+
+    pause() {
+        if (!this.supported) return;
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+            window.speechSynthesis.pause();
+            this.isPaused = true;
+            this.updateControlsState();
+        }
+    },
+
+    resume() {
+        if (!this.supported) return;
+        // Use internal flag to handle browsers with unreliable paused state
+        if (this.currentUtterance && (this.isPaused || window.speechSynthesis.paused)) {
+            window.speechSynthesis.resume();
+            this.isPaused = false;
+            // Some browsers need a small delay before state reflects correctly
+            this.updateControlsState();
+            setTimeout(() => this.updateControlsState(), 60);
+        }
+    },
+
+    isSpeaking() {
+        if (!this.supported) return false;
+        return window.speechSynthesis.speaking && !window.speechSynthesis.paused;
+    },
+
+    updateControlsState() {
+        // Update play/pause/stop buttons visual state
+        document.querySelectorAll('.tts-controls').forEach(ctrl => {
+            const mid = ctrl.getAttribute('data-message-id');
+            const isPaused = this.isPaused || window.speechSynthesis.paused;
+            const isSpeakingOrPaused = (window.speechSynthesis.speaking || this.isPaused);
+            const isActive = this.speakingMessageId === mid && isSpeakingOrPaused;
+            ctrl.classList.toggle('tts-active', isActive);
+            const playBtn = ctrl.querySelector('[data-tts="play"]');
+            const pauseBtn = ctrl.querySelector('[data-tts="pause"]');
+            const resumeBtn = ctrl.querySelector('[data-tts="resume"]');
+            const stopBtn = ctrl.querySelector('[data-tts="stop"]');
+            if (playBtn) playBtn.disabled = isActive; // disable play if currently playing this message
+            if (pauseBtn) pauseBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking && !isPaused);
+            if (resumeBtn) resumeBtn.disabled = !(this.speakingMessageId === mid && isPaused);
+            if (stopBtn) stopBtn.disabled = !(this.speakingMessageId === mid && (window.speechSynthesis.speaking || isPaused));
+        });
+    }
+};
+
+tts.init();
+// Expose globally for settings module
+window.tts = tts;
+
+let eventSource = null;
+let chatConnections = {};
+// Используем глобальное состояние чата
+const state = window.chatState;
 
 // Context menu state
 let contextMenuState = {
@@ -29,6 +207,8 @@ const elements = (function() {
         roomsList: document.getElementById('roomsList'),
         currentRoomTitle: document.getElementById('currentRoomTitle'),
         chatMessages: document.getElementById('chatMessages'),
+        scrollTopBtn: document.getElementById('scrollTopBtn'),
+        scrollBottomBtn: document.getElementById('scrollBottomBtn'),
         messageInput: document.getElementById('messageInput'),
         sendButton: document.getElementById('sendMessageBtn'),
         stopButton: document.getElementById('stopGenerationBtn'),
@@ -47,7 +227,7 @@ const elements = (function() {
             elements.stopButton.addEventListener('click', () => {
                 if (state.currentRoom && state.currentRoom.id) {
                     stopStream(state.currentRoom.id);
-                    showNotification('Генерация остановлена', 'info');
+                    showNotification(window.i18n?.t('notify.generationStopped', 'Генерация остановлена'), 'info');
                 }
             });
         }
@@ -89,18 +269,37 @@ const elements = (function() {
                 });
             }
         }
+        // Scroll-to-top button click handler
+        if (elements.scrollTopBtn && elements.chatMessages) {
+            elements.scrollTopBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                try {
+                    elements.chatMessages.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch (_) {
+                    elements.chatMessages.scrollTop = 0;
+                }
+            });
+        }
+        // Scroll-to-bottom button click handler
+        if (elements.scrollBottomBtn && elements.chatMessages) {
+            elements.scrollBottomBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                try {
+                    elements.chatMessages.scrollTo({ top: elements.chatMessages.scrollHeight, behavior: 'smooth' });
+                } catch (_) {
+                    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+                }
+            });
+        }
         return elements;
     }
     return init();
 })();
 
-let eventSource = null;
-let chatConnections = {};
-let state = {
-    currentRoom: null,
-    rooms: [],
-    messages: []
-};
+// Re-render rooms list when language changes to refresh group titles/empty state
+window.addEventListener('i18n:changed', () => {
+    try { renderRoomsList(); } catch (_) { /* noop */ }
+});
 
 async function switchToLastRoom() {
     if (!state.rooms?.length) {
@@ -132,7 +331,7 @@ async function loadRooms() {
         }
     } catch (error) {
         console.error('Error loading rooms:', error);
-        showNotification('Не удалось загрузить комнаты. Пожалуйста, обновите страницу.', 'error');
+        showNotification(window.i18n?.t('error.roomsLoad', 'Не удалось загрузить комнаты. Пожалуйста, обновите страницу.'), 'error');
     }
 }
 
@@ -142,36 +341,35 @@ function renderRoomsList() {
     elements.roomsList.innerHTML = '';
 
     if (!state.rooms?.length) {
-        elements.roomsList.innerHTML = '<div class="no-rooms">История чатов пуста</div>';
-        hideInputs(true); // Прячем ввод и кнопку загрузки, если комнат нет
+        const empty = window.i18n?.t('rooms.empty', 'История чатов пуста');
+        elements.roomsList.innerHTML = `<div class="no-rooms">${empty}</div>`;
+        hideInputs(true);
         return;
     }
 
-    hideInputs(false); // Показываем ввод и кнопку загрузки, если комнаты есть
+    hideInputs(false);
 
-    // Группировка чатов
     const groupedRooms = groupRoomsByDate(state.rooms);
-    
-    // Отображение закрепленных чатов
+
     if (groupedRooms.pinned.length > 0) {
-        renderChatGroup('pinned', 'Закрепленные', groupedRooms.pinned, 'bi-pin-angle-fill');
+        renderChatGroup('pinned', window.i18n?.t('rooms.pinned', 'Закрепленные'), groupedRooms.pinned, 'bi-pin-angle-fill');
     }
-    
+
     // Отображение групп по времени
     if (groupedRooms.today.length > 0) {
-        renderChatGroup('today', 'Сегодня', groupedRooms.today, 'bi-clock');
+        renderChatGroup('today', window.i18n?.t('rooms.today', 'Сегодня'), groupedRooms.today, 'bi-clock');
     }
-    
+
     if (groupedRooms.yesterday.length > 0) {
-        renderChatGroup('yesterday', 'Вчера', groupedRooms.yesterday, 'bi-clock-history');
+        renderChatGroup('yesterday', window.i18n?.t('rooms.yesterday', 'Вчера'), groupedRooms.yesterday, 'bi-clock-history');
     }
-    
+
     if (groupedRooms.thisWeek.length > 0) {
-        renderChatGroup('thisWeek', 'На этой неделе', groupedRooms.thisWeek, 'bi-calendar-week');
+        renderChatGroup('thisWeek', window.i18n?.t('rooms.thisWeek', 'На этой неделе'), groupedRooms.thisWeek, 'bi-calendar-week');
     }
-    
+
     if (groupedRooms.older.length > 0) {
-        renderChatGroup('older', 'Ранее', groupedRooms.older, 'bi-archive');
+        renderChatGroup('older', window.i18n?.t('rooms.older', 'Ранее'), groupedRooms.older, 'bi-archive');
     }
 }
 
@@ -191,15 +389,13 @@ function groupRoomsByDate(rooms) {
         older: []
     };
 
-    // Сортируем комнаты по дате создания (новые сверху)
-    const sortedRooms = [...rooms].sort((a, b) => 
+    const sortedRooms = [...rooms].sort((a, b) =>
         new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
 
     sortedRooms.forEach(room => {
         if (!room?.id || !room?.title) return;
 
-        // Проверяем, закреплен ли чат
         if (isPinned(room.id)) {
             groups.pinned.push(room);
             return;
@@ -237,7 +433,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         }
     } catch (e) {}
 
-    // Заголовок группы
     const headerElement = document.createElement('div');
     headerElement.className = 'chat-group-header';
     headerElement.setAttribute('role', 'button');
@@ -251,7 +446,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         <i class="bi bi-chevron-down group-chevron" aria-hidden="true"></i>
     `;
 
-    // Обработчики для сворачивания/разворачивания конкретной группы
     const toggleGroup = () => {
         const willCollapse = !groupElement.classList.contains('collapsed');
         groupElement.classList.toggle('collapsed');
@@ -279,7 +473,6 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
         }
     });
 
-    // Контент группы
     const contentElement = document.createElement('div');
     contentElement.className = 'chat-group-content';
 
@@ -297,7 +490,7 @@ function createRoomElement(room) {
     const roomElement = document.createElement('div');
     const isActive = state.currentRoom?.id === room.id;
     const pinned = isPinned(room.id);
-    
+
     roomElement.className = `room-item ${isActive ? 'active' : ''} ${pinned ? 'pinned' : ''}`;
     roomElement.setAttribute('data-room-id', room.id);
     roomElement.setAttribute('data-room-title', room.title);
@@ -316,7 +509,7 @@ function createRoomElement(room) {
     const menuButton = document.createElement('button');
     menuButton.className = 'btn-menu';
     menuButton.innerHTML = '<i class="bi bi-three-dots-vertical"></i>';
-    menuButton.title = 'Действия';
+    menuButton.title = window.i18n?.t('room.actions', 'Действия');
     menuButton.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault(); // Предотвращаем любую стандартную обработку клика
@@ -361,15 +554,15 @@ function isPinned(roomId) {
 function togglePin(roomId) {
     const pinnedRooms = JSON.parse(localStorage.getItem('pinnedRooms') || '[]');
     const index = pinnedRooms.indexOf(roomId);
-    
+
     if (index > -1) {
         pinnedRooms.splice(index, 1);
-        showNotification('Чат откреплен', 'info');
+        showNotification(window.i18n?.t('notify.unpinned', 'Чат откреплен'), 'info');
     } else {
         pinnedRooms.push(roomId);
-        showNotification('Чат закреплен', 'success');
+        showNotification(window.i18n?.t('notify.pinned', 'Чат закреплен'), 'success');
     }
-    
+
     localStorage.setItem('pinnedRooms', JSON.stringify(pinnedRooms));
     renderRoomsList(); // Перерисовываем список
 }
@@ -392,19 +585,20 @@ async function switchRoom(room) {
         elements.messageInput.classList.toggle('grey-color', !room.active);
 
         if (!room.active && elements.limitMessages) {
-            elements.limitMessages.innerHTML = '<div class="limit-messages">Превышен лимит сообщений в комнате</div>';
+            const txt = window.i18n?.t('limit.exceeded', 'Превышен лимит сообщений в комнате');
+            elements.limitMessages.innerHTML = `<div class="limit-messages">${txt}</div>`;
         } else if (elements.limitMessages) {
             elements.limitMessages.innerHTML = '';
         }
 
         scrollToBottom(true);
-            // Закрываем сайдбар в мобильной версии после выбора чата
-            if (window.innerWidth < 768 && window.sidebarManager) {
-                setTimeout(() => window.sidebarManager.close(), 150);
-            }
+        // Закрываем сайдбар в мобильной версии после выбора чата
+        if (window.innerWidth < 768 && window.sidebarManager) {
+            setTimeout(() => window.sidebarManager.close(), 150);
+        }
     } catch (error) {
         console.error('Error switching room:', error);
-        showNotification('Ошибка загрузки', 'error');
+        showNotification(window.i18n?.t('error.switchRoom', 'Ошибка загрузки'), 'error');
     }
 }
 
@@ -437,7 +631,7 @@ async function loadRoomMessages(roomId) {
         renderMessages();
     } catch (error) {
         console.error('Error loading messages:', error);
-        showNotification('Ошибка загрузки сообщений. Обновите страницу.', 'error');
+        showNotification(window.i18n?.t('error.messagesLoad', 'Ошибка загрузки сообщений. Обновите страницу.'), 'error');
     }
 }
 
@@ -458,7 +652,7 @@ function isNearBottom() {
 // Scroll to bottom only if user is already at the bottom or auto-scroll is forced
 function scrollToBottom(force = false) {
     if (!elements || !elements.chatMessages) return;
-    
+
     if (force || !userScrolledUp || isNearBottom()) {
         elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
         userScrolledUp = false;
@@ -468,16 +662,37 @@ function scrollToBottom(force = false) {
 // Handle scroll events to detect user scroll up
 function setupScrollHandlers() {
     if (!elements || !elements.chatMessages) return;
-    
+
+    const updateScrollButtons = () => {
+        const sc = elements.chatMessages.scrollTop;
+        const max = elements.chatMessages.scrollHeight - elements.chatMessages.clientHeight;
+        const showTop = sc > 200;
+        const showBottom = max - sc > config.autoScroll.threshold; // not near bottom
+        // Mutual exclusivity: show only one button at the same fixed position
+        if (showBottom) {
+            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.remove('d-none');
+            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
+        } else if (showTop) {
+            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.remove('d-none');
+            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
+        } else {
+            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
+            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
+        }
+    };
+
     elements.chatMessages.addEventListener('scroll', () => {
         userScrolledUp = !isNearBottom();
+        updateScrollButtons();
     });
+
+    updateScrollButtons();
 }
 
 async function createRoom() {
     try {
         const response = await fetch(
-            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent('Новый чат')}`,
+            `${config.apiBaseUrl}/rooms/create?userId=${elements.userId}&title=${encodeURIComponent(window.i18n?.t('sidebar.newChat', 'Новый чат'))}`,
             {
                 method: 'GET',
                 headers: {
@@ -501,7 +716,7 @@ async function createRoom() {
         return newRoom;
     } catch (error) {
         console.error('Error creating room:', error);
-        showNotification(`Не удалось создать комнату: ${error.message}`, 'error');
+        showNotification(`${window.i18n?.t('error.createRoom', 'Не удалось создать комнату')}: ${error.message}`, 'error');
         return null;
     }
 }
@@ -530,7 +745,7 @@ async function generateChatNameFromMessage(message, roomId) {
                 }
             }
         );
-        
+
         if (response.ok) {
             const updatedRoom = await response.json();
             // Update the room in the state
@@ -538,10 +753,10 @@ async function generateChatNameFromMessage(message, roomId) {
             if (roomIndex !== -1) {
                 state.rooms[roomIndex] = updatedRoom;
             }
-            
+
             // Update the UI
             renderRoomsList();
-            
+
             // If this is the current room, update the title
             if (state.currentRoom && state.currentRoom.id === updatedRoom.id) {
                 state.currentRoom.title = updatedRoom.title;
@@ -571,31 +786,31 @@ async function sendMessage() {
     const roomId = state.currentRoom.id;
     const isFirstMessage = state.messages.length === 0;
     let fileData = null;
-    
+
     // If this is the first message in the chat, generate a name based on the message
     if (isFirstMessage && messageContent) {
         // Don't await this, let it happen in the background
         generateChatNameFromMessage(messageContent, roomId);
     }
-    
+
     // Upload file first if exists
     if (files.length) {
         try {
             fileData = await uploadFile(files[0]);
         } catch (error) {
             console.error('Error uploading file:', error);
-            showNotification('Ошибка при загрузке файла', 'error');
+            showNotification(window.i18n?.t('error.fileUpload', 'Ошибка при загрузке файла'), 'error');
             elements.sendButton.disabled = false;
             return;
         }
     }
-    
+
     // Create temp message with file data if available
     const tempMessage = getTempMessage(roomId, messageContent, 'temp-user-', elements.userId);
     if (fileData) {
         tempMessage.fileData = fileData;
     }
-    
+
     state.messages.push(tempMessage);
     renderMessages();
     scrollToBottom(true);
@@ -668,10 +883,18 @@ async function sendMessage() {
                 } else if (message.error === 'SERVER_ERROR') {
                     onErrorSendMessage(message.content, roomId, tempMessage);
                 } else {
-                    state.messages.push(getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant'));
+                    const finalMsg = getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant');
+                    state.messages.push(finalMsg);
                     window.dispatchEvent(new CustomEvent('messageSent'));
-                    //renderMessages();
+                    renderMessages();
                     scrollToBottom(true);
+                    // Autoplay TTS if enabled
+                    try {
+                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && finalMsg?.content) {
+                            const plainText = finalMsg.content.replace(/<[^>]*>/g, '');
+                            window.tts.play(plainText, finalMsg.id);
+                        }
+                    } catch (_) { /* noop */ }
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
@@ -739,11 +962,11 @@ function toggleStreamingUI(isStreaming) {
         elements.stopButton.disabled = false;
         elements.stopButton.style.display = 'flex';
         elements.stopButton.style.visibility = 'visible';
-        
+
         // Disable send button and upload button during streaming
         elements.sendButton.disabled = true;
         if (elements.uploadButton) elements.uploadButton.disabled = true;
-        
+
         // Update current room state
         if (state.currentRoom) {
             state.currentRoom.isStreaming = true;
@@ -752,11 +975,11 @@ function toggleStreamingUI(isStreaming) {
         // Deactivate stop button but keep it in the layout
         elements.stopButton.classList.remove('active');
         elements.stopButton.disabled = true;
-        
+
         // Re-enable send button and upload button
         elements.sendButton.disabled = false;
         if (elements.uploadButton) elements.uploadButton.disabled = false;
-        
+
         // Update current room state
         if (state.currentRoom) {
             state.currentRoom.isStreaming = false;
@@ -768,7 +991,7 @@ function stopStream(chatId) {
     if (chatConnections[chatId]) {
         chatConnections[chatId].close();
         delete chatConnections[chatId];
-        
+
         if (state.currentRoom && state.currentRoom.id === chatId) {
             state.currentRoom.isStreaming = false;
         }
@@ -878,7 +1101,6 @@ function removeFile(index) {
     showFilePreviews(files);
 }
 
-// Утилита для debouncing
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -950,7 +1172,7 @@ const showFilePreviews = debounce((files) => {
     });
 
     updateSendButtonState();
-}, 100); // Задержка 100 мс
+}, 100);
 
 function attachRemoveHandler(previewElement, index) {
     const removeBtn = previewElement.querySelector('.file-preview-remove');
@@ -1013,7 +1235,7 @@ async function uploadFile(file) {
             const error = await response.text();
             throw new Error(`File upload failed: ${error}`);
         }
-        
+
         // Get the file data from the response
         return await response.json();
     } catch (error) {
@@ -1025,11 +1247,11 @@ async function uploadFile(file) {
 
 function getFilePreviewUrl(fileData) {
     if (!fileData) return '';
-    
+
     if (fileData.contentType && fileData.contentType.startsWith('image/')) {
         return `/api/files/${fileData.id}/preview`;
     }
-    
+
     return ''; // For non-image files, we'll just show an icon
 }
 
@@ -1051,7 +1273,7 @@ const typingIndicator = {
 
             // Try to find existing container or create a new one
             this.container = document.getElementById('typingIndicatorContainer');
-            
+
             if (!this.container) {
                 this.container = document.createElement('div');
                 this.container.id = 'typingIndicatorContainer';
@@ -1066,16 +1288,16 @@ const typingIndicator = {
                     </div>`;
 
                 // Find the best place to insert the typing indicator
-                const chatContainer = document.querySelector('.chat-messages')?.parentElement || 
-                                    document.querySelector('.chat-container') || 
-                                    document.body;
-                
+                const chatContainer = document.querySelector('.chat-messages')?.parentElement ||
+                    document.querySelector('.chat-container') ||
+                    document.body;
+
                 if (chatContainer) {
                     // Insert before the chat input if possible
-                    const chatInput = chatContainer.querySelector('.message-input') || 
-                                    chatContainer.querySelector('input[type="text"]') ||
-                                    chatContainer.lastElementChild;
-                    
+                    const chatInput = chatContainer.querySelector('.message-input') ||
+                        chatContainer.querySelector('input[type="text"]') ||
+                        chatContainer.lastElementChild;
+
                     if (chatInput) {
                         chatContainer.insertBefore(this.container, chatInput.nextSibling);
                     } else {
@@ -1086,7 +1308,7 @@ const typingIndicator = {
                 console.warn('Could not find a suitable container for the typing indicator');
                 return false;
             }
-            
+
             return true;
         } catch (error) {
             console.error('Error initializing typing indicator:', error);
@@ -1122,14 +1344,14 @@ const voiceInput = {
     isListening: false,
     recognition: null,
     finalTranscript: '',
-    
+
     init() {
         // Check for browser support
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             this.showUnsupportedMessage();
             return;
         }
-        
+
         // Initialize speech recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
@@ -1137,19 +1359,19 @@ const voiceInput = {
         this.recognition.interimResults = true;
         this.recognition.maxAlternatives = 1;
         this.recognition.lang = 'ru-RU';
-        
+
         // Setup event handlers
         this.recognition.onstart = this.onStart.bind(this);
         this.recognition.onresult = this.onResult.bind(this);
         this.recognition.onerror = this.onError.bind(this);
         this.recognition.onend = this.onEnd.bind(this);
-        
+
         // Add click handler to the voice input button
         const voiceBtn = document.getElementById('voiceInputBtn');
         if (voiceBtn) {
             voiceBtn.addEventListener('click', this.toggleListening.bind(this));
         }
-        
+
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.code === 'Space') {
                 e.preventDefault();
@@ -1157,7 +1379,7 @@ const voiceInput = {
             }
         });
     },
-    
+
     toggleListening() {
         if (this.isListening) {
             this.stopListening();
@@ -1165,14 +1387,14 @@ const voiceInput = {
             this.startListening();
         }
     },
-    
+
     startListening() {
         if (!this.recognition) return;
-        
+
         this.finalTranscript = '';
         this.isListening = true;
         document.getElementById('voiceInputBtn').classList.add('recording');
-        
+
         try {
             this.recognition.start();
         } catch (error) {
@@ -1181,24 +1403,24 @@ const voiceInput = {
             this.stopListening();
         }
     },
-    
+
     stopListening() {
         if (!this.recognition) return;
-        
+
         this.isListening = false;
-        
+
         try {
             this.recognition.stop();
         } catch (error) {
             console.error('Error stopping speech recognition:', error);
         }
-        
+
         const voiceBtn = document.getElementById('voiceInputBtn');
         if (voiceBtn) {
             voiceBtn.classList.remove('recording');
         }
     },
-    
+
     onStart() {
         // Only clear on first start, not on auto-restart
         if (!this.isListening) {
@@ -1207,14 +1429,14 @@ const voiceInput = {
         }
         this.isListening = true;
     },
-    
+
     onResult(event) {
         let interimTranscript = '';
-        
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i];
             const transcript = result[0].transcript;
-            
+
             if (result.isFinal) {
                 // Add space between phrases for better readability
                 this.finalTranscript = (this.finalTranscript + ' ' + transcript).trim();
@@ -1225,20 +1447,20 @@ const voiceInput = {
                 interimTranscript = transcript;
             }
         }
-        
+
         // Update the input field with both final and interim results
         const input = document.getElementById('messageInput');
         const displayText = (this.finalTranscript + ' ' + interimTranscript).trim();
         input.value = displayText;
-        
+
         // Move cursor to the end of the input
         input.focus();
         input.setSelectionRange(displayText.length, displayText.length);
-        
+
         // Trigger input event for any listeners
         input.dispatchEvent(new Event('input'));
     },
-    
+
     // Clear the current transcription
     clearTranscription() {
         this.finalTranscript = '';
@@ -1246,21 +1468,21 @@ const voiceInput = {
         input.value = '';
         input.dispatchEvent(new Event('input'));
     },
-    
+
     onError(event) {
         console.error('Speech recognition error', event.error);
-        
+
         let errorMessage = 'Ошибка распознавания речи';
         if (event.error === 'not-allowed') {
             errorMessage = 'Доступ к микрофону запрещен. Пожалуйста, разрешите доступ к микрофону в настройках браузера.';
         } else if (event.error === 'audio-capture') {
             errorMessage = 'Не удалось получить доступ к микрофону. Убедитесь, что микрофон подключен и настроен правильно.';
         }
-        
+
         this.showError(errorMessage);
         this.stopListening();
     },
-    
+
     onEnd() {
         if (this.isListening) {
             try {
@@ -1272,21 +1494,21 @@ const voiceInput = {
             }
         }
     },
-    
+
     showUnsupportedMessage() {
         const voiceBtn = document.getElementById('voiceInputBtn');
         if (voiceBtn) {
             voiceBtn.disabled = true;
             voiceBtn.title = 'Голосовой ввод не поддерживается в вашем браузере';
             voiceBtn.classList.add('tooltip');
-            
+
             const tooltip = document.createElement('span');
             tooltip.className = 'tooltiptext';
             tooltip.textContent = 'Голосовой ввод поддерживается в последних версиях Chrome, Edge, Safari и других современных браузеров';
             voiceBtn.appendChild(tooltip);
         }
     },
-    
+
     showError(message) {
         showNotification(message, 'error');
     }
@@ -1311,7 +1533,7 @@ const uxFeatures = {
                     showNotification('Сообщение скопировано', 'success');
                 } catch (error) {
                     console.error('Failed to copy:', error);
-                    showNotification('Ошибка копирования', 'error');
+                    showNotification(window.i18n?.t('notify.copyError', 'Ошибка копирования'), 'error');
                 }
             });
 
@@ -1354,7 +1576,7 @@ async function handleDeleteRoom(roomId, title) {
             state.currentRoom = null;
             state.messages = [];
             elements.chatMessages.innerHTML = '';
-            elements.currentRoomTitle.textContent = 'Выберите или создайте чат';
+            elements.currentRoomTitle.textContent = window.i18n?.t('chat.header.selectOrCreate', 'Выберите или создайте чат');
         }
 
         renderRoomsList();
@@ -1377,72 +1599,75 @@ async function handleDeleteRoom(roomId, title) {
                 <div class="mb-4" style="width: 130px; height: 130px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);">
                     <i class="bi bi-robot" style="font-size: 3.5rem; color: white;"></i>
                 </div>
-                <h3 class="mb-3 fw-bold">Добро пожаловать в AI Чат-ассистент</h3>
-                <p class="text-muted mb-4 fs-5">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
+                <h3 class="mb-3 fw-bold" data-i18n="welcome.title">Добро пожаловать в AI Чат-ассистент</h3>
+                <p class="text-muted mb-4 fs-5" data-i18n="welcome.subtitle">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
                 <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm" onclick="createRoom()">
-                    <i class="bi bi-plus-lg me-2"></i>Начать новый диалог
+                    <i class="bi bi-plus-lg me-2"></i><span data-i18n="welcome.start">Начать новый диалог</span>
                 </button>
                 <div class="mt-5 pt-4 border-top w-100">
-                    <h5 class="mb-4">Что я могу для вас сделать:</h5>
+                    <h5 class="mb-4" data-i18n="welcome.section.title">Что я могу для вас сделать:</h5>
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.idea.text', 'Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-lightbulb-fill text-primary"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Идеи для разработки</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.idea.title">Идеи для разработки</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.idea.text">Какие есть интересные идеи для веб-приложения на Spring Boot и Jakarta EE?</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.optimize.text', 'Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-code-square text-success"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Оптимизация кода</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.optimize.title">Оптимизация кода</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.optimize.text">Как оптимизировать SQL-запрос с множественными JOIN и подзапросами?</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.arch.text', 'Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-info bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-gear-fill text-info"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Архитектура приложений</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.arch.title">Архитектура приложений</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.arch.text">Как создать RESTful API с Jakarta EE и документировать его с OpenAPI?</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm hover-shadow cursor-pointer transition-all"
-                                 onclick="setExampleQuestion('Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория')">
+                                 onclick="setExampleQuestion(window.i18n?.t('welcome.cards.examples.text', 'Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория'))">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
                                             <i class="bi bi-file-earmark-code-fill text-warning"></i>
                                         </div>
-                                        <h6 class="mb-0 fw-bold">Примеры кода</h6>
+                                        <h6 class="mb-0 fw-bold" data-i18n="welcome.cards.examples.title">Примеры кода</h6>
                                     </div>
-                                    <p class="text-muted mb-0">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
+                                    <p class="text-muted mb-0" data-i18n="welcome.cards.examples.text">Напиши пример использования Spring Data JPA с Lombok для создания сущности и репозитория</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>`;
+
+            // Apply i18n to the newly created welcome screen
+            try { window.i18n?.apply(welcomeScreen); } catch (_) {}
 
             // Clear chat messages and append new welcome screen
             elements.chatMessages.innerHTML = '';
@@ -1457,10 +1682,10 @@ async function handleDeleteRoom(roomId, title) {
             localStorage.removeItem('lastRoomId');
         }
 
-        showNotification('Чат успешно удалён', 'success');
+        showNotification(window.i18n?.t('success.chatDeleted', 'Чат успешно удалён'), 'success');
     } catch (error) {
         console.error('Error deleting room:', error);
-        showNotification(`Не удалось удалить чат: ${error.message}`, 'error');
+        showNotification(`${window.i18n?.t('error.deleteChat', 'Не удалось удалить чат')}: ${error.message}`, 'error');
     } finally {
         // Restore button state
         if (deleteButton) {
@@ -1472,19 +1697,19 @@ async function handleDeleteRoom(roomId, title) {
 
 async function confirmDeleteChat(title) {
     const result = await Swal.fire({
-        title: '<span class="delete-title">Подтверждение удаления</span>',
+        title: `<span class="delete-title">${window.i18n?.t('delete.confirm.title', 'Подтверждение удаления')}</span>`,
         html: `<div class="delete-message">
                 <div class="delete-icon-container">
                     <i class="bi bi-trash-fill delete-icon-animated"></i>
                 </div>
-                <p>Вы уверены, что хотите удалить чат</p>
+                <p>${window.i18n?.t('delete.confirm.text', 'Вы уверены, что хотите удалить чат')}</p>
                 <p class="chat-title">«${title}»</p>
-                <p class="delete-warning">Это действие нельзя будет отменить</p>
+                <p class="delete-warning">${window.i18n?.t('delete.confirm.warning', 'Это действие нельзя будет отменить')}</p>
               </div>`,
         icon: null,
         showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-trash me-1"></i> Удалить',
-        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+        confirmButtonText: `<i class="bi bi-trash me-1"></i> ${window.i18n?.t('delete.confirm.ok', 'Удалить')}`,
+        cancelButtonText: `<i class="bi bi-x me-1"></i> ${window.i18n?.t('delete.confirm.cancel', 'Отмена')}`,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#6c757d',
         reverseButtons: true,
@@ -1499,11 +1724,11 @@ async function confirmDeleteChat(title) {
         },
         buttonsStyling: true,
         allowOutsideClick: false,
-        showClass: { 
-            popup: 'animate__animated animate__fadeInDown animate__faster' 
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown animate__faster'
         },
-        hideClass: { 
-            popup: 'animate__animated animate__fadeOutUp animate__faster' 
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp animate__faster'
         },
         didOpen: (modal) => {
             // Добавляем стили для красивого отображения диалога
@@ -1693,11 +1918,11 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
     // Get context menu element
     const contextMenu = document.getElementById('roomContextMenu');
     if (!contextMenu) return;
-    
+
     // Check if clicking the same room with an open menu
     const isSameRoom = lastClickedRoom === roomId;
     const menuIsVisible = contextMenu.classList.contains('visible');
-    
+
     if (isSameRoom && menuIsVisible) {
         hideContextMenu();
         return;
@@ -1718,7 +1943,9 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
             pinIcon.className = isPinned ? 'bi bi-pin-angle-fill' : 'bi bi-pin-angle';
         }
         if (pinText) {
-            pinText.textContent = isPinned ? 'Открепить' : 'Закрепить';
+            pinText.textContent = isPinned
+                ? window.i18n?.t('context.unpin', 'Открепить')
+                : window.i18n?.t('context.pin', 'Закрепить');
         }
     }
 
@@ -1794,24 +2021,24 @@ function handleContextMenuAction(action) {
 function showRenameRoomModal(roomId, currentTitle) {
     // Unified SweetAlert2 dialog styled similarly to delete confirmation
     Swal.fire({
-        title: '<span class="rename-title">Переименовать чат</span>',
+        title: `<span class="rename-title">${window.i18n?.t('rename.title', 'Переименовать чат')}</span>`,
         input: 'text',
         inputValue: currentTitle || '',
         inputAttributes: {
             maxlength: '50',
             autocapitalize: 'off',
             autocorrect: 'off',
-            'aria-label': 'Новое название чата'
+            'aria-label': window.i18n?.t('rename.label', 'Новое название')
         },
         html: `<div class="rename-message">
                 <div class="rename-icon-container">
                     <i class="bi bi-pencil-square rename-icon-animated"></i>
                 </div>
-                <p class="text-muted mb-0">Введите новое название чата</p>
+                <p class="text-muted mb-0">${window.i18n?.t('rename.placeholder', 'Введите новое название чата')}</p>
                </div>`,
         showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Сохранить',
-        cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+        confirmButtonText: `<i class="bi bi-check-lg me-1"></i> ${window.i18n?.t('common.save', 'Сохранить')}`,
+        cancelButtonText: `<i class="bi bi-x me-1"></i> ${window.i18n?.t('common.cancel', 'Отмена')}`,
         confirmButtonColor: '#0d6efd',
         cancelButtonColor: '#6c757d',
         reverseButtons: true,
@@ -2117,17 +2344,22 @@ function renderMessages() {
     elements.chatMessages.innerHTML = '';
 
     if (!state.messages.length && state.currentRoom) {
+        const t = (k, f) => (window.i18n && typeof window.i18n.t === 'function') ? window.i18n.t(k, f) : (f || k);
+        const s1 = t('emptyChat.suggestion.1', 'Расскажи о себе');
+        const s2 = t('emptyChat.suggestion.2', 'Помоги мне с Java');
+        const s3 = t('emptyChat.suggestion.3', 'Что такое Spring Data JPA?');
+        const esc = (str) => String(str).replace(/'/g, "&#39;");
         elements.chatMessages.innerHTML = `
             <div class="empty-chat-container">
                 <div class="empty-chat-illustration">
                     <i class="bi bi-chat-dots"></i>
                 </div>
-                <h4>Начните общение</h4>
-                <p class="text-muted">Это начало вашего разговора с AI ассистентом.<br>Чем я могу вам помочь?</p>
+                <h4>${t('emptyChat.title', 'Начните общение')}</h4>
+                <p class="text-muted">${t('emptyChat.subtitle', 'Это начало вашего разговора с AI ассистентом. Чем я могу вам помочь?')}</p>
                 <div class="empty-chat-suggestions">
-                    <button class="suggestion-btn" onclick="setExampleQuestion('Расскажи о себе')">Расскажи о себе</button>
-                    <button class="suggestion-btn" onclick="setExampleQuestion('Помоги мне с Java')">Помоги мне с Java</button>
-                    <button class="suggestion-btn" onclick="setExampleQuestion('Что такое Spring Data JPA?')">Что такое Spring Data JPA?</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('${esc(s1)}')">${s1}</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('${esc(s2)}')">${s2}</button>
+                    <button class="suggestion-btn" onclick="setExampleQuestion('${esc(s3)}')">${s3}</button>
                 </div>
             </div>`;
         return;
@@ -2178,13 +2410,25 @@ function renderMessages() {
             filePreviews += '</div>';
         }
 
+        const isAI = message.userId !== elements.userId;
+        const disabledAttr = tts.supported ? '' : 'disabled title="TTS не поддерживается браузером"';
+        const ttsControls = (isAI && message.content) ? `
+            <div class="tts-controls d-inline-flex align-items-center gap-1" data-message-id="${message.id}" title="Озвучить ответ">
+                <button class="btn btn-sm btn-outline-secondary" data-tts="play" aria-label="Озвучить" ${disabledAttr}><i class="bi bi-volume-up"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" data-tts="pause" aria-label="Пауза" ${disabledAttr}><i class="bi bi-pause"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" data-tts="resume" aria-label="Продолжить" ${disabledAttr}><i class="bi bi-play"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" data-tts="stop" aria-label="Стоп" ${disabledAttr}><i class="bi bi-stop"></i></button>
+            </div>
+        ` : '';
+
         messageElement.innerHTML = `
-            <div class="message-sender">${message.userId === elements.userId ? 'Вы' : 'AI'}</div>
+            <div class="message-sender">${isAI ? 'AI' : 'Вы'}</div>
             ${filePreviews}
             <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
-            <div class="message-meta">
+            <div class="message-meta d-flex align-items-center gap-2">
                 <span class="message-time">${formatTime(message.timestamp)}</span>
                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
+                ${ttsControls}
             </div>
         `;
 
@@ -2194,6 +2438,36 @@ function renderMessages() {
         }
 
         elements.chatMessages.appendChild(messageElement);
+
+        // Bind TTS controls for AI messages
+        if (isAI && message.content) {
+            const ctrl = messageElement.querySelector('.tts-controls');
+            if (ctrl) {
+                const textToSpeak = message.content.replace(/<[^>]*>/g, '');
+                const playBtn = ctrl.querySelector('[data-tts="play"]');
+                const pauseBtn = ctrl.querySelector('[data-tts="pause"]');
+                const resumeBtn = ctrl.querySelector('[data-tts="resume"]');
+                const stopBtn = ctrl.querySelector('[data-tts="stop"]');
+                if (tts.supported) {
+                    if (playBtn) playBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.play(textToSpeak, message.id);
+                    });
+                    if (pauseBtn) pauseBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.pause();
+                    });
+                    if (resumeBtn) resumeBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.resume();
+                    });
+                    if (stopBtn) stopBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tts.stop();
+                    });
+                }
+            }
+        }
     });
 
     // Add click handlers for images
@@ -2217,7 +2491,7 @@ function setupChatSearch() {
     searchContainer.innerHTML = `
     <div class="search-box position-relative">
         <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
-        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" placeholder="Поиск чатов...">
+        <input type="text" id="chatSearchInput" class="form-control rounded-pill ps-5" data-i18n-attr="placeholder" data-i18n="search.room" placeholder="Поиск чатов...">
         <i id="clearSearchBtn" class="bi bi-x-circle position-absolute end-0 top-50 translate-middle-y me-3 text-muted d-none" style="cursor: pointer;"></i>
     </div>
 `;
@@ -2280,12 +2554,10 @@ function setupChatSearch() {
         });
     };
 
-// Обработчик ввода в поле поиска
     searchInput.addEventListener('input', () => {
         performSearch(searchInput.value);
     });
 
-// Обработчик кнопки очистки
     clearButton.addEventListener('click', clearSearch);
 
     // Функция очистки поиска
@@ -2294,20 +2566,6 @@ function setupChatSearch() {
         performSearch('');
         searchInput.focus();
     }
-
-// Обработчик горячих клавиш (Ctrl+F для поиска)
-    document.addEventListener('keydown', (e) => {
-        // Ctrl+F для фокуса на поиске
-        if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.activeElement !== elements.messageInput) {
-            e.preventDefault();
-            searchInput.focus();
-        } 
-        // Escape для очистки и выхода из поиска
-        else if (e.key === 'Escape' && document.activeElement === searchInput) {
-            clearSearch();
-            searchInput.blur();
-        }
-    });
 }
 
 
@@ -2329,7 +2587,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (action) {
                     handleContextMenuAction(action);
                 }
-               // return;
+                // return;
             }
         });
 
@@ -2465,17 +2723,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (window.Swal && typeof window.Swal.fire === 'function') {
                 Swal.fire({
-                    title: '<span class="logout-title">Выйти из аккаунта?</span>',
+                    title: `<span class="logout-title">${window.i18n?.t('logout.confirm.title', 'Выйти из аккаунта?')}</span>`,
                     html: `<div class="logout-message">
                             <div class="logout-icon-container">
                                 <i class="bi bi-box-arrow-right logout-icon-animated"></i>
                             </div>
-                            <p class="text-muted mb-0">Вы сможете войти снова в любое время.</p>
+                            <p class="text-muted mb-0">${window.i18n?.t('logout.confirm.text', 'Вы уверены, что хотите выйти?')}</p>
                            </div>`,
                     icon: null,
                     showCancelButton: true,
-                    confirmButtonText: '<i class="bi bi-door-open me-1"></i> Выйти',
-                    cancelButtonText: '<i class="bi bi-x me-1"></i> Отмена',
+                    confirmButtonText: `<i class="bi bi-door-open me-1"></i> ${window.i18n?.t('logout.confirm.ok', 'Выйти')}`,
+                    cancelButtonText: `<i class="bi bi-x me-1"></i> ${window.i18n?.t('logout.confirm.cancel', 'Отмена')}`,
                     reverseButtons: true,
                     focusCancel: true,
                     confirmButtonColor: '#0d6efd',
@@ -2525,7 +2783,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else {
                 // Fallback на стандартное подтверждение, если SweetAlert2 недоступен
-                if (confirm('Выйти из аккаунта?')) {
+                if (confirm(window.i18n?.t('logout.confirm.title', 'Выйти из аккаунта?'))) {
                     form.submit();
                 }
             }

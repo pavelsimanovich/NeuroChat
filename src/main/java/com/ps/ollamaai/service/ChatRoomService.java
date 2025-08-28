@@ -97,9 +97,7 @@ public class ChatRoomService {
 
         // 4. Снова получаем сообщения и удаляем их
         List<ChatMessage> messagesToDelete = chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
-        for (ChatMessage message : messagesToDelete) {
-            chatMessageRepository.delete(message);
-        }
+        chatMessageRepository.deleteAll(messagesToDelete);
         entityManager.flush();
         entityManager.clear();
 

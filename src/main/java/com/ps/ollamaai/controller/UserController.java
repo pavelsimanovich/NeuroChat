@@ -1,6 +1,7 @@
 package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.User;
+import com.ps.ollamaai.dto.RegistrationRequest;
 import com.ps.ollamaai.dto.ChangePasswordRequest;
 import com.ps.ollamaai.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,29 +35,39 @@ public class UserController {
 
     @GetMapping("/registration")
     public String registration(Model model) {
-        model.addAttribute("user", new User());
+        model.addAttribute("registrationRequest", new RegistrationRequest());
         return "registration";
     }
 
     @PostMapping("/saveUser")
-    public String saveUser(@Valid @ModelAttribute User user, BindingResult bindingResult, 
-                          Model model, HttpServletRequest request) {
-        // Проверка валидации входных данных
+    public String saveUser(@Valid @ModelAttribute("registrationRequest") RegistrationRequest requestDto,
+                           BindingResult bindingResult,
+                           Model model, HttpServletRequest request) {
+        if (!bindingResult.hasFieldErrors("confirmPassword") &&
+                requestDto.getPassword() != null && requestDto.getConfirmPassword() != null &&
+                !requestDto.getPassword().equals(requestDto.getConfirmPassword())) {
+            bindingResult.addError(new FieldError("registrationRequest", "confirmPassword", "Пароли не совпадают"));
+        }
+
+        // Проверка существования пользователя с таким email
+        if (requestDto.getEmail() != null && userService.findByEmail(requestDto.getEmail()) != null) {
+            bindingResult.addError(new FieldError("registrationRequest", "email", "Пользователь с таким email уже существует"));
+        }
+
         if (bindingResult.hasErrors()) {
             return "registration";
         }
 
-        // Проверка, что пользователь с таким email не существует
-        if (userService.findByEmail(user.getEmail()) != null) {
-            model.addAttribute("error", "Пользователь с таким email уже существует");
-            return "registration";
-        }
-
         try {
-            // Логируем IP-адрес при регистрации для безопасности
             String ipAddress = getClientIp(request);
-            log.info("Регистрация нового пользователя с email: {}, IP: {}", 
-                    user.getEmail(), ipAddress);
+            log.info("Регистрация нового пользователя с email: {}, IP: {}",
+                    requestDto.getEmail(), ipAddress);
+
+            User user = new User();
+            user.setEmail(requestDto.getEmail());
+            user.setPassword(requestDto.getPassword());
+            user.setFirstName(requestDto.getFirstName());
+            user.setLastName(requestDto.getLastName());
 
             userService.save(user);
             model.addAttribute("message", SUCCESS_REGISTRATION);

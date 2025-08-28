@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="admin.title">Админ-панель</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .card-chart { min-height: 320px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/home" data-i18n="brand.name">AI Chat</a>
+        <div class="d-flex">
+            <a class="btn btn-outline-light" href="/home"><i class="bi bi-arrow-left"></i> <span data-i18n="admin.nav.back">Назад</span></a>
+        </div>
+    </div>
+</nav>
+<div class="container my-4">
+    <!-- Tabs header -->
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring" type="button" role="tab" aria-controls="monitoring" aria-selected="true" data-i18n="admin.tabs.monitoring">Мониторинг</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false" data-i18n="admin.tabs.users">Пользователи</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab" aria-controls="announcements" aria-selected="false" data-i18n="admin.tabs.announcements">Объявления</button>
+        </li>
+    </ul>
+
+    <!-- Tabs content -->
+    <div class="tab-content pt-3" id="adminTabsContent">
+        <!-- Monitoring Pane -->
+        <div class="tab-pane fade show active" id="monitoring" role="tabpanel" aria-labelledby="monitoring-tab" tabindex="0">
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h3 class="mb-0" data-i18n="admin.monitoring.title">Мониторинг</h3>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <span class="input-group-text" data-i18n="admin.monitoring.period">Период:</span>
+                                <select id="timeRangeSelect" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="5" data-i18n="time.5m">5 мин</option>
+                                    <option value="15" data-i18n="time.15m" selected>15 мин</option>
+                                    <option value="30" data-i18n="time.30m">30 мин</option>
+                                    <option value="60" data-i18n="time.1h">1 час</option>
+                                    <option value="180" data-i18n="time.3h">3 часа</option>
+                                    <option value="360" data-i18n="time.6h">6 часов</option>
+                                </select>
+                                <span class="input-group-text" data-i18n="admin.monitoring.interval">Интервал:</span>
+                                <select id="metricsIntervalSelect" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="3000" data-i18n="interval.3s">3 сек</option>
+                                    <option value="5000" data-i18n="interval.5s" selected>5 сек</option>
+                                    <option value="10000" data-i18n="interval.10s">10 сек</option>
+                                    <option value="30000" data-i18n="interval.30s">30 сек</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="text-muted small" data-i18n="admin.monitoring.uptime">Время работы (ЧЧ:ММ:СС)</div>
+                                    <div id="uptime" class="fs-5 fw-bold">—</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="text-muted small" data-i18n="admin.monitoring.httpRps">HTTP req/s (посл. замер)</div>
+                                    <div id="httpRps" class="fs-5 fw-bold">—</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-6">
+                            <div class="card card-chart">
+                                <div class="card-header" data-i18n="admin.monitoring.chart.rps">HTTP Requests per second</div>
+                                <div class="card-body"><canvas id="rpsChart" height="120"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <div class="card card-chart">
+                                <div class="card-header" data-i18n="admin.monitoring.chart.cpu">CPU Usage (%)</div>
+                                <div class="card-body"><canvas id="cpuChart" height="120"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="card card-chart">
+                                <div class="card-header" data-i18n="admin.monitoring.chart.heap">Heap Memory (MB)</div>
+                                <div class="card-body"><canvas id="heapChart" height="120"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Pane -->
+        <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab" tabindex="0">
+            <div class="col-12 mt-4">
+                <h3 class="mb-3" data-i18n="admin.users.stats.title">Статистика пользователей</h3>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="text-muted small" data-i18n="admin.users.stats.total">Всего</div>
+                                <div id="userStatTotal" class="fs-5 fw-bold">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="text-muted small" data-i18n="admin.users.stats.new24h">Новые (24ч)</div>
+                                <div id="userStatNew24h" class="fs-5 fw-bold">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="text-muted small" data-i18n="admin.users.stats.new7d">Новые (7д)</div>
+                                <div id="userStatNew7d" class="fs-5 fw-bold">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 mt-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0" data-i18n="admin.users.title">Пользователи</h3>
+                    <div class="input-group" style="max-width: 360px;">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input id="userSearch" type="text" class="form-control" data-i18n="admin.users.search" data-i18n-attr="placeholder" placeholder="Поиск по email/имени">
+                    </div>
+                </div>
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm align-middle table-hover">
+                        <thead>
+                        <tr>
+                            <th data-i18n="admin.users.table.email">Email</th>
+                            <th data-i18n="admin.users.table.name">Имя</th>
+                            <th data-i18n="admin.users.table.role">Роль</th>
+                            <th data-i18n="admin.users.table.status">Статус</th>
+                            <th data-i18n="admin.users.table.created">Создан</th>
+                            <th class="text-end" data-i18n="admin.users.table.actions">Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements Pane -->
+        <div class="tab-pane fade" id="announcements" role="tabpanel" aria-labelledby="announcements-tab" tabindex="0">
+            <div class="col-12 mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0" data-i18n="admin.ann.title">Управление объявлениями</h3>
+                    <button id="newAnnouncementBtn" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i> <span data-i18n="admin.ann.new">Новое объявление</span>
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="announcementsTable">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="admin.ann.table.title">Заголовок</th>
+                                        <th style="width: 180px" data-i18n="admin.ann.table.start">Начало показа</th>
+                                        <th style="width: 180px" data-i18n="admin.ann.table.end">Окончание</th>
+                                        <th style="width: 120px" data-i18n="admin.ann.table.status">Статус</th>
+                                        <th style="width: 100px" class="text-end" data-i18n="admin.ann.table.actions">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden" data-i18n="announcement.loading.sr">Загрузка...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Announcement Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel" data-i18n="admin.ann.modal.title">Новое объявление</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-i18n="common.close" data-i18n-attr="aria-label"></button>
+            </div>
+            <!-- Update the form with proper name attributes -->
+            <form id="announcementForm">
+                <div class="modal-body">
+                    <input type="hidden" id="announcementId" name="id">
+                    <div class="mb-3">
+                        <label for="announcementTitle" class="form-label" data-i18n="admin.ann.modal.field.title">Заголовок <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="announcementTitle" name="title" required>
+                        <div class="invalid-feedback" data-i18n="admin.ann.modal.validation.title">Пожалуйста, укажите заголовок</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="announcementContent" class="form-label" data-i18n="admin.ann.modal.field.content">Содержание <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="announcementContent" name="content" rows="8" required></textarea>
+                        <div class="form-text" data-i18n="admin.ann.modal.help.html">Поддерживается HTML-разметка</div>
+                        <div class="invalid-feedback" data-i18n="admin.ann.modal.validation.content">Пожалуйста, введите содержание</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="announcementImage" class="form-label" data-i18n="admin.ann.modal.field.image">Изображение</label>
+                        <input class="form-control" type="file" id="announcementImage" accept="image/*">
+                        <div class="form-text" data-i18n="admin.ann.modal.help.image">PNG, JPG, WebP. Размер до 2 МБ рекомендуется.</div>
+                        <div class="mt-2" id="imagePreviewContainer" style="display:none;">
+                            <img id="imagePreview" alt="Превью изображения" data-i18n="admin.ann.modal.image.alt" data-i18n-attr="alt" class="img-fluid rounded border" style="max-height: 220px; object-fit: contain;">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="announcementIsAd" name="isAd">
+                                <label class="form-check-label" for="announcementIsAd" data-i18n="admin.ann.modal.field.isAd">Реклама</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="announcementAdTargetUrl" class="form-label" data-i18n="admin.ann.modal.field.link">Ссылка для перехода</label>
+                            <input type="url" class="form-control" id="announcementAdTargetUrl" name="adTargetUrl" placeholder="https://example.com">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="announcementStartDate" class="form-label" data-i18n="admin.ann.modal.field.start">Дата начала</label>
+                            <input type="datetime-local" class="form-control" id="announcementStartDate" name="startDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableEndDate">
+                                <label class="form-check-label" for="enableEndDate" data-i18n="admin.ann.modal.field.enableEnd">Установить дату окончания</label>
+                            </div>
+                            <div id="endDateGroup" style="display: none;">
+                                <input type="datetime-local" class="form-control" id="announcementEndDate" name="endDate">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="announcementActive" name="active" checked>
+                        <label class="form-check-label" for="announcementActive" data-i18n="admin.ann.modal.field.active">Активно</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Отмена</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.save">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/i18n.js"></script>
+<script src="/webjars/jquery/jquery.min.js"></script>
+<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/js/admin.js"></script>
+<script src="/js/announcements.js"></script>
+</body>
+</html>

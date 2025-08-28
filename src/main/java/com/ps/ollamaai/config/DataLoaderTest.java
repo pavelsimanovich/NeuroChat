@@ -21,6 +21,7 @@ public class DataLoaderTest {
                 user.setPassword(encoder.encode("password"));
                 user.setFirstName("User");
                 user.setLastName("User");
+                user.setRole("ADMIN");
                 user.setEnabled(true);
                 repo.save(user);
             }

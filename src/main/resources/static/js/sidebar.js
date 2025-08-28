@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Sidebar manager loaded');
-
-    // Получаем основные элементы
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileSidebar = document.getElementById('mobileSidebar');
     const collapseRoomsBtn = document.getElementById('collapseRoomsBtn');
@@ -109,11 +106,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
 
-            // Сохраняем ссылку на обработчик, чтобы потом его можно было удалить
             item._clickHandler = clickHandler;
             item.addEventListener('click', clickHandler);
         });
-        console.log(`Added click handlers to ${roomItems.length} room items`);
     }
 
     // Делегирование событий для списка комнат
