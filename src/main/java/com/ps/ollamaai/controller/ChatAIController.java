@@ -9,6 +9,7 @@ import com.ps.ollamaai.service.ChatRoomService;
 import com.ps.ollamaai.service.FileStorageService;
 import com.ps.ollamaai.service.ReactiveService;
 import com.ps.ollamaai.service.UserPreferencesService;
+import com.ps.ollamaai.service.TokenQuotaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -53,6 +54,7 @@ public class ChatAIController {
     private final ReactiveService reactiveService;
     private final FileStorageService fileStorageService;
     private final UserPreferencesService userPreferencesService;
+    private final TokenQuotaService tokenQuotaService;
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChunkResponseDTO> streamChat(
@@ -71,6 +73,14 @@ public class ChatAIController {
                                     ? prefs.getSystemPrompt()
                                     : PROMPT_GENERAL_INSTRUCTIONS;
                             String preferredModel = prefs.getPreferredModel();
+
+                            // Check quota before sending
+                            try {
+                                int estimate = TokenQuotaService.estimateTokensForMessages(systemPrompt, question);
+                                tokenQuotaService.checkAndReserveTokens(username, estimate);
+                            } catch (LimitExceededException ex) {
+                                return Mono.just(new ChunkResponseDTO(ex.getMessage(), true, LIMIT_EXCEEDED.name())).flux();
+                            }
 
                             List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
                             Prompt prompt = new Prompt(messages);
@@ -96,6 +106,10 @@ public class ChatAIController {
                                         // Extend in-memory history for next turn
                                         currentHistory.add(new UserMessage(question));
                                         currentHistory.add(new AssistantMessage(response));
+                                        // Add usage (approx): system + question + response
+                                        int used = TokenQuotaService.estimateTokensForMessages(systemPrompt, question)
+                                                + tokenQuotaService.estimateTokensForText(response);
+                                        tokenQuotaService.addUsage(username, used);
                                     })
                                     .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
                         }))

@@ -75,6 +75,7 @@ https://huggingface.co/
 - **Stream Support**: Real-time communication using streaming technology
 - **Room Management**: Create and manage chat rooms programmatically
 - **User System**: Secure login/registration flows
+- **Observability and Reporting**: Supporting Grafana and Prometheuslj,
 
 ### 🤖 AI Chat Functionality
 - **Ollama Integration**: Powered by cutting-edge Ollama API for intelligent responses
@@ -85,6 +86,7 @@ https://huggingface.co/
 - **Usage Controls**:
     - Configurable rate limiting
 - **Image Analysis**
+- **Syntax highlighting for code snippets**
 - **Chat Export**
 - **Voice input, Text-to-speech for response**
 - **User Settings**

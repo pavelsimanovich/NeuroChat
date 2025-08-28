@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import static com.ps.ollamaai.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 
@@ -72,6 +73,9 @@ public class UserPreferencesService {
         dto.setPreferredModel(entity.getModel());
         dto.setAvatarFileId(entity.getAvatarFileId());
         dto.setLanguage(entity.getLanguage());
+        dto.setMonthlyTokenLimit(entity.getMonthlyTokenLimit());
+        dto.setTokenUsedInPeriod(entity.getTokenUsedInPeriod());
+        dto.setPeriodStart(entity.getPeriodStart());
         return dto;
     }
 
@@ -93,5 +97,40 @@ public class UserPreferencesService {
         if (StringUtils.hasText(dto.getLanguage())) {
             entity.setLanguage(dto.getLanguage());
         }
+        // Quota fields
+        if (dto.getMonthlyTokenLimit() != null) {
+            entity.setMonthlyTokenLimit(dto.getMonthlyTokenLimit());
+        }
+        if (dto.getTokenUsedInPeriod() != null) {
+            entity.setTokenUsedInPeriod(dto.getTokenUsedInPeriod());
+        }
+        if (dto.getPeriodStart() != null) {
+            entity.setPeriodStart(dto.getPeriodStart());
+        }
+    }
+
+    @Transactional
+    public void setMonthlyLimit(String email, Integer limit) {
+        UserPreferencies preferences = findByUserId(email)
+                .orElseGet(() -> {
+                    UserPreferencies p = new UserPreferencies();
+                    p.setUserId(email);
+                    return p;
+                });
+        preferences.setMonthlyTokenLimit(limit);
+        save(preferences);
+    }
+
+    @Transactional
+    public void resetQuotaPeriod(String email) {
+        UserPreferencies preferences = findByUserId(email)
+                .orElseGet(() -> {
+                    UserPreferencies p = new UserPreferencies();
+                    p.setUserId(email);
+                    return p;
+                });
+        preferences.setTokenUsedInPeriod(0L);
+        preferences.setPeriodStart(LocalDateTime.now());
+        save(preferences);
     }
 }
