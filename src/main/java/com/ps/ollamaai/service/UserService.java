@@ -1,7 +1,9 @@
 package com.ps.ollamaai.service;
 
 import com.ps.ollamaai.domain.User;
+import com.ps.ollamaai.domain.UserPreferencies;
 import com.ps.ollamaai.dto.enums.Role;
+import com.ps.ollamaai.dto.enums.SupportedLanguages;
 import com.ps.ollamaai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,12 +18,19 @@ import java.time.LocalDateTime;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserPreferencesService userPreferencesService;
 
     public void save(final User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
         user.setRole(Role.USER.name());
-        userRepository.save(user);
+        User save = userRepository.save(user);
+
+        UserPreferencies userPreferences = new UserPreferencies();
+        userPreferences.setUserId(save.getId());
+        userPreferences.setLanguage(SupportedLanguages.EN.name());
+        userPreferences.setMonthlyTokenLimit(100_000);
+        userPreferencesService.save(userPreferences);
     }
 
     public User findByEmail(final String email) {
@@ -51,13 +60,6 @@ public class UserService {
     public void setEnabled(String userId, boolean enabled) {
         userRepository.findById(userId).ifPresent(u -> {
             u.setEnabled(enabled);
-            userRepository.save(u);
-        });
-    }
-
-    public void resetPassword(String userId, String newPassword) {
-        userRepository.findById(userId).ifPresent(u -> {
-            u.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(u);
         });
     }

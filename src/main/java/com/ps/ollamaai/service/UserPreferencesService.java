@@ -62,7 +62,7 @@ public class UserPreferencesService {
         return dto;
     }
 
-    private UserPreferencies save(UserPreferencies userPreferencies) {
+    public UserPreferencies save(UserPreferencies userPreferencies) {
         return userPreferenciesRepository.save(userPreferencies);
     }
 
