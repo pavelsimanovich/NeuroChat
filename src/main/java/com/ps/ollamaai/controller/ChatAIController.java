@@ -77,7 +77,7 @@ public class ChatAIController {
                             String preferredModel = prefs.getPreferredModel();
 
                             if (useTokenLimits) {
-                                Flux<ChunkResponseDTO> ex = estimate(question, username, systemPrompt);
+                                Flux<ChunkResponseDTO> ex = estimate(question, username);
                                 if (ex != null) return ex;
                             }
 
@@ -91,7 +91,7 @@ public class ChatAIController {
                                     .content()
                                     .map(chunk -> new ChunkResponseDTO(chunk, false, null))
                                     .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
-                                    .doOnComplete(() -> onCompletionUpdate(username, chatId, question, currentHistory, systemPrompt))
+                                    .doOnComplete(() -> onCompletionUpdate(username, chatId, question, currentHistory))
                                     .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
                         }))
                 .publishOn(Schedulers.boundedElastic())
@@ -108,10 +108,10 @@ public class ChatAIController {
                 });
     }
 
-    private Flux<ChunkResponseDTO> estimate(String question, String username, String systemPrompt) {
+    private Flux<ChunkResponseDTO> estimate(String question, String username) {
         // Quota pre-check (includes expected assistant answer by heuristic)
         try {
-            estimateAndCheckQuota(username, systemPrompt, question);
+            estimateAndCheckQuota(username, question);
         } catch (LimitExceededException ex) {
             return Mono.just(new ChunkResponseDTO(ex.getMessage(), true, LIMIT_EXCEEDED.name())).flux();
         }
@@ -124,8 +124,8 @@ public class ChatAIController {
                 : PROMPT_GENERAL_INSTRUCTIONS;
     }
 
-    private void estimateAndCheckQuota(String username, String systemPrompt, String question) {
-        int estimate = TokenQuotaService.estimateTokensForTurn(systemPrompt, question, null);
+    private void estimateAndCheckQuota(String username, String question) {
+        int estimate = TokenQuotaService.estimateTokensForTurn(question, null);
         tokenQuotaService.checkAndReserveTokens(username, estimate);
     }
 
@@ -146,14 +146,13 @@ public class ChatAIController {
     private void onCompletionUpdate(String username,
                                     String chatId,
                                     String question,
-                                    List<Message> currentHistory,
-                                    String systemPrompt) {
+                                    List<Message> currentHistory) {
         String response = chatMessageService.saveAiResponse(chatId);
         // Extend in-memory history for next turn
         currentHistory.add(new UserMessage(question));
         currentHistory.add(new AssistantMessage(response));
         // Add usage (approx): system + question + response
-        int used = TokenQuotaService.estimateTokensForMessages(systemPrompt, question)
+        int used = TokenQuotaService.estimateTokensForMessages(question)
                 + tokenQuotaService.estimateTokensForText(response);
         tokenQuotaService.addUsage(username, used);
     }

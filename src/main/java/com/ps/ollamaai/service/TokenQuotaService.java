@@ -47,7 +47,6 @@ public class TokenQuotaService {
         Integer limit = prefs.getMonthlyTokenLimit();
         if (limit == null || limit <= 0) {
             // Unlimited - nothing to reserve
-            userPreferenciesRepository.save(prefs);
             return;
         }
         long used = prefs.getTokenUsedInPeriod() == null ? 0L : prefs.getTokenUsedInPeriod();
@@ -75,16 +74,16 @@ public class TokenQuotaService {
         userPreferenciesRepository.save(prefs);
     }
 
-    public static int estimateTokensForMessages(String systemPrompt, String question) {
-        return estimateTokens(systemPrompt) + estimateTokens(question);
+    public static int estimateTokensForMessages(String question) {
+        return estimateTokens(question);
     }
 
     /**
-     * Estimate total tokens for a single chat turn: system + user question + assistant answer (expected).
+     * Estimate total tokens for a single chat turn: user question + assistant answer (expected).
      * Uses a heuristic when expectedAnswerTokens is not provided by caller.
      */
-    public static int estimateTokensForTurn(String systemPrompt, String question, Integer expectedAnswerTokens) {
-        int base = estimateTokensForMessages(systemPrompt, question);
+    public static int estimateTokensForTurn(String question, Integer expectedAnswerTokens) {
+        int base = estimateTokensForMessages(question);
         int answerEstimate;
         if (expectedAnswerTokens != null && expectedAnswerTokens > 0) {
             answerEstimate = expectedAnswerTokens;
