@@ -31,7 +31,7 @@ public class UserService {
         User save = userRepository.save(user);
 
         UserPreferencies userPreferences = new UserPreferencies();
-        userPreferences.setUserId(save.getId());
+        userPreferences.setUserName(save.getEmail());
         userPreferences.setLanguage(SupportedLanguages.EN.getLanguage());
         userPreferences.setMonthlyTokenLimit(userTokenLimits);
         userPreferencesService.save(userPreferences);

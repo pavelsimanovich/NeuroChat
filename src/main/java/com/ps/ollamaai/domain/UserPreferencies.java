@@ -21,7 +21,8 @@ public class UserPreferencies implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-    private String userId;
+    @Column(name = "user_id")
+    private String userName;
     private String language;
     @Column(columnDefinition = "TEXT")
     private String userSystemPrompt;

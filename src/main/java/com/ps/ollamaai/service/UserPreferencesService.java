@@ -23,7 +23,7 @@ public class UserPreferencesService {
     private final UserPreferenciesRepository userPreferenciesRepository;
 
     public Optional<UserPreferencies> findByUserId(String email) {
-        return userPreferenciesRepository.findByUserId(email);
+        return userPreferenciesRepository.findByUserName(email);
     }
 
     @Transactional
@@ -31,7 +31,7 @@ public class UserPreferencesService {
         UserPreferencies preferences = findByUserId(email)
                 .orElseGet(() -> {
                     UserPreferencies newPreferences = new UserPreferencies();
-                    newPreferences.setUserId(email);
+                    newPreferences.setUserName(email);
                     return newPreferences;
                 });
         applyDtoToEntity(dto, preferences, email);
@@ -114,7 +114,7 @@ public class UserPreferencesService {
         UserPreferencies preferences = findByUserId(email)
                 .orElseGet(() -> {
                     UserPreferencies p = new UserPreferencies();
-                    p.setUserId(email);
+                    p.setUserName(email);
                     return p;
                 });
         preferences.setMonthlyTokenLimit(limit);
@@ -126,7 +126,7 @@ public class UserPreferencesService {
         UserPreferencies preferences = findByUserId(email)
                 .orElseGet(() -> {
                     UserPreferencies p = new UserPreferencies();
-                    p.setUserId(email);
+                    p.setUserName(email);
                     return p;
                 });
         preferences.setTokenUsedInPeriod(0L);

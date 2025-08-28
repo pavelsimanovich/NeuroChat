@@ -28,10 +28,10 @@ public class TokenQuotaService {
 
     @Transactional
     public void checkAndReserveTokens(String email, int estimatedTokens) {
-        UserPreferencies prefs = userPreferenciesRepository.findByUserId(email)
+        UserPreferencies prefs = userPreferenciesRepository.findByUserName(email)
                 .orElseGet(() -> {
                     UserPreferencies p = new UserPreferencies();
-                    p.setUserId(email);
+                    p.setUserName(email);
                     p.setTokenUsedInPeriod(0L);
                     p.setPeriodStart(LocalDateTime.now());
                     return p;
@@ -60,10 +60,10 @@ public class TokenQuotaService {
     @Transactional
     public void addUsage(String email, int usedTokens) {
         if (usedTokens <= 0) return;
-        UserPreferencies prefs = userPreferenciesRepository.findByUserId(email)
+        UserPreferencies prefs = userPreferenciesRepository.findByUserName(email)
                 .orElseGet(() -> {
                     UserPreferencies p = new UserPreferencies();
-                    p.setUserId(email);
+                    p.setUserName(email);
                     return p;
                 });
         if (prefs.getPeriodStart() == null) {
