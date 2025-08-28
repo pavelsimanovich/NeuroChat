@@ -21,6 +21,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
 import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
@@ -56,6 +57,9 @@ public class ChatAIController {
     private final UserPreferencesService userPreferencesService;
     private final TokenQuotaService tokenQuotaService;
 
+    @Value("${app.use-token-limits}")
+    private boolean useTokenLimits;
+
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChunkResponseDTO> streamChat(
             @RequestParam String question,
@@ -72,8 +76,10 @@ public class ChatAIController {
                             String systemPrompt = resolveSystemPrompt(prefs);
                             String preferredModel = prefs.getPreferredModel();
 
-                            Flux<ChunkResponseDTO> ex = estimate(question, username, systemPrompt);
-                            if (ex != null) return ex;
+                            if (useTokenLimits) {
+                                Flux<ChunkResponseDTO> ex = estimate(question, username, systemPrompt);
+                                if (ex != null) return ex;
+                            }
 
                             List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
                             Prompt prompt = new Prompt(messages);
