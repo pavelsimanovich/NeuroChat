@@ -1,9 +1,11 @@
 package com.ps.ollamaai.service;
 
+import com.ps.ollamaai.domain.UserPreferencies;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,6 +17,7 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,8 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
+    private final MessageSource messageSource;
+    private final UserPreferencesService userPreferencesService;
 
     @Value("${spring.mail.username}")
     private String from;
@@ -40,7 +45,10 @@ public class EmailService {
             // Добавляем базовый URL приложения в контекст
             mutableVariables.put("appUrl", appUrl);
 
-            Context context = new Context();
+            // Определяем локаль получателя по user preferences (email == userId)
+            Locale locale = resolveLocaleForUser(to);
+
+            Context context = new Context(locale);
             mutableVariables.forEach(context::setVariable);
             String html = templateEngine.process(templateName, context);
 
@@ -64,11 +72,23 @@ public class EmailService {
         variables.put("resetUrl", resetUrl);
         variables.put("expiryHours", 24);
 
-        sendEmailWithTemplate(
-                to,
-                "Восстановление пароля",
-                "password-reset-email",
-                variables
-        );
+        // Локализуем тему письма через MessageSource
+        Locale locale = resolveLocaleForUser(to);
+        String subject = messageSource.getMessage("email.reset.title", null, "Password reset", locale);
+
+        sendEmailWithTemplate(to, subject, "password-reset-email", variables);
+    }
+
+    private Locale resolveLocaleForUser(String email) {
+        try {
+            String lang = userPreferencesService.findByUserId(email)
+                    .map(UserPreferencies::getLanguage)
+                    .orElse(null);
+            if (lang != null && !lang.isBlank()) {
+                Locale loc = Locale.forLanguageTag(lang);
+                if (loc != null) return loc;
+            }
+        } catch (Exception ignored) {}
+        return Locale.ENGLISH;
     }
 }
