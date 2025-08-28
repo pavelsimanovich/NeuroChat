@@ -1263,6 +1263,32 @@ body {
     pointer-events: none;
 }
 
+.message.message-playing {
+  position: relative;
+  background: linear-gradient(
+    0deg,
+    rgba(13, 110, 253, 0.06),
+    rgba(13, 110, 253, 0.04)
+  );
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15), 0 6px 18px rgba(13, 110, 253, 0.12);
+  border-color: rgba(13, 110, 253, 0.35) !important;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-bs-theme="dark"] .message.message-playing {
+  background: linear-gradient(
+    0deg,
+    rgba(13, 110, 253, 0.12),
+    rgba(13, 110, 253, 0.06)
+  );
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.22), 0 8px 20px rgba(13, 110, 253, 0.18);
+  border-color: rgba(13, 110, 253, 0.45) !important;
+}
+
+.message.message-playing .tts-controls .btn {
+  border-color: rgba(13, 110, 253, 0.35);
+}
+
 .message-status {
     color: var(--danger-color);
     font-style: italic;

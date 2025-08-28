@@ -165,19 +165,36 @@ const tts = {
         // Update play/pause/stop buttons visual state
         document.querySelectorAll('.tts-controls').forEach(ctrl => {
             const mid = ctrl.getAttribute('data-message-id');
+            const activeId = (this.speakingMessageId !== null && this.speakingMessageId !== undefined)
+                ? String(this.speakingMessageId)
+                : null;
             const isPaused = this.isPaused || window.speechSynthesis.paused;
             const isSpeakingOrPaused = (window.speechSynthesis.speaking || this.isPaused);
-            const isActive = this.speakingMessageId === mid && isSpeakingOrPaused;
+            const isActive = activeId === mid && isSpeakingOrPaused;
             ctrl.classList.toggle('tts-active', isActive);
             const playBtn = ctrl.querySelector('[data-tts="play"]');
             const pauseBtn = ctrl.querySelector('[data-tts="pause"]');
             const resumeBtn = ctrl.querySelector('[data-tts="resume"]');
             const stopBtn = ctrl.querySelector('[data-tts="stop"]');
             if (playBtn) playBtn.disabled = isActive; // disable play if currently playing this message
-            if (pauseBtn) pauseBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking && !isPaused);
-            if (resumeBtn) resumeBtn.disabled = !(this.speakingMessageId === mid && isPaused);
-            if (stopBtn) stopBtn.disabled = !(this.speakingMessageId === mid && (window.speechSynthesis.speaking || isPaused));
+            if (pauseBtn) pauseBtn.disabled = !(activeId === mid && window.speechSynthesis.speaking && !isPaused);
+            if (resumeBtn) resumeBtn.disabled = !(activeId === mid && isPaused);
+            if (stopBtn) stopBtn.disabled = !(activeId === mid && (window.speechSynthesis.speaking || isPaused));
         });
+
+        // Toggle highlight on the currently playing message
+        try {
+            const activeId = (this.speakingMessageId !== null && this.speakingMessageId !== undefined)
+                ? String(this.speakingMessageId)
+                : null;
+            const activeState = (window.speechSynthesis.speaking || this.isPaused);
+            document.querySelectorAll('.message[data-message-id]')
+                .forEach(msg => {
+                    const id = msg.getAttribute('data-message-id');
+                    const on = activeId && id === activeId && activeState;
+                    msg.classList.toggle('message-playing', !!on);
+                });
+        } catch (_) { /* noop */ }
     }
 };
 
@@ -2364,10 +2381,13 @@ function renderMessages() {
         new Date(a.timestamp) - new Date(b.timestamp)
     );
 
-    sortedMessages.forEach(message => {
+    sortedMessages.forEach((message, idx) => {
+        const mid = String(
+            message.id ?? message.uuid ?? message._id ?? message.messageId ?? `${message.timestamp || Date.now()}-${idx}`
+        );
         const messageElement = document.createElement('div');
         messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
-        messageElement.setAttribute('data-message-id', message.id);
+        messageElement.setAttribute('data-message-id', mid);
 
         // File previews with click handlers
         let filePreviews = '';
@@ -2408,7 +2428,7 @@ function renderMessages() {
         const isAI = message.userId !== elements.userId;
         const disabledAttr = tts.supported ? '' : 'disabled title="TTS не поддерживается браузером"';
         const ttsControls = (isAI && message.content) ? `
-            <div class="tts-controls d-inline-flex align-items-center gap-1" data-message-id="${message.id}" title="Озвучить ответ">
+            <div class="tts-controls d-inline-flex align-items-center gap-1" data-message-id="${mid}" title="Озвучить ответ">
                 <button class="btn btn-sm btn-outline-secondary" data-tts="play" aria-label="Озвучить" ${disabledAttr}><i class="bi bi-volume-up"></i></button>
                 <button class="btn btn-sm btn-outline-secondary" data-tts="pause" aria-label="Пауза" ${disabledAttr}><i class="bi bi-pause"></i></button>
                 <button class="btn btn-sm btn-outline-secondary" data-tts="resume" aria-label="Продолжить" ${disabledAttr}><i class="bi bi-play"></i></button>
@@ -2446,7 +2466,13 @@ function renderMessages() {
                 if (tts.supported) {
                     if (playBtn) playBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        tts.play(textToSpeak, message.id);
+                        // Immediate UI feedback
+                        try {
+                            document.querySelectorAll('.message.message-playing').forEach(m => m.classList.remove('message-playing'));
+                            const container = ctrl.closest('.message');
+                            if (container) container.classList.add('message-playing');
+                        } catch (_) { /* noop */ }
+                        tts.play(textToSpeak, mid);
                     });
                     if (pauseBtn) pauseBtn.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -2459,6 +2485,11 @@ function renderMessages() {
                     if (stopBtn) stopBtn.addEventListener('click', (e) => {
                         e.preventDefault();
                         tts.stop();
+                        // Remove highlight immediately
+                        try {
+                            const container = ctrl.closest('.message');
+                            if (container) container.classList.remove('message-playing');
+                        } catch (_) { /* noop */ }
                     });
                 }
             }
@@ -2476,6 +2507,8 @@ function renderMessages() {
     });
 
     Prism.highlightAll();
+    // Re-apply TTS UI and playing highlight after DOM update
+    try { if (window.tts && typeof window.tts.updateControlsState === 'function') window.tts.updateControlsState(); } catch (_) { /* noop */ }
     scrollToBottom(true);
 }
 
