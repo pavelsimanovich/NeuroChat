@@ -11,6 +11,8 @@ public class UserPreferencesDTO {
     private String preferredModel;
     private String avatarFileId;
     private String language;
+    // TTS preferences
+    private Boolean ttsSpeakWhileGenerating;
     // Token quota
     private Integer monthlyTokenLimit;
     private Long tokenUsedInPeriod;

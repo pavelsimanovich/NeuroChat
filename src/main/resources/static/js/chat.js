@@ -34,7 +34,8 @@ const tts = {
         voiceURI: '',
         rate: 1.0,
         pitch: 1.0,
-        autoplay: false
+        autoplay: false,
+        speakWhileGenerating: false
     },
 
     init() {
@@ -42,7 +43,7 @@ const tts = {
         // Load saved settings
         try {
             const saved = JSON.parse(localStorage.getItem('tts_settings') || '{}');
-            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, ...saved };
+            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, speakWhileGenerating: false, ...saved };
         } catch (_) { /* noop */ }
         // Attempt to select a Russian voice if available
         const pickVoice = () => {
@@ -82,6 +83,32 @@ const tts = {
             }
         }
         // If currently speaking, update control states
+        this.updateControlsState();
+    },
+
+    // Queue a chunk without cancelling existing utterances (for streaming)
+    speakChunk(text, messageId, lang = 'ru-RU') {
+        if (!this.supported || !text) return;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = this.selectedVoice?.lang || lang;
+        if (this.selectedVoice) utter.voice = this.selectedVoice;
+        utter.rate = Number(this.settings.rate) || 1.0;
+        utter.pitch = Number(this.settings.pitch) || 1.0;
+        utter.onstart = () => {
+            this.speakingMessageId = messageId;
+            this.isPaused = false;
+            this.updateControlsState();
+        };
+        utter.onend = () => {
+            // Do not clear speakingMessageId here; next chunk or stop() will update state
+            this.updateControlsState();
+        };
+        utter.onerror = () => {
+            this.updateControlsState();
+        };
+        // Enqueue without canceling to preserve queue
+        window.speechSynthesis.speak(utter);
+        this.currentUtterance = utter;
         this.updateControlsState();
     },
 
@@ -871,9 +898,14 @@ async function sendMessage() {
                 <div id="cm${uuid}" class="message-content"></div>
             `
         });
+        // Assign a stable message-id for streaming element for TTS highlight
+        const streamMid = `stream-${uuid}`;
+        messageElement.setAttribute('data-message-id', streamMid);
 
         let response = '';
         let isStreamActive = true;
+        // Buffer for live TTS speaking by sentences
+        let speakBuf = '';
 
         eventSource.onmessage = (e) => {
             if (roomId !== state.currentRoom.id || !isStreamActive) return;
@@ -900,9 +932,17 @@ async function sendMessage() {
                     window.dispatchEvent(new CustomEvent('messageSent'));
                     renderMessages();
                     scrollToBottom(true);
-                    // Autoplay TTS if enabled
+                    // Flush any remaining buffer for live speak
                     try {
-                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && finalMsg?.content) {
+                        if (window.tts && window.tts.supported && window.tts.settings.speakWhileGenerating && speakBuf.trim()) {
+                            const chunk = speakBuf.replace(/<[^>]*>/g, '');
+                            window.tts.speakChunk(chunk, streamMid);
+                            speakBuf = '';
+                        }
+                    } catch (_) { /* noop */ }
+                    // Autoplay TTS of the final text if enabled and not speaking live
+                    try {
+                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && !window.tts.settings.speakWhileGenerating && finalMsg?.content) {
                             const plainText = finalMsg.content.replace(/<[^>]*>/g, '');
                             window.tts.play(plainText, finalMsg.id);
                         }
@@ -917,6 +957,32 @@ async function sendMessage() {
                     Prism.highlightAllUnder(contentDiv);
                     scrollToBottom();
                 }
+                // Live TTS chunking if enabled
+                try {
+                    if (window.tts && window.tts.supported && window.tts.settings.speakWhileGenerating) {
+                        const deltaPlain = String(message.content || '').replace(/<[^>]*>/g, '');
+                        if (deltaPlain) {
+                            speakBuf += deltaPlain;
+                            // Emit full sentences or lines
+                            let cutIndex = -1;
+                            while (true) {
+                                // find earliest sentence boundary
+                                const dot = speakBuf.indexOf('.')
+                                const ex = speakBuf.indexOf('!');
+                                const q = speakBuf.indexOf('?');
+                                const nl = speakBuf.indexOf('\n');
+                                const candidates = [dot, ex, q, nl].filter(i => i >= 0);
+                                if (!candidates.length) break;
+                                cutIndex = Math.min(...candidates);
+                                const sentence = speakBuf.slice(0, cutIndex + 1).trim();
+                                if (sentence) {
+                                    window.tts.speakChunk(sentence, streamMid);
+                                }
+                                speakBuf = speakBuf.slice(cutIndex + 1);
+                            }
+                        }
+                    }
+                } catch (_) { /* noop */ }
             }
         };
 
