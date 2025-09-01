@@ -28,10 +28,8 @@ const tts = {
     supported: ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window),
     currentUtterance: null,
     speakingMessageId: null,
-    selectedVoice: null,
     isPaused: false,
     settings: {
-        voiceURI: '',
         rate: 1.0,
         pitch: 1.0,
         autoplay: false,
@@ -45,26 +43,6 @@ const tts = {
             const saved = JSON.parse(localStorage.getItem('tts_settings') || '{}');
             this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, speakWhileGenerating: false, ...saved };
         } catch (_) { /* noop */ }
-        // Attempt to select a Russian voice if available
-        const pickVoice = () => {
-            const voices = window.speechSynthesis.getVoices();
-            if (!voices || voices.length === 0) return;
-            // If user selected a voice, try to match by voiceURI
-            if (this.settings.voiceURI) {
-                const byURI = voices.find(v => v.voiceURI === this.settings.voiceURI);
-                if (byURI) this.selectedVoice = byURI;
-            }
-            // Fallbacks
-            if (!this.selectedVoice) {
-                this.selectedVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('ru'))
-                    || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
-                    || voices[0];
-            }
-        };
-        pickVoice();
-        // Voices may load asynchronously
-        window.speechSynthesis.onvoiceschanged = () => pickVoice();
-        // Stop TTS on page unload
         window.addEventListener('beforeunload', () => this.stop());
     },
 
@@ -72,26 +50,14 @@ const tts = {
         // Update runtime settings and persist
         this.settings = { ...this.settings, ...newSettings };
         try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (_) { /* noop */ }
-        // Update selected voice if voiceURI changed
-        if (this.supported) {
-            const voices = window.speechSynthesis.getVoices();
-            if (Array.isArray(voices) && voices.length) {
-                if (this.settings.voiceURI) {
-                    const v = voices.find(v => v.voiceURI === this.settings.voiceURI);
-                    if (v) this.selectedVoice = v;
-                }
-            }
-        }
         // If currently speaking, update control states
         this.updateControlsState();
     },
 
     // Queue a chunk without cancelling existing utterances (for streaming)
-    speakChunk(text, messageId, lang = 'ru-RU') {
+    speakChunk(text, messageId) {
         if (!this.supported || !text) return;
         const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = this.selectedVoice?.lang || lang;
-        if (this.selectedVoice) utter.voice = this.selectedVoice;
         utter.rate = Number(this.settings.rate) || 1.0;
         utter.pitch = Number(this.settings.pitch) || 1.0;
         utter.onstart = () => {
@@ -112,7 +78,7 @@ const tts = {
         this.updateControlsState();
     },
 
-    play(text, messageId, lang = 'ru-RU') {
+    play(text, messageId) {
         if (!this.supported || !text) return;
         // If already speaking another message, stop it first
         if (this.isSpeaking() && this.speakingMessageId !== messageId) {
@@ -120,8 +86,6 @@ const tts = {
         }
 
         const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = this.selectedVoice?.lang || lang;
-        if (this.selectedVoice) utter.voice = this.selectedVoice;
         utter.rate = Number(this.settings.rate) || 1.0; // normal speed
         utter.pitch = Number(this.settings.pitch) || 1.0; // normal pitch
         utter.onstart = () => {
