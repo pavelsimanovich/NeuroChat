@@ -42,14 +42,16 @@ const tts = {
         try {
             const saved = JSON.parse(localStorage.getItem('tts_settings') || '{}');
             this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, speakWhileGenerating: false, ...saved };
-        } catch (_) { /* noop */ }
+        } catch (ex) {
+            console.error(ex);
+        }
         window.addEventListener('beforeunload', () => this.stop());
     },
 
     applySettings(newSettings = {}) {
         // Update runtime settings and persist
         this.settings = { ...this.settings, ...newSettings };
-        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (_) { /* noop */ }
+        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (ex) {console.error(ex);}
         // If currently speaking, update control states
         this.updateControlsState();
     },
@@ -185,7 +187,9 @@ const tts = {
                     const on = activeId && id === activeId && activeState;
                     msg.classList.toggle('message-playing', !!on);
                 });
-        } catch (_) { /* noop */ }
+        } catch (ex) {
+            console.error(ex);
+        }
     }
 };
 
@@ -278,7 +282,8 @@ const elements = (function() {
                 e.preventDefault();
                 try {
                     elements.chatMessages.scrollTo({ top: 0, behavior: 'smooth' });
-                } catch (_) {
+                } catch (ex) {
+                    console.error(ex);
                     elements.chatMessages.scrollTop = 0;
                 }
             });
@@ -289,7 +294,7 @@ const elements = (function() {
                 e.preventDefault();
                 try {
                     elements.chatMessages.scrollTo({ top: elements.chatMessages.scrollHeight, behavior: 'smooth' });
-                } catch (_) {
+                } catch (ex) {
                     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
                 }
             });
@@ -301,7 +306,11 @@ const elements = (function() {
 
 // Re-render rooms list when language changes to refresh group titles/empty state
 window.addEventListener('i18n:changed', () => {
-    try { renderRoomsList(); } catch (_) { /* noop */ }
+    try {
+        renderRoomsList();
+    }  catch (ex) {
+        console.error(ex)
+    }
 });
 
 async function switchToLastRoom() {
@@ -462,7 +471,9 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
                 set.delete(groupId);
             }
             localStorage.setItem('collapsedGroups', JSON.stringify(Array.from(set)));
-        } catch (e) {}
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     headerElement.addEventListener('click', (e) => {
@@ -903,14 +914,18 @@ async function sendMessage() {
                             window.tts.speakChunk(chunk, streamMid);
                             speakBuf = '';
                         }
-                    } catch (_) { /* noop */ }
+                    } catch (ex) {
+                        console.error(ex)
+                    }
                     // Autoplay TTS of the final text if enabled and not speaking live
                     try {
                         if (window.tts && window.tts.supported && window.tts.settings.autoplay && !window.tts.settings.speakWhileGenerating && finalMsg?.content) {
                             const plainText = finalMsg.content.replace(/<[^>]*>/g, '');
                             window.tts.play(plainText, finalMsg.id);
                         }
-                    } catch (_) { /* noop */ }
+                    } catch (ex) {
+                        console.error(ex)
+                    }
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
@@ -946,7 +961,9 @@ async function sendMessage() {
                             }
                         }
                     }
-                } catch (_) { /* noop */ }
+                } catch (ex) {
+                    console.error(ex)
+                }
             }
         };
 
@@ -1708,7 +1725,6 @@ async function handleDeleteRoom(roomId, title) {
                     </div>
                 </div>`;
 
-            // Apply i18n to the newly created welcome screen
             try { window.i18n?.apply(welcomeScreen); } catch (_) {}
 
             // Clear chat messages and append new welcome screen
@@ -2501,7 +2517,9 @@ function renderMessages() {
                             document.querySelectorAll('.message.message-playing').forEach(m => m.classList.remove('message-playing'));
                             const container = ctrl.closest('.message');
                             if (container) container.classList.add('message-playing');
-                        } catch (_) { /* noop */ }
+                        }  catch (ex) {
+                            console.error(ex)
+                        }
                         tts.play(textToSpeak, mid);
                     });
                     if (pauseBtn) pauseBtn.addEventListener('click', (e) => {
@@ -2519,7 +2537,9 @@ function renderMessages() {
                         try {
                             const container = ctrl.closest('.message');
                             if (container) container.classList.remove('message-playing');
-                        } catch (_) { /* noop */ }
+                        } catch (ex) {
+                            console.error(ex)
+                        }
                     });
                 }
             }
