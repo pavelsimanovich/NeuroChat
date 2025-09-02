@@ -1,6 +1,7 @@
 package com.ps.ollamaai.controller;
 
 import com.ps.ollamaai.domain.UserPreferencies;
+import com.ps.ollamaai.dto.enums.SupportedOllamaModel;
 import com.ps.ollamaai.service.OllamaService;
 import com.ps.ollamaai.service.UserPreferencesService;
 import com.ps.ollamaai.service.UserService;
@@ -46,6 +47,7 @@ public class IndexController {
         model.addAttribute("userId", user.getId());
         model.addAttribute("userName", "%s %s".formatted(user.getFirstName(), user.getLastName()));
         model.addAttribute("userAvatarUrl", avatarUrl);
+        model.addAttribute("supportedModels", SupportedOllamaModel.values());
         return "home";
     }
 

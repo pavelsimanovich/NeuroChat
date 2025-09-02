@@ -437,9 +437,9 @@
                                     <div class="mb-3">
                                         <label for="modelSelect" class="form-label"><strong data-i18n="settings.model.label">Модель ИИ</strong></label>
                                         <select class="form-select" id="modelSelect">
-                                            <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
-                                            <option value="gemma3:4b">Gemma 3 (4B)</option>
-                                            <option value="gemma3:12b">Gemma 3 (12B)</option>
+                                            <option th:each="m : ${supportedModels}"
+                                                    th:value="${m.id()}"
+                                                    th:text="${m.displayName()}"></option>
                                         </select>
                                         <div class="form-text" data-i18n="settings.model.help">Выберите предпочитаемую модель для ваших чатов.</div>
                                     </div>
