@@ -73,6 +73,7 @@ public class UserPreferencesService {
         dto.setPreferredModel(entity.getModel());
         dto.setAvatarFileId(entity.getAvatarFileId());
         dto.setLanguage(entity.getLanguage());
+        dto.setTtsSpeakWhileGenerating(entity.getTtsSpeakWhileGenerating());
         dto.setMonthlyTokenLimit(entity.getMonthlyTokenLimit());
         dto.setTokenUsedInPeriod(entity.getTokenUsedInPeriod());
         dto.setPeriodStart(entity.getPeriodStart());
@@ -96,6 +97,10 @@ public class UserPreferencesService {
         // Language (simple string, no validation list here)
         if (StringUtils.hasText(dto.getLanguage())) {
             entity.setLanguage(dto.getLanguage());
+        }
+        // TTS live speak preference
+        if (dto.getTtsSpeakWhileGenerating() != null) {
+            entity.setTtsSpeakWhileGenerating(dto.getTtsSpeakWhileGenerating());
         }
         // Quota fields
         if (dto.getMonthlyTokenLimit() != null) {

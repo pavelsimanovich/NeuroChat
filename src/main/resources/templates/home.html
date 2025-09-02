@@ -437,9 +437,9 @@
                                     <div class="mb-3">
                                         <label for="modelSelect" class="form-label"><strong data-i18n="settings.model.label">Модель ИИ</strong></label>
                                         <select class="form-select" id="modelSelect">
-                                            <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
-                                            <option value="gemma3:4b">Gemma 3 (4B)</option>
-                                            <option value="gemma3:12b">Gemma 3 (12B)</option>
+                                            <option th:each="m : ${supportedModels}"
+                                                    th:value="${m.id()}"
+                                                    th:text="${m.displayName()}"></option>
                                         </select>
                                         <div class="form-text" data-i18n="settings.model.help">Выберите предпочитаемую модель для ваших чатов.</div>
                                     </div>
@@ -455,6 +455,10 @@
                                         <div class="form-check form-switch mb-3">
                                             <input class="form-check-input" type="checkbox" id="ttsAutoplay">
                                             <label class="form-check-label" for="ttsAutoplay" data-i18n="settings.tts.autoplay">Автоматически озвучивать ответы</label>
+                                        </div>
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="ttsLive">
+                                            <label class="form-check-label" for="ttsLive" data-i18n="settings.tts.live">Озвучивать на лету (во время генерации)</label>
                                         </div>
                                         <div class="row g-3 align-items-end">
                                             <div class="col-md-6">

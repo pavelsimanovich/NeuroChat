@@ -28,13 +28,12 @@ const tts = {
     supported: ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window),
     currentUtterance: null,
     speakingMessageId: null,
-    selectedVoice: null,
     isPaused: false,
     settings: {
-        voiceURI: '',
         rate: 1.0,
         pitch: 1.0,
-        autoplay: false
+        autoplay: false,
+        speakWhileGenerating: false
     },
 
     init() {
@@ -42,50 +41,46 @@ const tts = {
         // Load saved settings
         try {
             const saved = JSON.parse(localStorage.getItem('tts_settings') || '{}');
-            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, ...saved };
-        } catch (_) { /* noop */ }
-        // Attempt to select a Russian voice if available
-        const pickVoice = () => {
-            const voices = window.speechSynthesis.getVoices();
-            if (!voices || voices.length === 0) return;
-            // If user selected a voice, try to match by voiceURI
-            if (this.settings.voiceURI) {
-                const byURI = voices.find(v => v.voiceURI === this.settings.voiceURI);
-                if (byURI) this.selectedVoice = byURI;
-            }
-            // Fallbacks
-            if (!this.selectedVoice) {
-                this.selectedVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('ru'))
-                    || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
-                    || voices[0];
-            }
-        };
-        pickVoice();
-        // Voices may load asynchronously
-        window.speechSynthesis.onvoiceschanged = () => pickVoice();
-        // Stop TTS on page unload
+            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, speakWhileGenerating: false, ...saved };
+        } catch (ex) {
+            console.error(ex);
+        }
         window.addEventListener('beforeunload', () => this.stop());
     },
 
     applySettings(newSettings = {}) {
         // Update runtime settings and persist
         this.settings = { ...this.settings, ...newSettings };
-        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (_) { /* noop */ }
-        // Update selected voice if voiceURI changed
-        if (this.supported) {
-            const voices = window.speechSynthesis.getVoices();
-            if (Array.isArray(voices) && voices.length) {
-                if (this.settings.voiceURI) {
-                    const v = voices.find(v => v.voiceURI === this.settings.voiceURI);
-                    if (v) this.selectedVoice = v;
-                }
-            }
-        }
+        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (ex) {console.error(ex);}
         // If currently speaking, update control states
         this.updateControlsState();
     },
 
-    play(text, messageId, lang = 'ru-RU') {
+    // Queue a chunk without cancelling existing utterances (for streaming)
+    speakChunk(text, messageId) {
+        if (!this.supported || !text) return;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = Number(this.settings.rate) || 1.0;
+        utter.pitch = Number(this.settings.pitch) || 1.0;
+        utter.onstart = () => {
+            this.speakingMessageId = messageId;
+            this.isPaused = false;
+            this.updateControlsState();
+        };
+        utter.onend = () => {
+            // Do not clear speakingMessageId here; next chunk or stop() will update state
+            this.updateControlsState();
+        };
+        utter.onerror = () => {
+            this.updateControlsState();
+        };
+        // Enqueue without canceling to preserve queue
+        window.speechSynthesis.speak(utter);
+        this.currentUtterance = utter;
+        this.updateControlsState();
+    },
+
+    play(text, messageId) {
         if (!this.supported || !text) return;
         // If already speaking another message, stop it first
         if (this.isSpeaking() && this.speakingMessageId !== messageId) {
@@ -93,8 +88,6 @@ const tts = {
         }
 
         const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = this.selectedVoice?.lang || lang;
-        if (this.selectedVoice) utter.voice = this.selectedVoice;
         utter.rate = Number(this.settings.rate) || 1.0; // normal speed
         utter.pitch = Number(this.settings.pitch) || 1.0; // normal pitch
         utter.onstart = () => {
@@ -194,7 +187,9 @@ const tts = {
                     const on = activeId && id === activeId && activeState;
                     msg.classList.toggle('message-playing', !!on);
                 });
-        } catch (_) { /* noop */ }
+        } catch (ex) {
+            console.error(ex);
+        }
     }
 };
 
@@ -287,7 +282,8 @@ const elements = (function() {
                 e.preventDefault();
                 try {
                     elements.chatMessages.scrollTo({ top: 0, behavior: 'smooth' });
-                } catch (_) {
+                } catch (ex) {
+                    console.error(ex);
                     elements.chatMessages.scrollTop = 0;
                 }
             });
@@ -298,7 +294,7 @@ const elements = (function() {
                 e.preventDefault();
                 try {
                     elements.chatMessages.scrollTo({ top: elements.chatMessages.scrollHeight, behavior: 'smooth' });
-                } catch (_) {
+                } catch (ex) {
                     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
                 }
             });
@@ -310,7 +306,11 @@ const elements = (function() {
 
 // Re-render rooms list when language changes to refresh group titles/empty state
 window.addEventListener('i18n:changed', () => {
-    try { renderRoomsList(); } catch (_) { /* noop */ }
+    try {
+        renderRoomsList();
+    }  catch (ex) {
+        console.error(ex)
+    }
 });
 
 async function switchToLastRoom() {
@@ -471,7 +471,9 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
                 set.delete(groupId);
             }
             localStorage.setItem('collapsedGroups', JSON.stringify(Array.from(set)));
-        } catch (e) {}
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     headerElement.addEventListener('click', (e) => {
@@ -871,9 +873,14 @@ async function sendMessage() {
                 <div id="cm${uuid}" class="message-content"></div>
             `
         });
+        // Assign a stable message-id for streaming element for TTS highlight
+        const streamMid = `stream-${uuid}`;
+        messageElement.setAttribute('data-message-id', streamMid);
 
         let response = '';
         let isStreamActive = true;
+        // Buffer for live TTS speaking by sentences
+        let speakBuf = '';
 
         eventSource.onmessage = (e) => {
             if (roomId !== state.currentRoom.id || !isStreamActive) return;
@@ -900,13 +907,25 @@ async function sendMessage() {
                     window.dispatchEvent(new CustomEvent('messageSent'));
                     renderMessages();
                     scrollToBottom(true);
-                    // Autoplay TTS if enabled
+                    // Flush any remaining buffer for live speak
                     try {
-                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && finalMsg?.content) {
+                        if (window.tts && window.tts.supported && window.tts.settings.speakWhileGenerating && speakBuf.trim()) {
+                            const chunk = speakBuf.replace(/<[^>]*>/g, '');
+                            window.tts.speakChunk(chunk, streamMid);
+                            speakBuf = '';
+                        }
+                    } catch (ex) {
+                        console.error(ex)
+                    }
+                    // Autoplay TTS of the final text if enabled and not speaking live
+                    try {
+                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && !window.tts.settings.speakWhileGenerating && finalMsg?.content) {
                             const plainText = finalMsg.content.replace(/<[^>]*>/g, '');
                             window.tts.play(plainText, finalMsg.id);
                         }
-                    } catch (_) { /* noop */ }
+                    } catch (ex) {
+                        console.error(ex)
+                    }
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
@@ -916,6 +935,34 @@ async function sendMessage() {
                     contentDiv.innerHTML = marked.parse(response);
                     Prism.highlightAllUnder(contentDiv);
                     scrollToBottom();
+                }
+                // Live TTS chunking if enabled
+                try {
+                    if (window.tts && window.tts.supported && window.tts.settings.speakWhileGenerating) {
+                        const deltaPlain = String(message.content || '').replace(/<[^>]*>/g, '');
+                        if (deltaPlain) {
+                            speakBuf += deltaPlain;
+                            // Emit full sentences or lines
+                            let cutIndex = -1;
+                            while (true) {
+                                // find earliest sentence boundary
+                                const dot = speakBuf.indexOf('.')
+                                const ex = speakBuf.indexOf('!');
+                                const q = speakBuf.indexOf('?');
+                                const nl = speakBuf.indexOf('\n');
+                                const candidates = [dot, ex, q, nl].filter(i => i >= 0);
+                                if (!candidates.length) break;
+                                cutIndex = Math.min(...candidates);
+                                const sentence = speakBuf.slice(0, cutIndex + 1).trim();
+                                if (sentence) {
+                                    window.tts.speakChunk(sentence, streamMid);
+                                }
+                                speakBuf = speakBuf.slice(cutIndex + 1);
+                            }
+                        }
+                    }
+                } catch (ex) {
+                    console.error(ex)
                 }
             }
         };
@@ -1678,7 +1725,6 @@ async function handleDeleteRoom(roomId, title) {
                     </div>
                 </div>`;
 
-            // Apply i18n to the newly created welcome screen
             try { window.i18n?.apply(welcomeScreen); } catch (_) {}
 
             // Clear chat messages and append new welcome screen
@@ -2471,7 +2517,9 @@ function renderMessages() {
                             document.querySelectorAll('.message.message-playing').forEach(m => m.classList.remove('message-playing'));
                             const container = ctrl.closest('.message');
                             if (container) container.classList.add('message-playing');
-                        } catch (_) { /* noop */ }
+                        }  catch (ex) {
+                            console.error(ex)
+                        }
                         tts.play(textToSpeak, mid);
                     });
                     if (pauseBtn) pauseBtn.addEventListener('click', (e) => {
@@ -2489,7 +2537,9 @@ function renderMessages() {
                         try {
                             const container = ctrl.closest('.message');
                             if (container) container.classList.remove('message-playing');
-                        } catch (_) { /* noop */ }
+                        } catch (ex) {
+                            console.error(ex)
+                        }
                     });
                 }
             }

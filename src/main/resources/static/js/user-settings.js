@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const languageSelectElement = document.getElementById('languageSelect');
     // TTS controls
     const ttsAutoplayEl = document.getElementById('ttsAutoplay');
+    const ttsLiveEl = document.getElementById('ttsLive'); // optional: speak while generating
     const ttsRateEl = document.getElementById('ttsRate');
     const ttsPitchEl = document.getElementById('ttsPitch');
 
@@ -67,17 +68,19 @@ document.addEventListener('DOMContentLoaded', function () {
                             try { if (window.i18n) window.i18n.setLanguage(languageSelectElement.value); } catch (e) {}
                         }, { once: true });
                     }
-                    // Load TTS settings from tts module/localStorage
+                    // Load TTS settings: prefer server value, fallback to tts/localStorage
                     try {
                         const ttsModule = window.tts;
-                        if (ttsAutoplayEl && ttsModule) {
-                            ttsAutoplayEl.checked = !!ttsModule.settings.autoplay;
-                        }
-                        if (ttsRateEl && ttsModule) {
-                            ttsRateEl.value = ttsModule.settings.rate || 1.0;
-                        }
-                        if (ttsPitchEl && ttsModule) {
-                            ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
+                        const serverLive = data && typeof data.ttsSpeakWhileGenerating === 'boolean' ? data.ttsSpeakWhileGenerating : null;
+                        if (ttsModule) {
+                            if (ttsAutoplayEl) ttsAutoplayEl.checked = !!ttsModule.settings.autoplay;
+                            if (ttsLiveEl) ttsLiveEl.checked = serverLive != null ? serverLive : !!ttsModule.settings.speakWhileGenerating;
+                            if (ttsRateEl) ttsRateEl.value = ttsModule.settings.rate || 1.0;
+                            if (ttsPitchEl) ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
+                            // Apply server live value to runtime if provided
+                            if (serverLive != null) {
+                                ttsModule.applySettings({ speakWhileGenerating: serverLive });
+                            }
                         }
                     } catch (ex) {
                         console.error(ex);
@@ -139,6 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (window.tts) {
                     ttsSettingsPayload = {
                         autoplay: !!(ttsAutoplayEl && ttsAutoplayEl.checked),
+                        speakWhileGenerating: !!(ttsLiveEl && ttsLiveEl.checked),
                         rate: ttsRateEl ? Number(ttsRateEl.value) : 1.0,
                         pitch: ttsPitchEl ? Number(ttsPitchEl.value) : 1.0
                     };
@@ -157,7 +161,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     systemPrompt: systemPrompt,
                     preferredModel: preferredModel,
                     avatarFileId: avatarFileId,
-                    language: language
+                    language: language,
+                    ttsSpeakWhileGenerating: !!(ttsLiveEl && ttsLiveEl.checked)
                 })
             })
             .then(response => response.json())
@@ -183,6 +188,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     const newLang = (data && data.language) || language;
                     if (newLang && window.i18n) window.i18n.setLanguage(newLang);
+                } catch (_) {}
+                // Apply server-confirmed TTS live setting
+                try {
+                    if (window.tts && typeof data?.ttsSpeakWhileGenerating === 'boolean') {
+                        window.tts.applySettings({ speakWhileGenerating: data.ttsSpeakWhileGenerating });
+                        if (ttsLiveEl) ttsLiveEl.checked = data.ttsSpeakWhileGenerating;
+                    }
                 } catch (_) {}
             })
             .catch(error => {

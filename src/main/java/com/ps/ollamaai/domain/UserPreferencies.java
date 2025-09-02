@@ -29,6 +29,10 @@ public class UserPreferencies implements Serializable {
     private String model;
     private String avatarFileId;
 
+    // TTS preferences
+    @Column(name = "tts_speak_while_generating")
+    private Boolean ttsSpeakWhileGenerating;
+
     // Token usage controls
     // Monthly quota in tokens (approx). Null or 0 means unlimited.
     private Integer monthlyTokenLimit;
