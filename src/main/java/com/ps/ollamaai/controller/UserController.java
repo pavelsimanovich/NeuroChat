@@ -68,6 +68,7 @@ public class UserController {
             user.setPassword(requestDto.getPassword());
             user.setFirstName(requestDto.getFirstName());
             user.setLastName(requestDto.getLastName());
+            user.setIpFromLogin(ipAddress);
 
             userService.save(user);
             model.addAttribute("message", SUCCESS_REGISTRATION);

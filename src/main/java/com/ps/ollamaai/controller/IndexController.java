@@ -37,7 +37,6 @@ public class IndexController {
                 .filter(StringUtils::hasText)
                 .orElse(ollamaService.getCurrentModelName());
 
-        // Determine avatar URL: preview if uploaded, otherwise default
         String avatarUrl = prefsOpt.map(UserPreferencies::getAvatarFileId)
                 .filter(StringUtils::hasText)
                 .map(id -> "/api/files/" + id + "/preview")

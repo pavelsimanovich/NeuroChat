@@ -64,11 +64,8 @@ public class TomcatConfig {
         connector.setPort(httpPort);
         connector.setSecure(false);
         connector.setRedirectPort(serverPort);
-
-        // Дополнительные настройки коннектора для большей безопасности
         connector.setXpoweredBy(false);
         connector.setAllowTrace(false);
-
         return connector;
     }
 }

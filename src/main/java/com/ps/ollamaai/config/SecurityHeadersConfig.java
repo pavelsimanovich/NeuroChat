@@ -27,7 +27,7 @@ public class SecurityHeadersConfig {
                 response.setHeader("X-Frame-Options", "DENY");
                 response.setHeader("X-XSS-Protection", "1; mode=block");
                 response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-                response.setHeader("Access-Control-Allow-Origin", "*"); // Укажите конкретные домены в продакшне
+                response.setHeader("Access-Control-Allow-Origin", "*"); // Указать конкретные домены в продакшне
                 filterChain.doFilter(request, response);
             }
         };

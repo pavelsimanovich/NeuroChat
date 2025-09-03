@@ -30,4 +30,5 @@ public class User implements Serializable {
     private String role;
     private boolean enabled;
     private LocalDateTime createdAt = LocalDateTime.now();
+    private String ipFromLogin;
 }
