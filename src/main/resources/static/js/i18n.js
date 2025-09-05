@@ -1,7 +1,7 @@
 // Simple client-side i18n utility
 (function () {
     const STORAGE_KEY = 'ui_lang';
-    const DEFAULT_LANG = 'ru';
+    const DEFAULT_LANG = ((navigator.language || navigator.userLanguage || 'en').toLowerCase().startsWith('ru')) ? 'ru' : 'en';
 
     const dictionaries = {
         ru: {
