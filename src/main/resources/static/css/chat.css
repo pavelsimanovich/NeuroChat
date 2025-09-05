@@ -2017,8 +2017,8 @@ border-color: rgba(255, 193, 7, 0.15);
 }
 
 .dot {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     background: var(--accent-color);
     border-radius: 50%;
     animation: bounce 1.4s infinite ease-in-out;
