@@ -61,7 +61,7 @@ public class I18nConfig implements WebMvcConfigurer {
         UserPreferenceLocaleResolver(UserPreferencesService userPreferencesService) {
             this.userPreferencesService = userPreferencesService;
             setDefaultLocale(Locale.ENGLISH);
-            setSupportedLocales(List.of(Locale.ENGLISH, new Locale("ru")));
+            setSupportedLocales(List.of(Locale.ENGLISH, Locale.forLanguageTag("ru")));
         }
 
         @Override
@@ -82,13 +82,7 @@ public class I18nConfig implements WebMvcConfigurer {
                     return toLocaleSafe(lang);
                 }
             }
-            // 3) Accept-Language header
-            Locale headerLocale = super.resolveLocale(request);
-            if (headerLocale != null) {
-                return headerLocale;
-            }
-            // 4) Default
-            return getDefaultLocale() != null ? getDefaultLocale() : Locale.ENGLISH;
+            return super.resolveLocale(request);
         }
 
         private Locale toLocaleSafe(String tag) {
