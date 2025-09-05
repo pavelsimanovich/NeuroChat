@@ -20,10 +20,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.util.Map;
 
-import static com.ps.ollamaai.constants.Messages.SUCCESS_REGISTRATION;
 
 @Slf4j
 @Controller
@@ -32,6 +33,7 @@ public class UserController {
 
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final MessageSource messageSource;
 
     @GetMapping("/registration")
     public String registration(Model model) {
@@ -46,12 +48,16 @@ public class UserController {
         if (!bindingResult.hasFieldErrors("confirmPassword") &&
                 requestDto.getPassword() != null && requestDto.getConfirmPassword() != null &&
                 !requestDto.getPassword().equals(requestDto.getConfirmPassword())) {
-            bindingResult.addError(new FieldError("registrationRequest", "confirmPassword", "Пароли не совпадают"));
+            String msg = messageSource.getMessage("registration.passwords.mismatch",
+                    null, LocaleContextHolder.getLocale());
+            bindingResult.addError(new FieldError("registrationRequest", "confirmPassword", msg));
         }
 
         // Проверка существования пользователя с таким email
         if (requestDto.getEmail() != null && userService.findByEmail(requestDto.getEmail()) != null) {
-            bindingResult.addError(new FieldError("registrationRequest", "email", "Пользователь с таким email уже существует"));
+            String msg = messageSource.getMessage("registration.email.exists",
+                    null, LocaleContextHolder.getLocale());
+            bindingResult.addError(new FieldError("registrationRequest", "email", msg));
         }
 
         if (bindingResult.hasErrors()) {
@@ -71,11 +77,15 @@ public class UserController {
             user.setIpFromLogin(ipAddress);
 
             userService.save(user);
-            model.addAttribute("message", SUCCESS_REGISTRATION);
+            String success = messageSource.getMessage("registration.success",
+                    null, LocaleContextHolder.getLocale());
+            model.addAttribute("message", success);
             return "index";
         } catch (Exception e) {
             log.error("Ошибка при сохранении пользователя", e);
-            model.addAttribute("error", "Произошла ошибка при регистрации. Пожалуйста, попробуйте снова.");
+            String err = messageSource.getMessage("registration.error",
+                    null, LocaleContextHolder.getLocale());
+            model.addAttribute("error", err);
             return "registration";
         }
     }
@@ -84,24 +94,36 @@ public class UserController {
     public ResponseEntity<?> changePassword(@AuthenticationPrincipal UserDetails userDetails,
                                             @RequestBody ChangePasswordRequest request) {
         if (request == null || request.getNewPassword() == null || request.getConfirmPassword() == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Неверные данные"));
+            String msg = messageSource.getMessage("api.user.change_password.invalid",
+                    null, LocaleContextHolder.getLocale());
+            return ResponseEntity.badRequest().body(Map.of("message", msg));
         }
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Пароли не совпадают"));
+            String msg = messageSource.getMessage("api.user.change_password.mismatch",
+                    null, LocaleContextHolder.getLocale());
+            return ResponseEntity.badRequest().body(Map.of("message", msg));
         }
         if (request.getNewPassword().length() < 8) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Пароль должен содержать минимум 8 символов"));
+            String msg = messageSource.getMessage("api.user.change_password.too_short",
+                    null, LocaleContextHolder.getLocale());
+            return ResponseEntity.badRequest().body(Map.of("message", msg));
         }
 
         User user = userService.findByEmail(userDetails.getUsername());
         if (user == null) {
-            return ResponseEntity.status(404).body(Map.of("message", "Пользователь не найден"));
+            String msg = messageSource.getMessage("api.user.not_found",
+                    null, LocaleContextHolder.getLocale());
+            return ResponseEntity.status(404).body(Map.of("message", msg));
         }
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            return ResponseEntity.status(400).body(Map.of("message", "Текущий пароль неверен"));
+            String msg = messageSource.getMessage("api.user.current_password.invalid",
+                    null, LocaleContextHolder.getLocale());
+            return ResponseEntity.status(400).body(Map.of("message", msg));
         }
         userService.save(user);
-        return ResponseEntity.ok(Map.of("message", "Пароль успешно изменен"));
+        String ok = messageSource.getMessage("api.user.change_password.success",
+                null, LocaleContextHolder.getLocale());
+        return ResponseEntity.ok(Map.of("message", ok));
     }
 
     /**

@@ -33,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -56,6 +58,7 @@ public class ChatAIController {
     private final FileStorageService fileStorageService;
     private final UserPreferencesService userPreferencesService;
     private final TokenQuotaService tokenQuotaService;
+    private final MessageSource messageSource;
 
     @Value("${app.use-token-limits}")
     private boolean useTokenLimits;
@@ -100,11 +103,17 @@ public class ChatAIController {
                             return null;
                         })
                         .subscribeOn(Schedulers.boundedElastic())
-                        .thenReturn(new ChunkResponseDTO(e.getMessage(), true, LIMIT_EXCEEDED.name()))
+                        .thenReturn(new ChunkResponseDTO(
+                                messageSource.getMessage("error.limit.exceeded",
+                                        new Object[]{e.getMessage()}, LocaleContextHolder.getLocale()),
+                                true,
+                                LIMIT_EXCEEDED.name()))
                         .flux())
                 .onErrorResume(e -> {
                     log.error("Error processing chat message", e);
-                    return Mono.just(new ChunkResponseDTO(e.getLocalizedMessage(), true, SERVER_ERROR.name()));
+                    String msg = messageSource.getMessage("error.server",
+                            null, LocaleContextHolder.getLocale());
+                    return Mono.just(new ChunkResponseDTO(msg, true, SERVER_ERROR.name()));
                 });
     }
 
@@ -113,7 +122,9 @@ public class ChatAIController {
         try {
             estimateAndCheckQuota(username, question);
         } catch (LimitExceededException ex) {
-            return Mono.just(new ChunkResponseDTO(ex.getMessage(), true, LIMIT_EXCEEDED.name())).flux();
+            String msg = messageSource.getMessage("error.limit.exceeded",
+                    new Object[]{ex.getMessage()}, LocaleContextHolder.getLocale());
+            return Mono.just(new ChunkResponseDTO(msg, true, LIMIT_EXCEEDED.name())).flux();
         }
         return null;
     }

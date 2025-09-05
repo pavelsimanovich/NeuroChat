@@ -14,6 +14,8 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 @Controller
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class PasswordResetController {
 
     private final PasswordResetService passwordResetService;
+    private final MessageSource messageSource;
 
     @GetMapping("/forgot-password")
     public String showForgotPasswordForm(Model model) {
@@ -40,8 +43,8 @@ public class PasswordResetController {
 
         passwordResetService.createPasswordResetTokenForUser(request.getEmail());
 
-        redirectAttributes.addFlashAttribute("success",
-                "Если указанный email зарегистрирован в системе, на него была отправлена инструкция по восстановлению пароля.");
+        String sentMsg = messageSource.getMessage("password.forgot.sent_info", null, LocaleContextHolder.getLocale());
+        redirectAttributes.addFlashAttribute("success", sentMsg);
         return "redirect:/forgot-password?sent";
     }
 
@@ -53,8 +56,8 @@ public class PasswordResetController {
 
         boolean isValidToken = passwordResetService.validatePasswordResetToken(token);
         if (!isValidToken) {
-            redirectAttributes.addFlashAttribute("error", 
-                    "Недействительная или просроченная ссылка для восстановления пароля. Пожалуйста, запросите новую.");
+            String err = messageSource.getMessage("password.reset.invalid_token", null, LocaleContextHolder.getLocale());
+            redirectAttributes.addFlashAttribute("error", err);
             return "redirect:/forgot-password";
         }
 
@@ -73,26 +76,27 @@ public class PasswordResetController {
         }
 
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            result.rejectValue("confirmPassword", "password.mismatch", "Пароли не совпадают");
+            String msg = messageSource.getMessage("password.reset.mismatch", null, LocaleContextHolder.getLocale());
+            result.rejectValue("confirmPassword", "password.mismatch", msg);
             return "reset-password";
         }
 
         boolean resetSuccess = passwordResetService.resetPassword(request.getToken(), request.getPassword());
         if (!resetSuccess) {
-            redirectAttributes.addFlashAttribute("error", 
-                    "Не удалось изменить пароль. Ссылка недействительна или устарела.");
+            String err = messageSource.getMessage("password.reset.failed", null, LocaleContextHolder.getLocale());
+            redirectAttributes.addFlashAttribute("error", err);
             return "redirect:/forgot-password";
         }
 
-        redirectAttributes.addFlashAttribute("success", 
-                "Ваш пароль успешно изменен. Теперь вы можете войти в систему, используя новый пароль.");
+        String ok = messageSource.getMessage("password.reset.success", null, LocaleContextHolder.getLocale());
+        redirectAttributes.addFlashAttribute("success", ok);
         return "redirect:/login";
     }
 
     @Data
     public static class ForgotPasswordRequest {
-        @NotBlank(message = "Email не может быть пустым")
-        @Email(message = "Пожалуйста, введите корректный email")
+        @NotBlank(message = "{validation.email.not_blank}")
+        @Email(message = "{validation.email.invalid}")
         private String email;
     }
 
@@ -101,11 +105,11 @@ public class PasswordResetController {
     public static class ResetPasswordRequest {
         private String token;
 
-        @NotBlank(message = "Пароль не может быть пустым")
-        @Size(min = 8, message = "Пароль должен содержать минимум 8 символов")
+        @NotBlank(message = "{validation.password.not_blank}")
+        @Size(min = 8, message = "{validation.password.too_short}")
         private String password;
 
-        @NotBlank(message = "Подтверждение пароля не может быть пустым")
+        @NotBlank(message = "{validation.confirm.not_blank}")
         private String confirmPassword;
 
         public ResetPasswordRequest(String token) {
