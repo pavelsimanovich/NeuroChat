@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -105,6 +106,7 @@ public class PasswordResetController {
 
     @Data
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class ResetPasswordRequest {
         private String token;
 
