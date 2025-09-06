@@ -58,9 +58,9 @@ public class EmailService {
             helper.setText(html, true);
 
             mailSender.send(message);
-            log.info("Email успешно отправлен на адрес: {}", to);
+            log.info("Email has been successfully send: {}", to);
         } catch (MessagingException e) {
-            log.error("Ошибка при отправке email на адрес: {}", to, e);
+            log.error("Error during sending an email to: {}", to, e);
         }
     }
 

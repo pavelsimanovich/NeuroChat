@@ -52,7 +52,7 @@ public class TokenQuotaService {
         long used = prefs.getTokenUsedInPeriod() == null ? 0L : prefs.getTokenUsedInPeriod();
         long remaining = Math.max(0, (long) limit - used);
         if (estimatedTokens > remaining) {
-            throw new LimitExceededException("Превышен месячный лимит токенов. Доступно: " + remaining + ", требуется: " + estimatedTokens);
+            throw new LimitExceededException("Monthly token limit exceeded. Available: " + remaining + ", required: " + estimatedTokens);
         }
         userPreferenciesRepository.save(prefs);
     }

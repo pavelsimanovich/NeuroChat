@@ -88,7 +88,7 @@ public class I18nConfig implements WebMvcConfigurer {
         private Locale toLocaleSafe(String tag) {
             try {
                 return Locale.forLanguageTag(tag);
-            } catch (Exception ignored) {
+            } catch (Exception _) {
                 return Locale.ENGLISH;
             }
         }
@@ -105,7 +105,7 @@ public class I18nConfig implements WebMvcConfigurer {
                 if (principal instanceof String s) {
                     return s;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception _) {}
             return null;
         }
     }

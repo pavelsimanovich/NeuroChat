@@ -76,7 +76,10 @@ public class AdminApiController {
         if (val instanceof Number n) {
             limit = n.intValue();
         } else if (val instanceof String s && StringUtils.hasText(s)) {
-            try { limit = Integer.parseInt(s.trim()); } catch (Exception ignored) {}
+            try {
+                limit = Integer.parseInt(s.trim());
+            } catch (Exception ignored) {
+            }
         }
         userPreferencesService.setMonthlyLimit(u.getEmail(), limit);
         return ResponseEntity.ok(Map.of("status", "ok"));
