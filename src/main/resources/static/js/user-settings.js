@@ -10,6 +10,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const ttsLiveEl = document.getElementById('ttsLive'); // optional: speak while generating
     const ttsRateEl = document.getElementById('ttsRate');
     const ttsPitchEl = document.getElementById('ttsPitch');
+    const ttsRateValueEl = document.getElementById('ttsRateValue');
+    const ttsPitchValueEl = document.getElementById('ttsPitchValue');
+
+    // Helpers: update visible badges for range values
+    const format1 = (v) => (Math.round(Number(v) * 10) / 10).toFixed(1);
+    function updateTtsBadges() {
+        if (ttsRateEl && ttsRateValueEl) ttsRateValueEl.textContent = format1(ttsRateEl.value || 1.0);
+        if (ttsPitchEl && ttsPitchValueEl) ttsPitchValueEl.textContent = format1(ttsPitchEl.value || 1.0);
+    }
+    // Live updates while dragging
+    if (ttsRateEl) ttsRateEl.addEventListener('input', updateTtsBadges);
+    if (ttsPitchEl) ttsPitchEl.addEventListener('input', updateTtsBadges);
 
     // Profile tab elements
     const avatarInput = document.getElementById('avatarInput');
@@ -82,6 +94,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 ttsModule.applySettings({ speakWhileGenerating: serverLive });
                             }
                         }
+                        // Update visible values once inputs are populated
+                        updateTtsBadges();
                     } catch (ex) {
                         console.error(ex);
                     }
@@ -196,6 +210,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (ttsLiveEl) ttsLiveEl.checked = data.ttsSpeakWhileGenerating;
                     }
                 } catch (_) {}
+                // Ensure badges reflect any runtime-normalized values
+                updateTtsBadges();
             })
             .catch(error => {
                 console.error('Error saving user preferences:', error);
