@@ -4,27 +4,28 @@ import com.ps.ollamaai.domain.UserPreferencies;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EmailServiceTest {
 
-    @Mock private JavaMailSender mailSender;
-    @Mock private SpringTemplateEngine templateEngine;
     @Mock private MessageSource messageSource;
     @Mock private UserPreferencesService userPreferencesService;
 
