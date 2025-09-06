@@ -41,11 +41,14 @@ public class PasswordResetController {
             return "forgot-password";
         }
 
-        passwordResetService.createPasswordResetTokenForUser(request.getEmail());
-
-        String sentMsg = messageSource.getMessage("password.forgot.sent_info", null, LocaleContextHolder.getLocale());
-        redirectAttributes.addFlashAttribute("success", sentMsg);
-        return "redirect:/forgot-password?sent";
+        boolean passwordResetTokenForUser = passwordResetService.createPasswordResetTokenForUser(request.getEmail());
+        if (!passwordResetTokenForUser) {
+            redirectAttributes.addFlashAttribute("error", "Email not exists");
+        } else {
+            String sentMsg = messageSource.getMessage("password.forgot.sent_info", null, LocaleContextHolder.getLocale());
+            redirectAttributes.addFlashAttribute("success", sentMsg);
+        }
+            return "redirect:/forgot-password?sent";
     }
 
     @GetMapping("/reset-password")

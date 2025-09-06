@@ -6,7 +6,6 @@ import com.ps.ollamaai.repository.PasswordResetTokenRepository;
 import com.ps.ollamaai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,21 +26,20 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
-    @Lazy
-    private final PasswordResetService self;
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void createPasswordResetTokenForUser(String email) {
+    public boolean createPasswordResetTokenForUser(String email) {
         try {
             Optional<User> userOptional = userRepository.findByEmail(email);
             if (userOptional.isEmpty()) {
                 log.warn("Attempt to reset password for non-existent email: {}", email);
+                return false;
             }
 
             User user = userOptional.get();
             
             // Use upsert instead of delete + insert
-            self.createOrUpdatePasswordToken(user);
+            return createOrUpdatePasswordToken(user);
         } catch (Exception e) {
             log.error("Error creating password reset token for email: {}", email, e);
             throw e;
@@ -49,7 +47,7 @@ public class PasswordResetService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
-    protected void createOrUpdatePasswordToken(User user) {
+    protected boolean createOrUpdatePasswordToken(User user) {
         String token = UUID.randomUUID().toString();
         LocalDateTime expiryDate = LocalDateTime.now().plusHours(24);
         
@@ -74,6 +72,7 @@ public class PasswordResetService {
         emailService.sendPasswordResetEmail(user.getEmail(), token, name);
 
         log.info("Password reset token created for user: {}", user.getEmail());
+        return true;
     }
 
     @Transactional(readOnly = true)
@@ -88,7 +87,7 @@ public class PasswordResetService {
             PasswordResetToken resetToken = tokenOptional.get();
             if (resetToken.isExpired()) {
                 // Delete expired token in separate transaction
-                self.deleteExpiredTokenAsync(resetToken);
+                deleteExpiredTokenAsync(resetToken);
                 log.warn("Attempt to use expired password reset token: {}", token);
                 return false;
             }
@@ -119,7 +118,7 @@ public class PasswordResetService {
 
             PasswordResetToken resetToken = tokenOptional.get();
             if (resetToken.isExpired()) {
-                self.deleteExpiredTokenAsync(resetToken);
+                deleteExpiredTokenAsync(resetToken);
                 return false;
             }
 
