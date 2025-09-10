@@ -1,4 +1,4 @@
-# Chat with Ollama and Spring Boot AI
+# NEUROCHAT. Chat with Ollama and Spring Boot AI
 
 ## First steps:
 
@@ -51,7 +51,7 @@ https://huggingface.co/
     project-root/
     ├── src/
     │   ├── main/
-    │   │   ├── java/com/ps/ollamaai
+    │   │   ├── java/com/ps/neurochat
     │   │   │   ├── config/       # Spring configs
     │   │   │   ├── constants/    # Constants
     │   │   │   ├── controller/   # REST and FLUX endpoints
