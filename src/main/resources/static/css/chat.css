@@ -2296,9 +2296,47 @@ border-color: rgba(255, 193, 7, 0.15);
 #userSettingsModal .modal-body {
     padding: 1.5rem;
     color: var(--text-primary);
-    /* Make the body scrollable within fixed-height modal */
+    /* Layout: keep left menu static; scroll only content on the right */
     flex: 1 1 auto;
-    overflow: auto;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Ensure the row stretches and right content becomes the scroller */
+#userSettingsModal .modal-body > .row { 
+    flex: 1 1 auto; 
+    width: 100%; 
+    display: flex; 
+    flex-wrap: nowrap; 
+    min-height: 0; /* allow children to shrink for overflow */
+}
+#userSettingsModal #userSettingsTabs { overflow: visible; }
+/* Left menu column stays static */
+#userSettingsModal .modal-body > .row > .col-12.col-md-3 { 
+    overflow: visible; 
+}
+/* Right content column holds the scroller (no own scroll) */
+#userSettingsModal .modal-body > .row > .col-12.col-md-9 { 
+    display: flex; 
+    flex-direction: column; 
+    flex: 1 1 auto; 
+    min-height: 0; 
+    overflow: hidden; 
+}
+#userSettingsModal #userSettingsTabsContent { 
+    flex: 1 1 auto; 
+    height: 100%;
+    min-height: 0; 
+    overflow: auto; 
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Fallback: ensure active tab pane itself can scroll if needed */
+#userSettingsModal #userSettingsTabsContent .tab-pane { 
+    min-height: 0; 
+}
+#userSettingsModal #userSettingsTabsContent .tab-pane.show.active { 
+    overflow: auto; 
 }
 
 #userSettingsModal .modal-footer {

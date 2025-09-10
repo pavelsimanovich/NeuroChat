@@ -70,7 +70,9 @@ public class AdminApiController {
     @PostMapping("/users/{id}/quota")
     public ResponseEntity<?> setUserQuota(@PathVariable("id") String id, @RequestBody Map<String, Object> payload) {
         User u = userService.findById(id);
-        if (u == null) return ResponseEntity.notFound().build();
+        if (u == null) {
+            return ResponseEntity.notFound().build();
+        }
         Integer limit = null;
         Object val = payload.get("monthlyTokenLimit");
         if (val instanceof Number n) {
@@ -78,7 +80,7 @@ public class AdminApiController {
         } else if (val instanceof String s && StringUtils.hasText(s)) {
             try {
                 limit = Integer.parseInt(s.trim());
-            } catch (Exception ignored) {
+            } catch (Exception _) {
             }
         }
         userPreferencesService.setMonthlyLimit(u.getEmail(), limit);
