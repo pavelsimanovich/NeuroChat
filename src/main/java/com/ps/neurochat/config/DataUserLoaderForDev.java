@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @Profile("dev")
-public class DataLoaderTest {
+public class DataUserLoaderForDev {
 
     @Bean
     public CommandLineRunner createDemoUsers(UserRepository repo, PasswordEncoder encoder) {
