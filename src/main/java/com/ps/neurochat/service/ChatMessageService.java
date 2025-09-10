@@ -17,6 +17,8 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -27,10 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.ps.neurochat.constants.Messages.LIMIT_EXCEEDED_MESSAGE;
+import static com.ps.neurochat.domain.ChatMessage.MessageType;
 import static com.ps.neurochat.domain.ChatMessage.MessageType.AI_RESPONSE;
 import static com.ps.neurochat.domain.ChatMessage.MessageType.USER_MESSAGE;
-import static com.ps.neurochat.domain.ChatMessage.MessageType;
 
 @Slf4j
 @Service
@@ -46,6 +47,7 @@ public class ChatMessageService {
     private final ChatMessageRepository messageRepository;
     private final UserService userService;
     private final HistoryEntryService historyEntryService;
+    private final MessageSource messageSource;
 
     private final Map<String, List<Message>> conversationalHistory = new ConcurrentHashMap<>();
     private final Map<String, StringBuilder> buffers = new ConcurrentHashMap<>();
@@ -58,19 +60,22 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public List<Message> processChatMessage(String message, String chatId, String userName, FileData fileData) throws LimitExceededException {
+    public List<Message> processChatMessage(String message, String chatId, String userName, FileData fileData)
+            throws LimitExceededException {
         final User user = userService.findByEmail(userName);
         saveUserMessage(chatId, user.getId(), message, fileData);
 
         checkHistory(chatId);
 
-        final List<Message> currentHistory = conversationalHistory.computeIfAbsent(chatId, k -> new ArrayList<>());
+        final List<Message> currentHistory = conversationalHistory.computeIfAbsent(chatId,
+                k -> new ArrayList<>());
 
         try {
             checkLimit(currentHistory);
         } catch (RuntimeException ex) {
             conversationalHistory.remove(chatId);
-            throw new LimitExceededException(LIMIT_EXCEEDED_MESSAGE);
+            throw new LimitExceededException(messageSource.getMessage("error.limit.exceeded",
+                    new Object[]{ex.getMessage()}, LocaleContextHolder.getLocale()));
         }
 
         return currentHistory;
@@ -102,7 +107,8 @@ public class ChatMessageService {
        chatMessageRepository.save(message);
     }
 
-    private ChatMessage createChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage, String userPrompt) {
+    private ChatMessage createChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage,
+                                          String userPrompt) {
         final ChatRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         // Получаем последний порядковый номер для этой комнаты
@@ -139,7 +145,8 @@ public class ChatMessageService {
 
     private void checkLimit(List<Message> currentHistory) {
         if (currentHistory.size() >= maxHistoryChatLength + 1) {
-            throw new RuntimeException(LIMIT_EXCEEDED_MESSAGE);
+            throw new RuntimeException(messageSource.getMessage("error.limit.exceeded",
+                    null, LocaleContextHolder.getLocale()));
         }
     }
 

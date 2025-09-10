@@ -46,7 +46,8 @@ public class PasswordResetController {
         if (!passwordResetTokenForUser) {
             redirectAttributes.addFlashAttribute("error", "Email not exists");
         } else {
-            String sentMsg = messageSource.getMessage("password.forgot.sent_info", null, LocaleContextHolder.getLocale());
+            String sentMsg = messageSource.getMessage("password.forgot.sent_info",
+                    null, LocaleContextHolder.getLocale());
             redirectAttributes.addFlashAttribute("success", sentMsg);
         }
             return "redirect:/forgot-password?sent";
@@ -60,7 +61,8 @@ public class PasswordResetController {
 
         boolean isValidToken = passwordResetService.validatePasswordResetToken(token);
         if (!isValidToken) {
-            String err = messageSource.getMessage("password.reset.invalid_token", null, LocaleContextHolder.getLocale());
+            String err = messageSource.getMessage("password.reset.invalid_token",
+                    null, LocaleContextHolder.getLocale());
             redirectAttributes.addFlashAttribute("error", err);
             return "redirect:/forgot-password";
         }
@@ -80,19 +82,22 @@ public class PasswordResetController {
         }
 
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            String msg = messageSource.getMessage("password.reset.mismatch", null, LocaleContextHolder.getLocale());
+            String msg = messageSource.getMessage("password.reset.mismatch",
+                    null, LocaleContextHolder.getLocale());
             result.rejectValue("confirmPassword", "password.mismatch", msg);
             return "reset-password";
         }
 
         boolean resetSuccess = passwordResetService.resetPassword(request.getToken(), request.getPassword());
         if (!resetSuccess) {
-            String err = messageSource.getMessage("password.reset.failed", null, LocaleContextHolder.getLocale());
+            String err = messageSource.getMessage("password.reset.failed",
+                    null, LocaleContextHolder.getLocale());
             redirectAttributes.addFlashAttribute("error", err);
             return "redirect:/forgot-password";
         }
 
-        String ok = messageSource.getMessage("password.reset.success", null, LocaleContextHolder.getLocale());
+        String ok = messageSource.getMessage("password.reset.success",
+                null, LocaleContextHolder.getLocale());
         redirectAttributes.addFlashAttribute("success", ok);
         return "redirect:/login";
     }

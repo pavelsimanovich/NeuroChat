@@ -93,9 +93,11 @@ public class ChatAIController {
                                     .stream()
                                     .content()
                                     .map(chunk -> new ChunkResponseDTO(chunk, false, null))
-                                    .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk.content()))
+                                    .doOnNext(chunk ->
+                                            chatMessageService.saveChunk(chatId, chunk.content()))
                                     .doOnComplete(() -> onCompletionUpdate(username, chatId, question, currentHistory))
-                                    .concatWith(Mono.just(new ChunkResponseDTO("[DONE]", true, null)));
+                                    .concatWith(Mono.just(
+                                            new ChunkResponseDTO("[DONE]", true, null)));
                         }))
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(LimitExceededException.class, e -> Mono.<Void>fromCallable(() -> {
@@ -177,7 +179,8 @@ public class ChatAIController {
         return StringUtils.hasText(fileId) ? fileStorageService.getFile(fileId) : null;
     }
 
-    private List<Message> buildMessages(String question, FileData fileData, List<Message> currentHistory, String systemPrompt) {
+    private List<Message> buildMessages(String question, FileData fileData, List<Message> currentHistory,
+                                        String systemPrompt) {
         List<Message> messages = new ArrayList<>(currentHistory);
         messages.add(new SystemMessage(systemPrompt));
         messages.add(buildUserMessage(question, fileData));

@@ -40,7 +40,12 @@ public class TokenQuotaService {
         // Reset period at the start of a new month
         LocalDateTime now = LocalDateTime.now();
         if (prefs.getPeriodStart() == null || isDifferentMonth(prefs.getPeriodStart(), now)) {
-            prefs.setPeriodStart(now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0));
+            prefs.setPeriodStart(now
+                    .withDayOfMonth(1)
+                    .withHour(0)
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0));
             prefs.setTokenUsedInPeriod(0L);
         }
 
@@ -52,7 +57,8 @@ public class TokenQuotaService {
         long used = prefs.getTokenUsedInPeriod() == null ? 0L : prefs.getTokenUsedInPeriod();
         long remaining = Math.max(0, (long) limit - used);
         if (estimatedTokens > remaining) {
-            throw new LimitExceededException("Monthly token limit exceeded. Available: " + remaining + ", required: " + estimatedTokens);
+            throw new LimitExceededException("" +
+                    "Monthly token limit exceeded. Available: " + remaining + ", required: " + estimatedTokens);
         }
         userPreferenciesRepository.save(prefs);
     }

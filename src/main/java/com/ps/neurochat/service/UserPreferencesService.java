@@ -90,7 +90,8 @@ public class UserPreferencesService {
             if (SupportedOllamaModel.isSupported(preferredModel)) {
                 entity.setModel(preferredModel);
             } else {
-                log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.", preferredModel, email);
+                log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.",
+                        preferredModel, email);
             }
         }
         if (StringUtils.hasText(dto.getAvatarFileId())) {

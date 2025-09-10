@@ -15,8 +15,10 @@ public class ReactiveService {
 
     private final ChatMessageService chatMessageService;
 
-    public Mono<List<Message>> processChatMessageReactive(String question, String chatId, String username, FileData fileData) {
-        return Mono.fromCallable(() -> chatMessageService.processChatMessage(question, chatId, username, fileData))
+    public Mono<List<Message>> processChatMessageReactive(String question, String chatId,
+                                                          String username, FileData fileData) {
+        return Mono.fromCallable(() ->
+                        chatMessageService.processChatMessage(question, chatId, username, fileData))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 }

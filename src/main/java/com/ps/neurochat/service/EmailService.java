@@ -73,7 +73,8 @@ public class EmailService {
         variables.put("expiryHours", 24);
 
         Locale locale = resolveLocaleForUser(to);
-        String subject = messageSource.getMessage("email.reset.title", null, "Password reset", locale);
+        String subject = messageSource.getMessage("email.reset.title", null,
+                "Password reset", locale);
 
         sendEmailWithTemplate(to, subject, "password-reset-email", variables);
     }
