@@ -689,6 +689,11 @@ function setupScrollHandlers() {
         if (elements.scrollBottomBtn) {
             elements.scrollBottomBtn.classList.toggle('d-none', !showBottom);
         }
+        // If both are visible, stack the top button above the bottom one
+        const bothVisible = showTop && showBottom;
+        if (elements.scrollTopBtn) {
+            elements.scrollTopBtn.classList.toggle('stacked', bothVisible);
+        }
     };
 
     elements.chatMessages.addEventListener('scroll', () => {

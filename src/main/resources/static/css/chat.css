@@ -2316,6 +2316,8 @@ border-color: rgba(255, 193, 7, 0.15);
 /* Left menu column stays static */
 #userSettingsModal .modal-body > .row > .col-12.col-md-3 { 
     overflow: visible; 
+    flex: 0 0 260px; /* fixed narrower menu */
+    max-width: 260px;
 }
 /* Right content column holds the scroller (no own scroll) */
 #userSettingsModal .modal-body > .row > .col-12.col-md-9 { 
@@ -2332,6 +2334,8 @@ border-color: rgba(255, 193, 7, 0.15);
     min-height: 0; 
     overflow: auto; 
     overflow-x: hidden;
+    scrollbar-gutter: stable both-edges; /* keep content away from scrollbar */
+    padding-right: 10px; /* ensure elements don't touch the scrollbar */
     -webkit-overflow-scrolling: touch;
 }
 
@@ -2342,6 +2346,16 @@ border-color: rgba(255, 193, 7, 0.15);
 #userSettingsModal #userSettingsTabsContent .tab-pane.show.active { 
     overflow: auto; 
     overflow-x: hidden;
+}
+
+/* Responsive: stack columns on small screens */
+@media (max-width: 768px) {
+    #userSettingsModal .modal-body > .row { flex-wrap: wrap; }
+    #userSettingsModal .modal-body > .row > .col-12.col-md-3,
+    #userSettingsModal .modal-body > .row > .col-12.col-md-9 { 
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
 }
 
 #userSettingsModal .modal-footer {
