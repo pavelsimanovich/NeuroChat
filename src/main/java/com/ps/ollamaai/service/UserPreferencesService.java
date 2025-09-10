@@ -6,12 +6,13 @@ import com.ps.ollamaai.dto.enums.SupportedOllamaModel;
 import com.ps.ollamaai.repository.UserPreferenciesRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Optional;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static com.ps.ollamaai.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 
@@ -38,6 +39,7 @@ public class UserPreferencesService {
         return toDto(save(preferences));
     }
 
+    @Cacheable("user_prefs")
     @Transactional(readOnly = true)
     public UserPreferencesDTO getUserPreferencesOrDefault(String email) {
         try {

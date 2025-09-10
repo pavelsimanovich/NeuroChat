@@ -682,16 +682,12 @@ function setupScrollHandlers() {
         const max = elements.chatMessages.scrollHeight - elements.chatMessages.clientHeight;
         const showTop = sc > 200;
         const showBottom = max - sc > config.autoScroll.threshold; // not near bottom
-        // Mutual exclusivity: show only one button at the same fixed position
-        if (showBottom) {
-            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.remove('d-none');
-            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
-        } else if (showTop) {
-            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.remove('d-none');
-            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
-        } else {
-            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
-            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
+        // Independent visibility: when in the middle, show both buttons
+        if (elements.scrollTopBtn) {
+            elements.scrollTopBtn.classList.toggle('d-none', !showTop);
+        }
+        if (elements.scrollBottomBtn) {
+            elements.scrollBottomBtn.classList.toggle('d-none', !showBottom);
         }
     };
 
@@ -1417,7 +1413,9 @@ const voiceInput = {
         this.recognition.continuous = true;
         this.recognition.interimResults = true;
         this.recognition.maxAlternatives = 1;
-        this.recognition.lang = 'ru-RU';
+        this.recognition.lang = ((navigator.language || navigator.userLanguage || 'en')
+            .toLowerCase()
+            .startsWith('ru')) ? 'ru-RU' : 'en-EN';
 
         // Setup event handlers
         this.recognition.onstart = this.onStart.bind(this);
