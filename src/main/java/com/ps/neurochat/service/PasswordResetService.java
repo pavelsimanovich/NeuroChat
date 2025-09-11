@@ -46,7 +46,6 @@ public class PasswordResetService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
     protected boolean createOrUpdatePasswordToken(User user) {
         String token = UUID.randomUUID().toString();
         LocalDateTime expiryDate = LocalDateTime.now().plusHours(24);

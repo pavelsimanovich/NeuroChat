@@ -40,12 +40,8 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
 
-            // Создаем изменяемую копию Map если она неизменяемая
             Map<String, Object> mutableVariables = new HashMap<>(variables);
-            // Добавляем базовый URL приложения в контекст
             mutableVariables.put("appUrl", appUrl);
-
-            // Определяем локаль получателя по user preferences (email == userId)
             Locale locale = resolveLocaleForUser(to);
 
             Context context = new Context(locale);
@@ -88,7 +84,7 @@ public class EmailService {
                 Locale loc = Locale.forLanguageTag(lang);
                 if (loc != null) return loc;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception _) {}
         return Locale.ENGLISH;
     }
 }

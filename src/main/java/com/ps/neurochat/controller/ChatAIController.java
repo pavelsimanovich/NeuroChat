@@ -70,22 +70,22 @@ public class ChatAIController {
             @RequestParam(required = false) String fileId,
             Principal principal) {
 
-        FileData fileData = getFileData(fileId);
-        String username = principal.getName();
+        final FileData fileData = getFileData(fileId);
+        final String username = principal.getName();
 
         return reactiveService.processChatMessageReactive(question, chatId, username, fileData)
                 .flatMapMany(currentHistory -> loadUserPreferences(username)
                         .flatMapMany(prefs -> {
-                            String systemPrompt = resolveSystemPrompt(prefs);
-                            String preferredModel = prefs.getPreferredModel();
+                            final String systemPrompt = resolveSystemPrompt(prefs);
+                            final String preferredModel = prefs.getPreferredModel();
 
                             if (useTokenLimits) {
                                 Flux<ChunkResponseDTO> ex = estimate(question, username);
                                 if (ex != null) return ex;
                             }
 
-                            List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
-                            Prompt prompt = new Prompt(messages);
+                            final List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
+                            final Prompt prompt = new Prompt(messages);
 
                             var spec = buildRequestSpec(prompt, chatId, preferredModel);
 
@@ -160,7 +160,7 @@ public class ChatAIController {
                                     String chatId,
                                     String question,
                                     List<Message> currentHistory) {
-        String response = chatMessageService.saveAiResponse(chatId);
+        final String response = chatMessageService.saveAiResponse(chatId);
         // Extend in-memory history for next turn
         currentHistory.add(new UserMessage(question));
         currentHistory.add(new AssistantMessage(response));
@@ -181,7 +181,7 @@ public class ChatAIController {
 
     private List<Message> buildMessages(String question, FileData fileData, List<Message> currentHistory,
                                         String systemPrompt) {
-        List<Message> messages = new ArrayList<>(currentHistory);
+        final List<Message> messages = new ArrayList<>(currentHistory);
         messages.add(new SystemMessage(systemPrompt));
         messages.add(buildUserMessage(question, fileData));
         return messages;
@@ -200,7 +200,7 @@ public class ChatAIController {
             }
         };
 
-        Media imageMedia = Media.builder()
+        final Media imageMedia = Media.builder()
                 .data(resource)
                 .mimeType(MimeType.valueOf(finalFileData.getContentType()))
                 .build();

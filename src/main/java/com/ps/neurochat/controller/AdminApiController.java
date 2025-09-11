@@ -30,7 +30,7 @@ public class AdminApiController {
 
     @GetMapping("/users")
     public List<AdminUserDto> listUsers(@RequestParam(value = "q", required = false) String q) {
-        List<User> users = StringUtils.hasText(q) ? userService.search(q) : userService.findAll();
+        final List<User> users = StringUtils.hasText(q) ? userService.search(q) : userService.findAll();
         return users.stream()
                 .map(AdminUserDto::from)
                 .toList();
@@ -43,7 +43,7 @@ public class AdminApiController {
 
     @PostMapping("/users/{id}/role")
     public ResponseEntity<?> changeRole(@PathVariable("id") String id, @RequestBody Map<String, String> payload) {
-        String role = payload.getOrDefault("role", "USER");
+        final String role = payload.getOrDefault("role", "USER");
         userService.setRole(id, role.toUpperCase());
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
@@ -57,9 +57,11 @@ public class AdminApiController {
 
     @GetMapping("/users/{id}/quota")
     public ResponseEntity<?> getUserQuota(@PathVariable("id") String id) {
-        User u = userService.findById(id);
-        if (u == null) return ResponseEntity.notFound().build();
-        UserPreferencesDTO prefs = userPreferencesService.getUserPreferencesOrDefault(u.getEmail());
+        final User user = userService.findById(id);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        final UserPreferencesDTO prefs = userPreferencesService.getUserPreferencesOrDefault(user.getEmail());
         return ResponseEntity.ok(Map.of(
                 "monthlyTokenLimit", prefs.getMonthlyTokenLimit(),
                 "tokenUsedInPeriod", prefs.getTokenUsedInPeriod(),
@@ -69,8 +71,8 @@ public class AdminApiController {
 
     @PostMapping("/users/{id}/quota")
     public ResponseEntity<?> setUserQuota(@PathVariable("id") String id, @RequestBody Map<String, Object> payload) {
-        User u = userService.findById(id);
-        if (u == null) {
+        final User user = userService.findById(id);
+        if (user == null) {
             return ResponseEntity.notFound().build();
         }
         Integer limit = null;
@@ -83,15 +85,17 @@ public class AdminApiController {
             } catch (Exception _) {
             }
         }
-        userPreferencesService.setMonthlyLimit(u.getEmail(), limit);
+        userPreferencesService.setMonthlyLimit(user.getEmail(), limit);
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
 
     @PostMapping("/users/{id}/quota/reset")
     public ResponseEntity<?> resetUserQuota(@PathVariable("id") String id) {
-        User u = userService.findById(id);
-        if (u == null) return ResponseEntity.notFound().build();
-        userPreferencesService.resetQuotaPeriod(u.getEmail());
+        final User user = userService.findById(id);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        userPreferencesService.resetQuotaPeriod(user.getEmail());
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
 

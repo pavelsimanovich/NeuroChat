@@ -63,7 +63,7 @@ public class ChatRoomApiController {
 
     @PostMapping("/rooms/{roomId}/rename")
     public ResponseEntity<Void> renameRoom(final @PathVariable String roomId, @RequestParam("title") String name) {
-       chatRoomService.renameRoom(roomId, name);
+        chatRoomService.renameRoom(roomId, name);
         return ResponseEntity.noContent().build();
     }
 
@@ -73,7 +73,7 @@ public class ChatRoomApiController {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 final String generatedName = ollamaService.generateChatName(context);
-                ChatRoomDto updatedRoom = chatRoomService.renameRoom(roomId, generatedName);
+                final ChatRoomDto updatedRoom = chatRoomService.renameRoom(roomId, generatedName);
                 return ResponseEntity.ok(updatedRoom);
             } catch (Exception e) {
                 log.error("Error generating chat name asynchronously", e);
@@ -92,9 +92,9 @@ public class ChatRoomApiController {
 
     @GetMapping(value = "/rooms/{roomId}/export", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<Resource> exportChatHistory(@PathVariable String roomId) {
-        String chatContent = chatMessageService.formatChatForExport(roomId);
-        ByteArrayResource resource = new ByteArrayResource(chatContent.getBytes(StandardCharsets.UTF_8));
-        String filename = "chat_export_" + roomId + ".txt";
+        final String chatContent = chatMessageService.formatChatForExport(roomId);
+        final ByteArrayResource resource = new ByteArrayResource(chatContent.getBytes(StandardCharsets.UTF_8));
+        final String filename = "chat_export_" + roomId + ".txt";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.TEXT_PLAIN)
