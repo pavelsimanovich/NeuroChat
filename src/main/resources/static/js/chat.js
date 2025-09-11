@@ -592,8 +592,8 @@ async function switchRoom(room) {
         // Update UI for room selection without re-rendering the entire list
         updateRoomActiveState(previousRoomId, room.id);
 
-        elements.currentRoomTitle.textContent = room.title;
         await loadRoomMessages(room.id);
+        elements.currentRoomTitle.textContent = room.title;
 
         hideInputs(!room.active);
         elements.messageInput.classList.toggle('grey-color', !room.active);
