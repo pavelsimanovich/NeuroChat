@@ -79,9 +79,7 @@ public class WebSecurityConfig {
                         .expiredUrl("/index?expired=true")
                 );
 
-        // Принудительное перенаправление на HTTPS если SSL включен
         if (sslEnabled) {
-            http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
             http.sessionManagement(session ->
                 session.sessionFixation().migrateSession()
                       .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
