@@ -27,7 +27,7 @@
             .scroll-top-btn {
                 position: fixed;
                 right: 24px;
-                bottom: 120px; /* keep above input area */
+                bottom: 120px; /* default same as bottom; when both visible, JS lifts this one */
                 width: 44px;
                 height: 44px;
                 border: none;
@@ -39,8 +39,12 @@
                 color: #fff;
                 box-shadow: 0 8px 20px rgba(13, 110, 253, 0.35);
                 z-index: 1050; /* above chat content */
-                transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+                transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease, bottom .15s ease;
                 opacity: 0.95;
+            }
+            /* When both buttons are visible, we stack the top button above the bottom button */
+            .scroll-top-btn.stacked {
+                bottom: 172px;
             }
             .scroll-top-btn:hover {
                 transform: translateY(-2px);
@@ -75,6 +79,7 @@
             .scroll-bottom-btn i { font-size: 1.2rem; }
             @media (max-width: 768px) {
                 .scroll-top-btn { right: 16px; bottom: 140px; }
+                .scroll-top-btn.stacked { bottom: 192px; }
                 .scroll-bottom-btn { right: 16px; bottom: 140px; }
             }
         </style>
@@ -437,9 +442,9 @@
                                     <div class="mb-3">
                                         <label for="modelSelect" class="form-label"><strong data-i18n="settings.model.label">Модель ИИ</strong></label>
                                         <select class="form-select" id="modelSelect">
-                                            <option value="qwen2.5-coder">Qwen 2.5 Coder</option>
-                                            <option value="gemma3:4b">Gemma 3 (4B)</option>
-                                            <option value="gemma3:12b">Gemma 3 (12B)</option>
+                                            <option th:each="m : ${supportedModels}"
+                                                    th:value="${m.id()}"
+                                                    th:text="${m.displayName()}"></option>
                                         </select>
                                         <div class="form-text" data-i18n="settings.model.help">Выберите предпочитаемую модель для ваших чатов.</div>
                                     </div>
@@ -456,14 +461,24 @@
                                             <input class="form-check-input" type="checkbox" id="ttsAutoplay">
                                             <label class="form-check-label" for="ttsAutoplay" data-i18n="settings.tts.autoplay">Автоматически озвучивать ответы</label>
                                         </div>
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="ttsLive">
+                                            <label class="form-check-label" for="ttsLive" data-i18n="settings.tts.live">Озвучивать на лету (во время генерации)</label>
+                                        </div>
                                         <div class="row g-3 align-items-end">
                                             <div class="col-md-6">
-                                                <label for="ttsRate" class="form-label" data-i18n="settings.tts.rate">Скорость</label>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <label for="ttsRate" class="form-label mb-0" data-i18n="settings.tts.rate">Скорость</label>
+                                                    <span id="ttsRateValue" class="badge bg-secondary">1.0</span>
+                                                </div>
                                                 <input type="range" min="0.5" max="1.5" step="0.1" id="ttsRate" class="form-range">
                                                 <div class="d-flex justify-content-between small text-muted"><span>0.5</span><span>1.5</span></div>
                                             </div>
                                             <div class="col-md-6">
-                                                <label for="ttsPitch" class="form-label" data-i18n="settings.tts.pitch">Высота</label>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <label for="ttsPitch" class="form-label mb-0" data-i18n="settings.tts.pitch">Высота</label>
+                                                    <span id="ttsPitchValue" class="badge bg-secondary">1.0</span>
+                                                </div>
                                                 <input type="range" min="0.5" max="1.5" step="0.1" id="ttsPitch" class="form-range">
                                                 <div class="d-flex justify-content-between small text-muted"><span>0.5</span><span>1.5</span></div>
                                             </div>

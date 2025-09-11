@@ -1263,6 +1263,32 @@ body {
     pointer-events: none;
 }
 
+.message.message-playing {
+  position: relative;
+  background: linear-gradient(
+    0deg,
+    rgba(13, 110, 253, 0.06),
+    rgba(13, 110, 253, 0.04)
+  );
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15), 0 6px 18px rgba(13, 110, 253, 0.12);
+  border-color: rgba(13, 110, 253, 0.35) !important;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-bs-theme="dark"] .message.message-playing {
+  background: linear-gradient(
+    0deg,
+    rgba(13, 110, 253, 0.12),
+    rgba(13, 110, 253, 0.06)
+  );
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.22), 0 8px 20px rgba(13, 110, 253, 0.18);
+  border-color: rgba(13, 110, 253, 0.45) !important;
+}
+
+.message.message-playing .tts-controls .btn {
+  border-color: rgba(13, 110, 253, 0.35);
+}
+
 .message-status {
     color: var(--danger-color);
     font-style: italic;
@@ -1991,8 +2017,8 @@ border-color: rgba(255, 193, 7, 0.15);
 }
 
 .dot {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     background: var(--accent-color);
     border-radius: 50%;
     animation: bounce 1.4s infinite ease-in-out;
@@ -2270,9 +2296,66 @@ border-color: rgba(255, 193, 7, 0.15);
 #userSettingsModal .modal-body {
     padding: 1.5rem;
     color: var(--text-primary);
-    /* Make the body scrollable within fixed-height modal */
+    /* Layout: keep left menu static; scroll only content on the right */
     flex: 1 1 auto;
-    overflow: auto;
+    display: flex;
+    overflow: hidden;
+    overflow-x: hidden;
+}
+
+/* Ensure the row stretches and right content becomes the scroller */
+#userSettingsModal .modal-body > .row { 
+    flex: 1 1 auto; 
+    width: 100%; 
+    display: flex; 
+    flex-wrap: nowrap; 
+    min-height: 0; /* allow children to shrink for overflow */
+    overflow-x: hidden;
+}
+#userSettingsModal #userSettingsTabs { overflow: visible; }
+/* Left menu column stays static */
+#userSettingsModal .modal-body > .row > .col-12.col-md-3 { 
+    overflow: visible; 
+    flex: 0 0 260px; /* fixed narrower menu */
+    max-width: 260px;
+}
+/* Right content column holds the scroller (no own scroll) */
+#userSettingsModal .modal-body > .row > .col-12.col-md-9 { 
+    display: flex; 
+    flex-direction: column; 
+    flex: 1 1 auto; 
+    min-height: 0; 
+    overflow: hidden; 
+    min-width: 0; /* prevent horizontal overflow from flex children */
+}
+#userSettingsModal #userSettingsTabsContent { 
+    flex: 1 1 auto; 
+    height: 100%;
+    min-height: 0; 
+    overflow: auto; 
+    overflow-x: hidden;
+    scrollbar-gutter: stable both-edges; /* keep content away from scrollbar */
+    padding-right: 10px; /* ensure elements don't touch the scrollbar */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Fallback: ensure active tab pane itself can scroll if needed */
+#userSettingsModal #userSettingsTabsContent .tab-pane { 
+    min-height: 0; 
+}
+#userSettingsModal #userSettingsTabsContent .tab-pane.show.active { 
+    overflow: auto; 
+    overflow-x: hidden;
+}
+
+/* Responsive: stack columns on small screens */
+@media (max-width: 768px) {
+    #userSettingsModal .modal-body > .row { flex-wrap: wrap; }
+    #userSettingsModal .modal-body > .row > .col-12.col-md-3,
+    #userSettingsModal .modal-body > .row > .col-12.col-md-9 { 
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
 }
 
 #userSettingsModal .modal-footer {

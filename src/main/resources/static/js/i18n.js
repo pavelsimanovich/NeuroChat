@@ -1,7 +1,7 @@
 // Simple client-side i18n utility
 (function () {
     const STORAGE_KEY = 'ui_lang';
-    const DEFAULT_LANG = 'ru';
+    const DEFAULT_LANG = ((navigator.language || navigator.userLanguage || 'en').toLowerCase().startsWith('ru')) ? 'ru' : 'en';
 
     const dictionaries = {
         ru: {
@@ -287,6 +287,7 @@
             // TTS
             'settings.tts.label': 'Озвучивание ответов (TTS)',
             'settings.tts.autoplay': 'Автоматически озвучивать ответы',
+            'settings.tts.live': 'Озвучивать на лету (во время генерации)',
             'settings.tts.voice.label': 'Голос',
             'settings.tts.voice.help': 'Список голосов зависит от браузера и ОС.',
             'settings.tts.voice.auto': 'Определяется браузером...',
@@ -593,11 +594,12 @@
             'settings.systemPrompt.help': 'Specify your system prompt so the AI adapts to your preferences. No longer than 1000 characters.',
 
             // TTS
-            'settings.tts.label': 'Text-to-Speech (TTS)',
-            'settings.tts.autoplay': 'Autoplay responses',
+            'settings.tts.label': 'Voice responses (TTS)',
+            'settings.tts.autoplay': 'Auto-speak responses',
+            'settings.tts.live': 'Speak on the fly (during generation)',
             'settings.tts.voice.label': 'Voice',
-            'settings.tts.voice.help': 'The list of voices depends on the browser and OS.',
-            'settings.tts.voice.auto': 'Determined by browser...',
+            'settings.tts.voice.help': 'Voices list depends on browser and OS.',
+            'settings.tts.voice.auto': 'Detected by browser...',
             'settings.tts.voice.defaultSuffix': ' — default',
             'settings.tts.rate': 'Rate',
             'settings.tts.pitch': 'Pitch',

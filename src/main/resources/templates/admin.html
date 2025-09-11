@@ -279,6 +279,33 @@
     </div>
 </div>
 
+<!-- Quota Modal -->
+<div class="modal fade" id="quotaModal" tabindex="-1" aria-labelledby="quotaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quotaModalLabel">Лимит токенов</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="quotaUserId">
+                <div class="mb-3">
+                    <label class="form-label">Месячный лимит токенов (0 или пусто = без ограничений)</label>
+                    <input type="number" class="form-control" id="monthlyTokenLimit" min="0" placeholder="например, 100000">
+                </div>
+                <div class="mb-2 small text-muted">
+                    <div>Использовано в периоде: <span id="tokenUsedInPeriod">—</span></div>
+                    <div>Начало периода: <span id="periodStart">—</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="resetQuotaBtn">Сбросить период</button>
+                <button type="button" class="btn btn-primary" id="saveQuotaBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+ </div>
+
 <script src="/js/i18n.js"></script>
 <script src="/webjars/jquery/jquery.min.js"></script>
 <script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>

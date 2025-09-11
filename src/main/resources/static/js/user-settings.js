@@ -7,8 +7,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const languageSelectElement = document.getElementById('languageSelect');
     // TTS controls
     const ttsAutoplayEl = document.getElementById('ttsAutoplay');
+    const ttsLiveEl = document.getElementById('ttsLive'); // optional: speak while generating
     const ttsRateEl = document.getElementById('ttsRate');
     const ttsPitchEl = document.getElementById('ttsPitch');
+    const ttsRateValueEl = document.getElementById('ttsRateValue');
+    const ttsPitchValueEl = document.getElementById('ttsPitchValue');
+
+    // Helpers: update visible badges for range values
+    const format1 = (v) => (Math.round(Number(v) * 10) / 10).toFixed(1);
+    function updateTtsBadges() {
+        if (ttsRateEl && ttsRateValueEl) ttsRateValueEl.textContent = format1(ttsRateEl.value || 1.0);
+        if (ttsPitchEl && ttsPitchValueEl) ttsPitchValueEl.textContent = format1(ttsPitchEl.value || 1.0);
+    }
+    // Live updates while dragging
+    if (ttsRateEl) ttsRateEl.addEventListener('input', updateTtsBadges);
+    if (ttsPitchEl) ttsPitchEl.addEventListener('input', updateTtsBadges);
 
     // Profile tab elements
     const avatarInput = document.getElementById('avatarInput');
@@ -67,18 +80,22 @@ document.addEventListener('DOMContentLoaded', function () {
                             try { if (window.i18n) window.i18n.setLanguage(languageSelectElement.value); } catch (e) {}
                         }, { once: true });
                     }
-                    // Load TTS settings from tts module/localStorage
+                    // Load TTS settings: prefer server value, fallback to tts/localStorage
                     try {
                         const ttsModule = window.tts;
-                        if (ttsAutoplayEl && ttsModule) {
-                            ttsAutoplayEl.checked = !!ttsModule.settings.autoplay;
+                        const serverLive = data && typeof data.ttsSpeakWhileGenerating === 'boolean' ? data.ttsSpeakWhileGenerating : null;
+                        if (ttsModule) {
+                            if (ttsAutoplayEl) ttsAutoplayEl.checked = !!ttsModule.settings.autoplay;
+                            if (ttsLiveEl) ttsLiveEl.checked = serverLive != null ? serverLive : !!ttsModule.settings.speakWhileGenerating;
+                            if (ttsRateEl) ttsRateEl.value = ttsModule.settings.rate || 1.0;
+                            if (ttsPitchEl) ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
+                            // Apply server live value to runtime if provided
+                            if (serverLive != null) {
+                                ttsModule.applySettings({ speakWhileGenerating: serverLive });
+                            }
                         }
-                        if (ttsRateEl && ttsModule) {
-                            ttsRateEl.value = ttsModule.settings.rate || 1.0;
-                        }
-                        if (ttsPitchEl && ttsModule) {
-                            ttsPitchEl.value = ttsModule.settings.pitch || 1.0;
-                        }
+                        // Update visible values once inputs are populated
+                        updateTtsBadges();
                     } catch (ex) {
                         console.error(ex);
                     }
@@ -139,6 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (window.tts) {
                     ttsSettingsPayload = {
                         autoplay: !!(ttsAutoplayEl && ttsAutoplayEl.checked),
+                        speakWhileGenerating: !!(ttsLiveEl && ttsLiveEl.checked),
                         rate: ttsRateEl ? Number(ttsRateEl.value) : 1.0,
                         pitch: ttsPitchEl ? Number(ttsPitchEl.value) : 1.0
                     };
@@ -157,7 +175,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     systemPrompt: systemPrompt,
                     preferredModel: preferredModel,
                     avatarFileId: avatarFileId,
-                    language: language
+                    language: language,
+                    ttsSpeakWhileGenerating: !!(ttsLiveEl && ttsLiveEl.checked)
                 })
             })
             .then(response => response.json())
@@ -184,6 +203,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     const newLang = (data && data.language) || language;
                     if (newLang && window.i18n) window.i18n.setLanguage(newLang);
                 } catch (_) {}
+                // Apply server-confirmed TTS live setting
+                try {
+                    if (window.tts && typeof data?.ttsSpeakWhileGenerating === 'boolean') {
+                        window.tts.applySettings({ speakWhileGenerating: data.ttsSpeakWhileGenerating });
+                        if (ttsLiveEl) ttsLiveEl.checked = data.ttsSpeakWhileGenerating;
+                    }
+                } catch (_) {}
+                // Ensure badges reflect any runtime-normalized values
+                updateTtsBadges();
             })
             .catch(error => {
                 console.error('Error saving user preferences:', error);

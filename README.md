@@ -1,4 +1,4 @@
-# Chat with Ollama and Spring Boot AI
+# NEUROCHAT. Chat with Ollama and Spring Boot AI
 
 ## First steps:
 
@@ -51,7 +51,7 @@ https://huggingface.co/
     project-root/
     ├── src/
     │   ├── main/
-    │   │   ├── java/com/ps/ollamaai
+    │   │   ├── java/com/ps/neurochat
     │   │   │   ├── config/       # Spring configs
     │   │   │   ├── constants/    # Constants
     │   │   │   ├── controller/   # REST and FLUX endpoints
@@ -75,6 +75,7 @@ https://huggingface.co/
 - **Stream Support**: Real-time communication using streaming technology
 - **Room Management**: Create and manage chat rooms programmatically
 - **User System**: Secure login/registration flows
+- **Observability and Reporting**: Supporting Grafana and Prometheuslj,
 
 ### 🤖 AI Chat Functionality
 - **Ollama Integration**: Powered by cutting-edge Ollama API for intelligent responses
@@ -83,8 +84,9 @@ https://huggingface.co/
     - Persistent message storage
     - Conversation continuity across sessions
 - **Usage Controls**:
-    - Configurable rate limiting
+    - Configurable rate limiting for chat and limits tokens for users (4 chars = 1 token)
 - **Image Analysis**
+- **Syntax highlighting for code snippets**
 - **Chat Export**
 - **Voice input, Text-to-speech for response**
 - **User Settings**

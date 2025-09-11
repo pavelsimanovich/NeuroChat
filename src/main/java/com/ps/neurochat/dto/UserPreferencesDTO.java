@@ -1,0 +1,20 @@
+package com.ps.neurochat.dto;
+
+import lombok.Getter;
+import lombok.Setter;
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+public class UserPreferencesDTO {
+    private String systemPrompt;
+    private String preferredModel;
+    private String avatarFileId;
+    private String language;
+    // TTS preferences
+    private Boolean ttsSpeakWhileGenerating;
+    // Token quota
+    private Integer monthlyTokenLimit;
+    private Long tokenUsedInPeriod;
+    private LocalDateTime periodStart;
+}

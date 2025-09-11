@@ -28,13 +28,12 @@ const tts = {
     supported: ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window),
     currentUtterance: null,
     speakingMessageId: null,
-    selectedVoice: null,
     isPaused: false,
     settings: {
-        voiceURI: '',
         rate: 1.0,
         pitch: 1.0,
-        autoplay: false
+        autoplay: false,
+        speakWhileGenerating: false
     },
 
     init() {
@@ -42,55 +41,46 @@ const tts = {
         // Load saved settings
         try {
             const saved = JSON.parse(localStorage.getItem('tts_settings') || '{}');
-            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, ...saved };
-        } catch (_) { /* noop */ }
-        // Attempt to select a Russian voice if available
-        const pickVoice = () => {
-            const voices = window.speechSynthesis.getVoices();
-            if (!voices || voices.length === 0) return;
-            // If user selected a voice, try to match by voiceURI
-            if (this.settings.voiceURI) {
-                const byURI = voices.find(v => v.voiceURI === this.settings.voiceURI);
-                if (byURI) this.selectedVoice = byURI;
-            }
-            // Fallbacks
-            if (!this.selectedVoice) {
-                this.selectedVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('ru'))
-                    || voices.find(v => (v.lang || '').toLowerCase().startsWith('en'))
-                    || voices[0];
-            }
-        };
-        pickVoice();
-        // Voices may load asynchronously
-        window.speechSynthesis.onvoiceschanged = () => pickVoice();
-        // Stop TTS on page unload
+            this.settings = { voiceURI: '', rate: 1.0, pitch: 1.0, autoplay: false, speakWhileGenerating: false, ...saved };
+        } catch (ex) {
+            console.error(ex);
+        }
         window.addEventListener('beforeunload', () => this.stop());
     },
 
     applySettings(newSettings = {}) {
         // Update runtime settings and persist
         this.settings = { ...this.settings, ...newSettings };
-        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (_) { /* noop */ }
-        // Update selected voice if voiceURI changed
-        if (this.supported) {
-            const voices = window.speechSynthesis.getVoices();
-            if (Array.isArray(voices) && voices.length) {
-                if (this.settings.voiceURI) {
-                    const v = voices.find(v => v.voiceURI === this.settings.voiceURI);
-                    if (v) this.selectedVoice = v;
-                }
-            }
-        }
+        try { localStorage.setItem('tts_settings', JSON.stringify(this.settings)); } catch (ex) {console.error(ex);}
         // If currently speaking, update control states
         this.updateControlsState();
     },
 
-    getVoices() {
-        if (!this.supported) return [];
-        return window.speechSynthesis.getVoices() || [];
+    // Queue a chunk without cancelling existing utterances (for streaming)
+    speakChunk(text, messageId) {
+        if (!this.supported || !text) return;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = Number(this.settings.rate) || 1.0;
+        utter.pitch = Number(this.settings.pitch) || 1.0;
+        utter.onstart = () => {
+            this.speakingMessageId = messageId;
+            this.isPaused = false;
+            this.updateControlsState();
+        };
+        utter.onend = () => {
+            // Do not clear speakingMessageId here; next chunk or stop() will update state
+            this.updateControlsState();
+        };
+        utter.onerror = () => {
+            this.updateControlsState();
+        };
+        // Enqueue without canceling to preserve queue
+        window.speechSynthesis.speak(utter);
+        this.currentUtterance = utter;
+        this.updateControlsState();
     },
 
-    play(text, messageId, lang = 'ru-RU') {
+    play(text, messageId) {
         if (!this.supported || !text) return;
         // If already speaking another message, stop it first
         if (this.isSpeaking() && this.speakingMessageId !== messageId) {
@@ -98,8 +88,6 @@ const tts = {
         }
 
         const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = this.selectedVoice?.lang || lang;
-        if (this.selectedVoice) utter.voice = this.selectedVoice;
         utter.rate = Number(this.settings.rate) || 1.0; // normal speed
         utter.pitch = Number(this.settings.pitch) || 1.0; // normal pitch
         utter.onstart = () => {
@@ -170,19 +158,38 @@ const tts = {
         // Update play/pause/stop buttons visual state
         document.querySelectorAll('.tts-controls').forEach(ctrl => {
             const mid = ctrl.getAttribute('data-message-id');
+            const activeId = (this.speakingMessageId !== null && this.speakingMessageId !== undefined)
+                ? String(this.speakingMessageId)
+                : null;
             const isPaused = this.isPaused || window.speechSynthesis.paused;
             const isSpeakingOrPaused = (window.speechSynthesis.speaking || this.isPaused);
-            const isActive = this.speakingMessageId === mid && isSpeakingOrPaused;
+            const isActive = activeId === mid && isSpeakingOrPaused;
             ctrl.classList.toggle('tts-active', isActive);
             const playBtn = ctrl.querySelector('[data-tts="play"]');
             const pauseBtn = ctrl.querySelector('[data-tts="pause"]');
             const resumeBtn = ctrl.querySelector('[data-tts="resume"]');
             const stopBtn = ctrl.querySelector('[data-tts="stop"]');
             if (playBtn) playBtn.disabled = isActive; // disable play if currently playing this message
-            if (pauseBtn) pauseBtn.disabled = !(this.speakingMessageId === mid && window.speechSynthesis.speaking && !isPaused);
-            if (resumeBtn) resumeBtn.disabled = !(this.speakingMessageId === mid && isPaused);
-            if (stopBtn) stopBtn.disabled = !(this.speakingMessageId === mid && (window.speechSynthesis.speaking || isPaused));
+            if (pauseBtn) pauseBtn.disabled = !(activeId === mid && window.speechSynthesis.speaking && !isPaused);
+            if (resumeBtn) resumeBtn.disabled = !(activeId === mid && isPaused);
+            if (stopBtn) stopBtn.disabled = !(activeId === mid && (window.speechSynthesis.speaking || isPaused));
         });
+
+        // Toggle highlight on the currently playing message
+        try {
+            const activeId = (this.speakingMessageId !== null && this.speakingMessageId !== undefined)
+                ? String(this.speakingMessageId)
+                : null;
+            const activeState = (window.speechSynthesis.speaking || this.isPaused);
+            document.querySelectorAll('.message[data-message-id]')
+                .forEach(msg => {
+                    const id = msg.getAttribute('data-message-id');
+                    const on = activeId && id === activeId && activeState;
+                    msg.classList.toggle('message-playing', !!on);
+                });
+        } catch (ex) {
+            console.error(ex);
+        }
     }
 };
 
@@ -275,7 +282,8 @@ const elements = (function() {
                 e.preventDefault();
                 try {
                     elements.chatMessages.scrollTo({ top: 0, behavior: 'smooth' });
-                } catch (_) {
+                } catch (ex) {
+                    console.error(ex);
                     elements.chatMessages.scrollTop = 0;
                 }
             });
@@ -286,7 +294,7 @@ const elements = (function() {
                 e.preventDefault();
                 try {
                     elements.chatMessages.scrollTo({ top: elements.chatMessages.scrollHeight, behavior: 'smooth' });
-                } catch (_) {
+                } catch (ex) {
                     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
                 }
             });
@@ -298,7 +306,11 @@ const elements = (function() {
 
 // Re-render rooms list when language changes to refresh group titles/empty state
 window.addEventListener('i18n:changed', () => {
-    try { renderRoomsList(); } catch (_) { /* noop */ }
+    try {
+        renderRoomsList();
+    }  catch (ex) {
+        console.error(ex)
+    }
 });
 
 async function switchToLastRoom() {
@@ -459,7 +471,9 @@ function renderChatGroup(groupId, title, rooms, iconClass) {
                 set.delete(groupId);
             }
             localStorage.setItem('collapsedGroups', JSON.stringify(Array.from(set)));
-        } catch (e) {}
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     headerElement.addEventListener('click', (e) => {
@@ -578,8 +592,8 @@ async function switchRoom(room) {
         // Update UI for room selection without re-rendering the entire list
         updateRoomActiveState(previousRoomId, room.id);
 
-        elements.currentRoomTitle.textContent = room.title;
         await loadRoomMessages(room.id);
+        elements.currentRoomTitle.textContent = room.title;
 
         hideInputs(!room.active);
         elements.messageInput.classList.toggle('grey-color', !room.active);
@@ -668,16 +682,17 @@ function setupScrollHandlers() {
         const max = elements.chatMessages.scrollHeight - elements.chatMessages.clientHeight;
         const showTop = sc > 200;
         const showBottom = max - sc > config.autoScroll.threshold; // not near bottom
-        // Mutual exclusivity: show only one button at the same fixed position
-        if (showBottom) {
-            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.remove('d-none');
-            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
-        } else if (showTop) {
-            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.remove('d-none');
-            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
-        } else {
-            if (elements.scrollTopBtn) elements.scrollTopBtn.classList.add('d-none');
-            if (elements.scrollBottomBtn) elements.scrollBottomBtn.classList.add('d-none');
+        // Independent visibility: when in the middle, show both buttons
+        if (elements.scrollTopBtn) {
+            elements.scrollTopBtn.classList.toggle('d-none', !showTop);
+        }
+        if (elements.scrollBottomBtn) {
+            elements.scrollBottomBtn.classList.toggle('d-none', !showBottom);
+        }
+        // If both are visible, stack the top button above the bottom one
+        const bothVisible = showTop && showBottom;
+        if (elements.scrollTopBtn) {
+            elements.scrollTopBtn.classList.toggle('stacked', bothVisible);
         }
     };
 
@@ -859,9 +874,14 @@ async function sendMessage() {
                 <div id="cm${uuid}" class="message-content"></div>
             `
         });
+        // Assign a stable message-id for streaming element for TTS highlight
+        const streamMid = `stream-${uuid}`;
+        messageElement.setAttribute('data-message-id', streamMid);
 
         let response = '';
         let isStreamActive = true;
+        // Buffer for live TTS speaking by sentences
+        let speakBuf = '';
 
         eventSource.onmessage = (e) => {
             if (roomId !== state.currentRoom.id || !isStreamActive) return;
@@ -888,13 +908,25 @@ async function sendMessage() {
                     window.dispatchEvent(new CustomEvent('messageSent'));
                     renderMessages();
                     scrollToBottom(true);
-                    // Autoplay TTS if enabled
+                    // Flush any remaining buffer for live speak
                     try {
-                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && finalMsg?.content) {
+                        if (window.tts && window.tts.supported && window.tts.settings.speakWhileGenerating && speakBuf.trim()) {
+                            const chunk = speakBuf.replace(/<[^>]*>/g, '');
+                            window.tts.speakChunk(chunk, streamMid);
+                            speakBuf = '';
+                        }
+                    } catch (ex) {
+                        console.error(ex)
+                    }
+                    // Autoplay TTS of the final text if enabled and not speaking live
+                    try {
+                        if (window.tts && window.tts.supported && window.tts.settings.autoplay && !window.tts.settings.speakWhileGenerating && finalMsg?.content) {
                             const plainText = finalMsg.content.replace(/<[^>]*>/g, '');
                             window.tts.play(plainText, finalMsg.id);
                         }
-                    } catch (_) { /* noop */ }
+                    } catch (ex) {
+                        console.error(ex)
+                    }
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
@@ -904,6 +936,34 @@ async function sendMessage() {
                     contentDiv.innerHTML = marked.parse(response);
                     Prism.highlightAllUnder(contentDiv);
                     scrollToBottom();
+                }
+                // Live TTS chunking if enabled
+                try {
+                    if (window.tts && window.tts.supported && window.tts.settings.speakWhileGenerating) {
+                        const deltaPlain = String(message.content || '').replace(/<[^>]*>/g, '');
+                        if (deltaPlain) {
+                            speakBuf += deltaPlain;
+                            // Emit full sentences or lines
+                            let cutIndex = -1;
+                            while (true) {
+                                // find earliest sentence boundary
+                                const dot = speakBuf.indexOf('.')
+                                const ex = speakBuf.indexOf('!');
+                                const q = speakBuf.indexOf('?');
+                                const nl = speakBuf.indexOf('\n');
+                                const candidates = [dot, ex, q, nl].filter(i => i >= 0);
+                                if (!candidates.length) break;
+                                cutIndex = Math.min(...candidates);
+                                const sentence = speakBuf.slice(0, cutIndex + 1).trim();
+                                if (sentence) {
+                                    window.tts.speakChunk(sentence, streamMid);
+                                }
+                                speakBuf = speakBuf.slice(cutIndex + 1);
+                            }
+                        }
+                    }
+                } catch (ex) {
+                    console.error(ex)
                 }
             }
         };
@@ -929,7 +989,7 @@ function handleLimitExceeded(uuid) {
     const limitMessages = document.getElementById('limitMessages');
     limitMessages.innerHTML = `
       <div class="limit-messages">
-        Превышен лимит сообщений в комнате, пожалуйста создайте новую.
+        Превышен лимит сообщений в комнате, пожалуйста создайте новую. Или закончилось количество доступных токенов
       </div>
     `;
 }
@@ -1358,7 +1418,9 @@ const voiceInput = {
         this.recognition.continuous = true;
         this.recognition.interimResults = true;
         this.recognition.maxAlternatives = 1;
-        this.recognition.lang = 'ru-RU';
+        this.recognition.lang = ((navigator.language || navigator.userLanguage || 'en')
+            .toLowerCase()
+            .startsWith('ru')) ? 'ru-RU' : 'en-EN';
 
         // Setup event handlers
         this.recognition.onstart = this.onStart.bind(this);
@@ -1666,7 +1728,6 @@ async function handleDeleteRoom(roomId, title) {
                     </div>
                 </div>`;
 
-            // Apply i18n to the newly created welcome screen
             try { window.i18n?.apply(welcomeScreen); } catch (_) {}
 
             // Clear chat messages and append new welcome screen
@@ -2369,10 +2430,13 @@ function renderMessages() {
         new Date(a.timestamp) - new Date(b.timestamp)
     );
 
-    sortedMessages.forEach(message => {
+    sortedMessages.forEach((message, idx) => {
+        const mid = String(
+            message.id ?? message.uuid ?? message._id ?? message.messageId ?? `${message.timestamp || Date.now()}-${idx}`
+        );
         const messageElement = document.createElement('div');
         messageElement.className = `message ${message.userId === elements.userId ? 'user-message' : 'ai-message'}`;
-        messageElement.setAttribute('data-message-id', message.id);
+        messageElement.setAttribute('data-message-id', mid);
 
         // File previews with click handlers
         let filePreviews = '';
@@ -2413,7 +2477,7 @@ function renderMessages() {
         const isAI = message.userId !== elements.userId;
         const disabledAttr = tts.supported ? '' : 'disabled title="TTS не поддерживается браузером"';
         const ttsControls = (isAI && message.content) ? `
-            <div class="tts-controls d-inline-flex align-items-center gap-1" data-message-id="${message.id}" title="Озвучить ответ">
+            <div class="tts-controls d-inline-flex align-items-center gap-1" data-message-id="${mid}" title="Озвучить ответ">
                 <button class="btn btn-sm btn-outline-secondary" data-tts="play" aria-label="Озвучить" ${disabledAttr}><i class="bi bi-volume-up"></i></button>
                 <button class="btn btn-sm btn-outline-secondary" data-tts="pause" aria-label="Пауза" ${disabledAttr}><i class="bi bi-pause"></i></button>
                 <button class="btn btn-sm btn-outline-secondary" data-tts="resume" aria-label="Продолжить" ${disabledAttr}><i class="bi bi-play"></i></button>
@@ -2451,7 +2515,15 @@ function renderMessages() {
                 if (tts.supported) {
                     if (playBtn) playBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        tts.play(textToSpeak, message.id);
+                        // Immediate UI feedback
+                        try {
+                            document.querySelectorAll('.message.message-playing').forEach(m => m.classList.remove('message-playing'));
+                            const container = ctrl.closest('.message');
+                            if (container) container.classList.add('message-playing');
+                        }  catch (ex) {
+                            console.error(ex)
+                        }
+                        tts.play(textToSpeak, mid);
                     });
                     if (pauseBtn) pauseBtn.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -2464,6 +2536,13 @@ function renderMessages() {
                     if (stopBtn) stopBtn.addEventListener('click', (e) => {
                         e.preventDefault();
                         tts.stop();
+                        // Remove highlight immediately
+                        try {
+                            const container = ctrl.closest('.message');
+                            if (container) container.classList.remove('message-playing');
+                        } catch (ex) {
+                            console.error(ex)
+                        }
                     });
                 }
             }
@@ -2481,6 +2560,8 @@ function renderMessages() {
     });
 
     Prism.highlightAll();
+    // Re-apply TTS UI and playing highlight after DOM update
+    try { if (window.tts && typeof window.tts.updateControlsState === 'function') window.tts.updateControlsState(); } catch (_) { /* noop */ }
     scrollToBottom(true);
 }
 
