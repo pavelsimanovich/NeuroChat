@@ -98,7 +98,10 @@ public class ChatAIController {
                                                             chatMessageService.saveChunk(chatId, chunk.content()))
                                             .subscribeOn(Schedulers.boundedElastic())
                                             .thenReturn(chunk))
-                                    .doOnComplete(() -> onCompletionUpdate(username, chatId, question, currentHistory))
+                                    .doOnComplete(() -> Mono.fromRunnable(() ->
+                                                    onCompletionUpdate(username, chatId, question, currentHistory))
+                                            .subscribeOn(Schedulers.boundedElastic())
+                                            .subscribe())
                                     .concatWith(Mono.just(
                                             new ChunkResponseDTO("[DONE]", true, null)));
                         }))
@@ -185,7 +188,7 @@ public class ChatAIController {
     private List<Message> buildMessages(String question, FileData fileData, List<Message> currentHistory,
                                         String systemPrompt) {
         final List<Message> messages = new ArrayList<>(currentHistory);
-        messages.addFirst(new SystemMessage(systemPrompt));
+        messages.add(new SystemMessage(systemPrompt));
         messages.add(buildUserMessage(question, fileData));
         return messages;
     }
