@@ -93,13 +93,16 @@ public class ChatAIController {
                                     .stream()
                                     .content()
                                     .map(chunk -> new ChunkResponseDTO(chunk, false, null))
-                                    .doOnNext(chunk ->
-                                            chatMessageService.saveChunk(chatId, chunk.content()))
+                                    .flatMap(chunk ->
+                                            Mono.fromRunnable(() ->
+                                                            chatMessageService.saveChunk(chatId, chunk.content()))
+                                            .subscribeOn(Schedulers.boundedElastic())
+                                            .thenReturn(chunk))
                                     .doOnComplete(() -> onCompletionUpdate(username, chatId, question, currentHistory))
                                     .concatWith(Mono.just(
                                             new ChunkResponseDTO("[DONE]", true, null)));
                         }))
-                .publishOn(Schedulers.boundedElastic())
+                // .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(LimitExceededException.class, e -> Mono.<Void>fromCallable(() -> {
                             chatRoomService.setInactive(chatId);
                             return null;
