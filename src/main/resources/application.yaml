@@ -14,7 +14,7 @@ spring:
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   application:
-    name: ollama-ai
+    name: neuro-chat
   ai:
     ollama:
       base-url: http://localhost:11434
