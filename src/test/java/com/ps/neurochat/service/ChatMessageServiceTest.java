@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.context.MessageSource;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
@@ -44,13 +45,15 @@ class ChatMessageServiceTest {
     @Mock private ChatMessageRepository messageRepository;
     @Mock private UserService userService;
     @Mock private HistoryEntryService historyEntryService;
+    @Mock private MessageSource messageSource;
 
     private ChatMessageService service;
     private User user;
 
     @BeforeEach
     void setup() throws Exception {
-        service = new ChatMessageService(roomRepository, chatMessageRepository, converter, messageRepository, userService, historyEntryService);
+        service = new ChatMessageService(roomRepository, chatMessageRepository, converter, messageRepository,
+                userService, historyEntryService, messageSource);
         user = new User();
         user.setEmail("user@example.com");
         user.setFirstName("Ivan");
