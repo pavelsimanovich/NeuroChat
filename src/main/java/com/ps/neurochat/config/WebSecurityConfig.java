@@ -106,7 +106,7 @@ public class WebSecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring()
                 .requestMatchers("/resources/**", "/static/**",
-                        "/css/**", "/js/**", "/images/**", "/webjars/**",
+                        "/css/**", "/js/**", "/img/**", "/webjars/**",
                         "/favicon.ico", "/robots.txt");
     }
 }
