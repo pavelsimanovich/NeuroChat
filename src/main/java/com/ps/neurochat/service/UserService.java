@@ -35,7 +35,8 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
         user.setRole(Role.USER.name());
-        User save = userRepository.save(user);
+
+        final User save = userRepository.save(user);
 
         final UserPreferencies userPreferences = new UserPreferencies();
         userPreferences.setUserName(save.getEmail());

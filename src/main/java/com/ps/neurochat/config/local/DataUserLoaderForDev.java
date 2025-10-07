@@ -1,4 +1,4 @@
-package com.ps.neurochat.config;
+package com.ps.neurochat.config.local;
 
 import com.ps.neurochat.domain.User;
 import com.ps.neurochat.repository.UserRepository;
