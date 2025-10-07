@@ -1,5 +1,6 @@
 package com.ps.neurochat.controller;
 
+import com.ps.neurochat.service.LocaleMessageService;
 import com.ps.neurochat.service.PasswordResetService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -7,16 +8,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.MessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @ExtendWith(MockitoExtension.class)
 class PasswordResetControllerTest {
@@ -27,11 +31,11 @@ class PasswordResetControllerTest {
     private PasswordResetService passwordResetService;
 
     @Mock
-    private MessageSource messageSource;
+    private LocaleMessageService localeMessageService;
 
     @BeforeEach
     void setup() {
-        PasswordResetController controller = new PasswordResetController(passwordResetService, messageSource);
+        PasswordResetController controller = new PasswordResetController(passwordResetService, localeMessageService);
         InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
         viewResolver.setPrefix("/WEB-INF/views/");
         viewResolver.setSuffix(".jsp");
@@ -75,7 +79,7 @@ class PasswordResetControllerTest {
     @DisplayName("POST /forgot-password success redirects with success flash")
     void postForgotPassword_success() throws Exception {
         when(passwordResetService.createPasswordResetTokenForUser("user@example.com")).thenReturn(true);
-        when(messageSource.getMessage(eq("password.forgot.sent_info"), isNull(), any())).thenReturn("sent");
+        when(localeMessageService.getLocalMessage(eq("password.forgot.sent_info"))).thenReturn("sent");
 
         mockMvc.perform(post("/forgot-password")
                         .param("email", "user@example.com"))
@@ -88,7 +92,7 @@ class PasswordResetControllerTest {
     @DisplayName("GET /reset-password invalid token redirects to /forgot-password with error")
     void getResetPassword_invalidToken() throws Exception {
         when(passwordResetService.validatePasswordResetToken("bad")).thenReturn(false);
-        when(messageSource.getMessage(eq("password.reset.invalid_token"), isNull(), any())).thenReturn("invalid");
+        when(localeMessageService.getLocalMessage(eq("password.reset.invalid_token"))).thenReturn("invalid");
 
         mockMvc.perform(get("/reset-password").param("token", "bad"))
                 .andExpect(status().is3xxRedirection())
@@ -136,7 +140,7 @@ class PasswordResetControllerTest {
     @DisplayName("POST /reset-password service failure redirects to /forgot-password with error")
     void postResetPassword_serviceFailure() throws Exception {
         when(passwordResetService.resetPassword("t", "password123")).thenReturn(false);
-        when(messageSource.getMessage(eq("password.reset.failed"), isNull(), any())).thenReturn("failed");
+        when(localeMessageService.getLocalMessage(eq("password.reset.failed"))).thenReturn("failed");
 
         mockMvc.perform(post("/reset-password")
                         .param("token", "t")
@@ -151,7 +155,7 @@ class PasswordResetControllerTest {
     @DisplayName("POST /reset-password success redirects to /login with success")
     void postResetPassword_success() throws Exception {
         when(passwordResetService.resetPassword("t", "password123")).thenReturn(true);
-        when(messageSource.getMessage(eq("password.reset.success"), isNull(), any())).thenReturn("ok");
+        when(localeMessageService.getLocalMessage(eq("password.reset.success"))).thenReturn("ok");
 
         mockMvc.perform(post("/reset-password")
                         .param("token", "t")

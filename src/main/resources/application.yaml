@@ -14,20 +14,20 @@ spring:
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   application:
-    name: ollama-ai
+    name: neuro-chat
   ai:
     ollama:
       base-url: http://localhost:11434
       init:
         chat:
           additional-models:
-            - qwen2.5-coder
+            - qwen2.5-coder:7b
       chat:
         options:
           model: gemma3:4b
           temperature: 1
           num-ctx: 65536
-          keep-alive: 30s
+          keep-alive: 1s
   datasource:
     url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
     username: ${MYSQL_ROOT_USER:root}
@@ -64,7 +64,7 @@ spring:
 app:
   use-token-limits: true
   user-token-limits: 100_000
-  chat-limit: 100
+  chat-limit: 100 #per chat
   url: http://localhost:8443
   security:
     remember-me-key: ${REMEMBER_ME_KEY:OlBQr5U8RXChrFpPG3oR89073kkib5YiUboIBcuBCMRBfVnffzgySCb8pRz71ePE}

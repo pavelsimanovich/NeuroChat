@@ -79,9 +79,7 @@ public class WebSecurityConfig {
                         .expiredUrl("/index?expired=true")
                 );
 
-        // Принудительное перенаправление на HTTPS если SSL включен
         if (sslEnabled) {
-            http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
             http.sessionManagement(session ->
                 session.sessionFixation().migrateSession()
                       .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -108,7 +106,7 @@ public class WebSecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring()
                 .requestMatchers("/resources/**", "/static/**",
-                        "/css/**", "/js/**", "/images/**", "/webjars/**",
+                        "/css/**", "/js/**", "/img/**", "/webjars/**",
                         "/favicon.ico", "/robots.txt");
     }
 }

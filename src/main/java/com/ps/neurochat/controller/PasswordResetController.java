@@ -1,5 +1,6 @@
 package com.ps.neurochat.controller;
 
+import com.ps.neurochat.service.LocaleMessageService;
 import com.ps.neurochat.service.PasswordResetService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -7,16 +8,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 @Controller
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 public class PasswordResetController {
 
     private final PasswordResetService passwordResetService;
-    private final MessageSource messageSource;
+    private final LocaleMessageService localeMessageService;
 
     @GetMapping("/forgot-password")
     public String showForgotPasswordForm(Model model) {
@@ -46,9 +48,8 @@ public class PasswordResetController {
         if (!passwordResetTokenForUser) {
             redirectAttributes.addFlashAttribute("error", "Email not exists");
         } else {
-            String sentMsg = messageSource.getMessage("password.forgot.sent_info",
-                    null, LocaleContextHolder.getLocale());
-            redirectAttributes.addFlashAttribute("success", sentMsg);
+            redirectAttributes.addFlashAttribute("success",
+                    localeMessageService.getLocalMessage("password.forgot.sent_info"));
         }
             return "redirect:/forgot-password?sent";
     }
@@ -61,9 +62,8 @@ public class PasswordResetController {
 
         boolean isValidToken = passwordResetService.validatePasswordResetToken(token);
         if (!isValidToken) {
-            String err = messageSource.getMessage("password.reset.invalid_token",
-                    null, LocaleContextHolder.getLocale());
-            redirectAttributes.addFlashAttribute("error", err);
+            redirectAttributes.addFlashAttribute("error",
+                    localeMessageService.getLocalMessage("password.reset.invalid_token"));
             return "redirect:/forgot-password";
         }
 
@@ -82,23 +82,20 @@ public class PasswordResetController {
         }
 
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            String msg = messageSource.getMessage("password.reset.mismatch",
-                    null, LocaleContextHolder.getLocale());
-            result.rejectValue("confirmPassword", "password.mismatch", msg);
+            result.rejectValue("confirmPassword", "password.mismatch",
+                    localeMessageService.getLocalMessage("password.reset.mismatch"));
             return "reset-password";
         }
 
         boolean resetSuccess = passwordResetService.resetPassword(request.getToken(), request.getPassword());
         if (!resetSuccess) {
-            String err = messageSource.getMessage("password.reset.failed",
-                    null, LocaleContextHolder.getLocale());
-            redirectAttributes.addFlashAttribute("error", err);
+            redirectAttributes.addFlashAttribute("error",
+                    localeMessageService.getLocalMessage("password.reset.failed"));
             return "redirect:/forgot-password";
         }
 
-        String ok = messageSource.getMessage("password.reset.success",
-                null, LocaleContextHolder.getLocale());
-        redirectAttributes.addFlashAttribute("success", ok);
+        redirectAttributes.addFlashAttribute("success",
+                localeMessageService.getLocalMessage("password.reset.success"));
         return "redirect:/login";
     }
 

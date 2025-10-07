@@ -20,14 +20,14 @@ public class UserPreferencesController {
 
     @GetMapping
     public ResponseEntity<UserPreferencesDTO> getUserPreferences(@AuthenticationPrincipal UserDetails userDetails) {
-        UserPreferencesDTO dto = userPreferencesService.getUserPreferencesOrDefault(userDetails.getUsername());
+        final UserPreferencesDTO dto = userPreferencesService.getUserPreferencesOrDefault(userDetails.getUsername());
         return ResponseEntity.ok(dto);
     }
 
     @PostMapping
     public ResponseEntity<UserPreferencesDTO> saveUserPreferences(@AuthenticationPrincipal UserDetails userDetails,
                                                                @RequestBody UserPreferencesDTO payload) {
-        UserPreferencesDTO savedPreferences = userPreferencesService.createOrUpdatePreferences(
+        final UserPreferencesDTO savedPreferences = userPreferencesService.createOrUpdatePreferences(
             userDetails.getUsername(),
             payload
         );

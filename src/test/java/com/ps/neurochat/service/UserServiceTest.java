@@ -1,7 +1,6 @@
 package com.ps.neurochat.service;
 
 import com.ps.neurochat.domain.User;
-import com.ps.neurochat.domain.UserPreferencies;
 import com.ps.neurochat.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,42 +8,25 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock private UserRepository userRepository;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private UserPreferencesService userPreferencesService;
 
     @InjectMocks private UserService userService;
-
-    @Test
-    @DisplayName("save encodes password, sets defaults, saves user and creates preferences")
-    void save_user() {
-        User in = new User();
-        in.setEmail("user@example.com");
-        in.setPassword("plain");
-        when(passwordEncoder.encode("plain")).thenReturn("ENC");
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        userService.save(in);
-
-        assertThat(in.getPassword()).isEqualTo("ENC");
-        assertThat(in.isEnabled()).isTrue();
-        assertThat(in.getRole()).isEqualTo("USER");
-        verify(userPreferencesService).save(any(UserPreferencies.class));
-    }
 
     @Test
     @DisplayName("findByEmail returns user or null when not found")

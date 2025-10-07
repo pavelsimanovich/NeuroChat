@@ -28,7 +28,7 @@ public class TomcatConfig {
             @Override
             protected void postProcessContext(Context context) {
                 if (sslEnabled) {
-                    // Настраиваем автоматическое перенаправление HTTP на HTTPS
+                    // setting for auto redirect from HTTP to HTTPS
                     SecurityConstraint securityConstraint = new SecurityConstraint();
                     securityConstraint.setUserConstraint("CONFIDENTIAL");
                     SecurityCollection collection = new SecurityCollection();
@@ -40,7 +40,7 @@ public class TomcatConfig {
         };
 
         if (sslEnabled) {
-            // Настройка протоколов и шифров для TLS
+            // Setting protocols and ciphers for TLS
             tomcat.addConnectorCustomizers(connector -> {
                 if (connector.getSecure()) {
                     connector.setProperty("sslProtocol", "TLS");

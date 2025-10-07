@@ -31,8 +31,8 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<FileDataDto> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            FileData fileData = fileStorageService.storeFile(file);
-            FileDataDto dto = fileDataToDtoConverter.convertToDto(fileData);
+            final FileData fileData = fileStorageService.storeFile(file);
+            final FileDataDto dto = fileDataToDtoConverter.convertToDto(fileData);
             return ResponseEntity.ok(dto);
         }  catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -42,8 +42,8 @@ public class FileController {
 
     @GetMapping("/{fileId}")
     public ResponseEntity<ByteArrayResource> downloadFile(@PathVariable String fileId) {
-        FileData fileData = fileStorageService.getFile(fileId);
-        ContentDisposition contentDisposition = ContentDisposition.attachment()
+        final FileData fileData = fileStorageService.getFile(fileId);
+        final ContentDisposition contentDisposition = ContentDisposition.attachment()
                 .filename(fileData.getFileName(), StandardCharsets.UTF_8)
                 .build();
 
@@ -55,7 +55,7 @@ public class FileController {
 
     @GetMapping(value = "/{fileId}/preview", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> previewImage(@PathVariable String fileId) {
-        FileData fileData = fileStorageService.getFile(fileId);
+        final FileData fileData = fileStorageService.getFile(fileId);
         
         // Check if the file is an image
         if (!fileData.getContentType().startsWith("image/")) {

@@ -2,6 +2,7 @@ package com.ps.neurochat.service;
 
 import com.ps.neurochat.domain.User;
 import com.ps.neurochat.domain.UserPreferencies;
+import com.ps.neurochat.dto.RegistrationRequest;
 import com.ps.neurochat.dto.enums.Role;
 import com.ps.neurochat.dto.enums.SupportedLanguages;
 import com.ps.neurochat.repository.UserRepository;
@@ -24,17 +25,28 @@ public class UserService {
     @Value("${app.user-token-limits}")
     private int userTokenLimits;
 
-    public void save(final User user) {
+    public void save(final RegistrationRequest requestDto, final String ipAddress) {
+        final User user = new User();
+        user.setEmail(requestDto.getEmail());
+        user.setPassword(requestDto.getPassword());
+        user.setFirstName(requestDto.getFirstName());
+        user.setLastName(requestDto.getLastName());
+        user.setIpFromLogin(ipAddress);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
         user.setRole(Role.USER.name());
         User save = userRepository.save(user);
 
-        UserPreferencies userPreferences = new UserPreferencies();
+        final UserPreferencies userPreferences = new UserPreferencies();
         userPreferences.setUserName(save.getEmail());
         userPreferences.setLanguage(SupportedLanguages.EN.getLanguage());
         userPreferences.setMonthlyTokenLimit(userTokenLimits);
         userPreferencesService.save(userPreferences);
+    }
+
+    public void updatePassword(final User user, final String password) {
+       user.setPassword(passwordEncoder.encode(password));
+       userRepository.save(user);
     }
 
     public User findByEmail(final String email) {
