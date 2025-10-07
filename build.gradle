@@ -8,7 +8,12 @@ plugins {
 
 group = 'com.ps'
 version = '0.0.1-SNAPSHOT'
-mainClassName = "com.ps.neurochat.NeuroChatAiApplication"
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.ps.neurochat.NeuroChatAiApplication'
+    }
+}
 
 java {
     toolchain {
