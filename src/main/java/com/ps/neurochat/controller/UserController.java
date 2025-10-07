@@ -1,8 +1,9 @@
 package com.ps.neurochat.controller;
 
 import com.ps.neurochat.domain.User;
-import com.ps.neurochat.dto.RegistrationRequest;
 import com.ps.neurochat.dto.ChangePasswordRequest;
+import com.ps.neurochat.dto.RegistrationRequest;
+import com.ps.neurochat.service.LocaleMessageService;
 import com.ps.neurochat.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -20,8 +21,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.util.Map;
 
@@ -33,7 +32,7 @@ public class UserController {
 
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    private final MessageSource messageSource;
+    private final LocaleMessageService localeMessageService;
 
     @GetMapping("/registration")
     public String registration(Model model) {
@@ -48,16 +47,14 @@ public class UserController {
         if (!bindingResult.hasFieldErrors("confirmPassword") &&
                 requestDto.getPassword() != null && requestDto.getConfirmPassword() != null &&
                 !requestDto.getPassword().equals(requestDto.getConfirmPassword())) {
-            String msg = messageSource.getMessage("registration.passwords.mismatch",
-                    null, LocaleContextHolder.getLocale());
-            bindingResult.addError(new FieldError("registrationRequest", "confirmPassword", msg));
+            bindingResult.addError(new FieldError("registrationRequest", "confirmPassword",
+                    localeMessageService.getLocalMessage("registration.passwords.mismatch")));
         }
 
         // Проверка существования пользователя с таким email
         if (requestDto.getEmail() != null && userService.findByEmail(requestDto.getEmail()) != null) {
-            String msg = messageSource.getMessage("registration.email.exists",
-                    null, LocaleContextHolder.getLocale());
-            bindingResult.addError(new FieldError("registrationRequest", "email", msg));
+            bindingResult.addError(new FieldError("registrationRequest", "email",
+                    localeMessageService.getLocalMessage("registration.email.exists")));
         }
 
         if (bindingResult.hasErrors()) {
@@ -69,23 +66,12 @@ public class UserController {
             log.info("Регистрация нового пользователя с email: {}, IP: {}",
                     requestDto.getEmail(), ipAddress);
 
-            User user = new User();
-            user.setEmail(requestDto.getEmail());
-            user.setPassword(requestDto.getPassword());
-            user.setFirstName(requestDto.getFirstName());
-            user.setLastName(requestDto.getLastName());
-            user.setIpFromLogin(ipAddress);
-
-            userService.save(user);
-            String success = messageSource.getMessage("registration.success",
-                    null, LocaleContextHolder.getLocale());
-            model.addAttribute("message", success);
+            userService.save(requestDto, ipAddress);
+            model.addAttribute("message", localeMessageService.getLocalMessage("registration.success"));
             return "index";
         } catch (Exception e) {
             log.error("Ошибка при сохранении пользователя", e);
-            String err = messageSource.getMessage("registration.error",
-                    null, LocaleContextHolder.getLocale());
-            model.addAttribute("error", err);
+            model.addAttribute("error", localeMessageService.getLocalMessage("registration.error"));
             return "registration";
         }
     }
@@ -94,36 +80,30 @@ public class UserController {
     public ResponseEntity<?> changePassword(@AuthenticationPrincipal UserDetails userDetails,
                                             @RequestBody ChangePasswordRequest request) {
         if (request == null || request.getNewPassword() == null || request.getConfirmPassword() == null) {
-            String msg = messageSource.getMessage("api.user.change_password.invalid",
-                    null, LocaleContextHolder.getLocale());
-            return ResponseEntity.badRequest().body(Map.of("message", msg));
+            return ResponseEntity.badRequest().body(Map.of("message",
+                    localeMessageService.getLocalMessage("api.user.change_password.invalid")));
         }
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            String msg = messageSource.getMessage("api.user.change_password.mismatch",
-                    null, LocaleContextHolder.getLocale());
-            return ResponseEntity.badRequest().body(Map.of("message", msg));
+            return ResponseEntity.badRequest().body(Map.of("message",
+                    localeMessageService.getLocalMessage("api.user.change_password.mismatch")));
         }
         if (request.getNewPassword().length() < 8) {
-            String msg = messageSource.getMessage("api.user.change_password.too_short",
-                    null, LocaleContextHolder.getLocale());
-            return ResponseEntity.badRequest().body(Map.of("message", msg));
+            return ResponseEntity.badRequest().body(Map.of("message",
+                    localeMessageService.getLocalMessage("api.user.change_password.too_short")));
         }
 
-        User user = userService.findByEmail(userDetails.getUsername());
+        final User user = userService.findByEmail(userDetails.getUsername());
         if (user == null) {
-            String msg = messageSource.getMessage("api.user.not_found",
-                    null, LocaleContextHolder.getLocale());
-            return ResponseEntity.status(404).body(Map.of("message", msg));
+            return ResponseEntity.status(404).body(Map.of("message",
+                    localeMessageService.getLocalMessage("api.user.not_found")));
         }
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            String msg = messageSource.getMessage("api.user.current_password.invalid",
-                    null, LocaleContextHolder.getLocale());
-            return ResponseEntity.status(400).body(Map.of("message", msg));
+            return ResponseEntity.status(400).body(Map.of("message",
+                    localeMessageService.getLocalMessage("api.user.current_password.invalid")));
         }
-        userService.save(user);
-        String ok = messageSource.getMessage("api.user.change_password.success",
-                null, LocaleContextHolder.getLocale());
-        return ResponseEntity.ok(Map.of("message", ok));
+        userService.updatePassword(user, request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message",
+                localeMessageService.getLocalMessage("api.user.change_password.success")));
     }
 
     /**

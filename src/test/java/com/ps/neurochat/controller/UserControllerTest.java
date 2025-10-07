@@ -1,6 +1,7 @@
 package com.ps.neurochat.controller;
 
 import com.ps.neurochat.domain.User;
+import com.ps.neurochat.service.LocaleMessageService;
 import com.ps.neurochat.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,38 +9,38 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.MessageSource;
+import org.springframework.core.MethodParameter;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.core.MethodParameter;
-import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
     @Mock private UserService userService;
     @Mock private PasswordEncoder passwordEncoder;
-    @Mock private MessageSource messageSource;
+    @Mock private LocaleMessageService localeMessageService;
 
     private MockMvc mockMvc;
 
     @BeforeEach
     void setup() {
-        UserController controller = new UserController(userService, passwordEncoder, messageSource);
+        UserController controller = new UserController(userService, passwordEncoder, localeMessageService);
         InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
         viewResolver.setPrefix("/WEB-INF/views/");
         viewResolver.setSuffix(".jsp");
@@ -47,7 +48,7 @@ class UserControllerTest {
                 .setViewResolvers(viewResolver)
                 .setCustomArgumentResolvers(new AuthPrincipalResolver("user@example.com"))
                 .build();
-        lenient().when(messageSource.getMessage(anyString(), any(), any())).thenReturn("msg");
+        lenient().when(localeMessageService.getLocalMessage(anyString())).thenReturn("msg");
     }
 
     @Test

@@ -98,7 +98,6 @@ public class PasswordResetService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     protected void deleteExpiredTokenAsync(PasswordResetToken token) {
         try {
             tokenRepository.delete(token);
@@ -136,8 +135,8 @@ public class PasswordResetService {
         }
     }
 
-    // Delete expired tokens every 6 hours
-    @Scheduled(fixedRate = 6 * 60 * 60 * 1000)
+    // Delete expired tokens every 24 hours
+    @Scheduled(fixedRate = 24 * 60 * 60 * 1000)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cleanupExpiredTokens() {
         try {
