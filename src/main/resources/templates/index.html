@@ -12,11 +12,9 @@
 <div class="container-fluid auth-container">
     <div class="auth-card">
         <div class="auth-header">
-            <!--                <div class="auth-logo">-->
-            <!--                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 24 24">-->
-            <!--                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>-->
-            <!--                    </svg>-->
-            <!--                </div>-->
+            <div class="auth-logo">
+               <img th:src="@{/img/logo.png}" width="100px" height="100px" alt="NeuroChat логотип"/>
+            </div>
             <div class="d-flex justify-content-between align-items-center w-100">
                 <div>
                     <h1 class="auth-title" data-i18n="index.welcome">Добро пожаловать в NeuroChat</h1>
@@ -24,26 +22,28 @@
                 </div>
             </div>
 
-            <div th:if="${param.error}" class="error-message">
+            <div th:if="${param.error}" class="error-message" role="alert" aria-live="assertive">
                 <i class="bi bi-exclamation-circle-fill"></i>
                 <span data-i18n="index.error">Неверный email или пароль. Пожалуйста, попробуйте снова.</span>
             </div>
 
-            <div th:if="${param.logout}" class="success-message">
+            <div th:if="${param.logout}" class="success-message" role="alert" aria-live="polite">
                 <i class="bi bi-check-circle-fill"></i>
                 <span data-i18n="index.loggedOut">Вы успешно вышли из системы.</span>
             </div>
 
-            <p th:if="${message}" class="success-message">
+            <p th:if="${message}" class="success-message" role="alert" aria-live="polite">
                 <i class="bi bi-check-circle-fill"></i>
                 <span th:text="${message}"></span>
             </p>
         </div>
 
-        <form th:action="@{/perform_login}" method="post" class="auth-form">
+        <form th:action="@{/perform_login}" method="post" class="auth-form" novalidate>
+            <!-- CSRF token for Spring Security -->
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <div class="mb-3">
                 <label for="email" class="form-label" data-i18n="index.email">Email</label>
-                <input type="email" class="form-control" id="email" name="username" data-i18n-attr="placeholder" data-i18n="index.email.placeholder" placeholder="Введите ваш email" required>
+                <input type="email" class="form-control" id="email" name="username" data-i18n-attr="placeholder" data-i18n="index.email.placeholder" placeholder="Введите ваш email" required autocomplete="username" inputmode="email">
             </div>
 
             <div class="mb-3">
@@ -53,7 +53,12 @@
                         <i class="bi bi-question-circle me-1 small"></i><span data-i18n="index.forgot">Забыли пароль?</span>
                     </a>
                 </div>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password" aria-describedby="toggle-password">
+                    <button class="btn btn-outline-secondary" type="button" id="toggle-password" aria-label="Показать пароль">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="form-check mb-4">
@@ -83,9 +88,28 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script defer src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- i18n must load after DOM but before usage -->
-<script th:src="@{/js/i18n.js}"></script>
+<script defer th:src="@{/js/i18n.js}"></script>
+<script>
+  // simple password visibility toggle (no dependencies)
+  (function(){
+    const btn = document.getElementById('toggle-password');
+    const input = document.getElementById('password');
+    if(btn && input){
+      btn.addEventListener('click', function(){
+        const isPassword = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPassword ? 'text' : 'password');
+        this.setAttribute('aria-label', isPassword ? 'Скрыть пароль' : 'Показать пароль');
+        const icon = this.querySelector('i');
+        if(icon){
+          icon.classList.toggle('bi-eye');
+          icon.classList.toggle('bi-eye-slash');
+        }
+      });
+    }
+  })();
+</script>
 </body>
 </html>
