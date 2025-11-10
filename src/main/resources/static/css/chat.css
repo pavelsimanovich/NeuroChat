@@ -1595,8 +1595,7 @@ pre[class*="language-"] {
     }
 }
 
-/* Voice input button styles */
-#voiceInputBtn {
+#voiceInputBtn, #uploadButton {
     background: none;
     border: none;
     color: var(--text-secondary);
@@ -1610,10 +1609,16 @@ pre[class*="language-"] {
     opacity: 0.7;
 }
 
-#voiceInputBtn:hover {
+#voiceInputBtn:hover, #uploadButton:hover {
     background: rgba(0, 0, 0, 0.05);
     color: var(--accent-color);
     opacity: 1;
+}
+
+/* Dark theme: slightly lighter gray hover background */
+[data-bs-theme="dark"] #voiceInputBtn:hover,
+[data-bs-theme="dark"] #uploadButton:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 #voiceInputBtn.recording {
