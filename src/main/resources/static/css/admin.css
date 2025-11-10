@@ -1,0 +1,75 @@
+/* Admin panel theming */
+:root {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #adb5bd;
+  --border-color: #dee2e6;
+  --accent-color: #0d6efd;
+  --accent-hover: #0b5ed7;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+}
+
+[data-bs-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-muted: #808080;
+  --border-color: #404040;
+  --shadow-light: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.5);
+}
+
+.admin-page { background: var(--bg-primary); color: var(--text-primary); }
+
+/* Navbar */
+.admin-page .navbar { border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 10px var(--shadow-light); }
+.admin-page .navbar.bg-dark { background-color: var(--bg-tertiary) !important; }
+.admin-page .navbar .navbar-brand, .admin-page .navbar .btn, .admin-page .navbar .nav-link { color: var(--text-primary) !important; }
+.admin-page .navbar .btn.btn-outline-light { border-color: var(--border-color) !important; }
+
+/* Cards */
+.admin-page .card { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: 0 1px 8px var(--shadow-light); }
+.admin-page .card .card-header { background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+.admin-page .card .text-muted, .admin-page .card .small { color: var(--text-secondary) !important; }
+
+/* Tabs */
+.admin-page .nav-tabs .nav-link { color: var(--text-secondary); }
+.admin-page .nav-tabs .nav-link.active { color: var(--text-primary); background: var(--bg-secondary); border-color: var(--border-color) var(--border-color) var(--bg-secondary); }
+.admin-page .nav-tabs { border-bottom: 1px solid var(--border-color); }
+
+/* Forms */
+.admin-page .form-control, .admin-page .form-select { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.admin-page .input-group-text { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.admin-page .form-check-label { color: var(--text-primary); }
+.admin-page .form-text { color: var(--text-secondary); }
+
+/* Tables */
+.admin-page .table { color: var(--text-primary); }
+.admin-page .table thead th { background: var(--bg-tertiary); color: var(--text-primary); border-bottom: 1px solid var(--border-color); }
+.admin-page .table tbody tr { border-color: var(--border-color); }
+.admin-page .table-hover tbody tr:hover { background: rgba(13,110,253,0.06); }
+
+/* Badges and buttons alignment with theme */
+.admin-page .btn-outline-secondary { color: var(--text-primary); border-color: var(--border-color); }
+.admin-page .btn-outline-primary { color: var(--accent-color); border-color: var(--accent-color); }
+.admin-page .btn-primary { background: linear-gradient(135deg, var(--accent-color), var(--accent-hover)); border: none; }
+
+/* Modals (announcement, quota) */
+.admin-page .modal-content { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.admin-page .modal-header, .admin-page .modal-footer { border-color: var(--border-color); }
+
+/* Inputs within modals */
+.admin-page .modal .form-control, .admin-page .modal .form-select { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.admin-page .modal .form-label { color: var(--text-primary); }
+.admin-page .modal .form-text { color: var(--text-secondary); }
+
+/* Utilities */
+.admin-page .text-muted { color: var(--text-secondary) !important; }
+.admin-page .border { border-color: var(--border-color) !important; }
+.admin-page .bg-light { background-color: var(--bg-tertiary) !important; color: var(--text-primary) !important; }

@@ -226,6 +226,7 @@
   }
 
   function createChart(ctx, label, color){
+    const theme = getChartTheme();
     return new Chart(ctx, {
       type: 'line',
       data: {
@@ -246,16 +247,18 @@
         scales: {
           x: { 
             display: true,
-            grid: { display: false }
+            grid: { display: false },
+            ticks: { color: theme.tickColor }
           },
           y: { 
             beginAtZero: true,
             min: 0,
             ticks: {
-              precision: 0
+              precision: 0,
+              color: theme.tickColor
             },
             grid: {
-              color: 'rgba(0, 0, 0, 0.05)'
+              color: theme.gridColor
             }
           }
         },
@@ -263,7 +266,12 @@
           legend: { display: false },
           tooltip: {
             mode: 'index',
-            intersect: false
+            intersect: false,
+            backgroundColor: theme.tooltipBg,
+            titleColor: theme.tooltipColor,
+            bodyColor: theme.tooltipColor,
+            borderColor: theme.gridColor,
+            borderWidth: 1
           }
         },
         animation: {
@@ -288,6 +296,52 @@
       loadUserStats();
     });
   }
+
+  // Theme helpers for Chart.js
+  function getCssVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function getChartTheme(){
+    const isDark = (document.documentElement.getAttribute('data-bs-theme') || '').toLowerCase() === 'dark';
+    // Fallbacks in case variables are missing
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const tickColor = isDark ? (getCssVar('--text-secondary') || '#b0b0b0') : (getCssVar('--text-secondary') || '#6c757d');
+    const tooltipBg = isDark ? (getCssVar('--bg-tertiary') || '#3a3a3a') : '#ffffff';
+    const tooltipColor = isDark ? (getCssVar('--text-primary') || '#ffffff') : '#212529';
+    return { gridColor, tickColor, tooltipBg, tooltipColor };
+  }
+
+  // Observe theme changes and update existing charts
+  const themeObserver = new MutationObserver((mutations)=>{
+    const changed = mutations.some(m => m.type === 'attributes' && m.attributeName === 'data-bs-theme');
+    if(!changed) return;
+    const theme = getChartTheme();
+    ['rps','cpu','heap'].forEach(key=>{
+      const chart = state.charts[key];
+      if(!chart) return;
+      // Update scales colors
+      if(chart.options.scales?.x){
+        chart.options.scales.x.ticks = chart.options.scales.x.ticks || {};
+        chart.options.scales.x.ticks.color = theme.tickColor;
+      }
+      if(chart.options.scales?.y){
+        chart.options.scales.y.ticks = chart.options.scales.y.ticks || {};
+        chart.options.scales.y.ticks.color = theme.tickColor;
+        chart.options.scales.y.grid = chart.options.scales.y.grid || {};
+        chart.options.scales.y.grid.color = theme.gridColor;
+      }
+      // Update tooltip theme
+      if(chart.options.plugins?.tooltip){
+        chart.options.plugins.tooltip.backgroundColor = theme.tooltipBg;
+        chart.options.plugins.tooltip.titleColor = theme.tooltipColor;
+        chart.options.plugins.tooltip.bodyColor = theme.tooltipColor;
+        chart.options.plugins.tooltip.borderColor = theme.gridColor;
+        chart.options.plugins.tooltip.borderWidth = 1;
+      }
+      chart.update('none');
+    });
+  });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 
   function updateChart(key) {
     const chart = state.charts[key];
