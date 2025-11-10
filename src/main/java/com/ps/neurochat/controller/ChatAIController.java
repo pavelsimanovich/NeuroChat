@@ -84,7 +84,8 @@ public class ChatAIController {
                                 if (ex != null) return ex;
                             }
 
-                            final List<Message> messages = buildMessages(question, fileData, currentHistory, systemPrompt);
+                            final List<Message> messages =
+                                    buildMessages(question, fileData, currentHistory, systemPrompt);
                             final Prompt prompt = new Prompt(messages);
 
                             var spec = buildRequestSpec(prompt, chatId, preferredModel);
@@ -96,8 +97,8 @@ public class ChatAIController {
                                     .flatMap(chunk ->
                                             Mono.fromRunnable(() ->
                                                             chatMessageService.saveChunk(chatId, chunk.content()))
-                                            .subscribeOn(Schedulers.boundedElastic())
-                                            .thenReturn(chunk))
+                                                    .subscribeOn(Schedulers.boundedElastic())
+                                                    .thenReturn(chunk))
                                     .doOnComplete(() -> Mono.fromRunnable(() ->
                                                     onCompletionUpdate(username, chatId, question, currentHistory))
                                             .subscribeOn(Schedulers.boundedElastic())
@@ -105,7 +106,6 @@ public class ChatAIController {
                                     .concatWith(Mono.just(
                                             new ChunkResponseDTO("[DONE]", true, null)));
                         }))
-                // .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(LimitExceededException.class, e -> Mono.<Void>fromCallable(() -> {
                             chatRoomService.setInactive(chatId);
                             return null;
