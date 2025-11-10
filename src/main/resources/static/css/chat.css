@@ -1430,7 +1430,6 @@ pre[class*="language-"] {
     font-weight: 500;
     color: var(--text-secondary);
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     margin-right: 10px;
 }
@@ -2466,4 +2465,45 @@ border-color: rgba(255, 193, 7, 0.15);
 [data-bs-theme="dark"] #userSettingsModal .accordion-item,
 [data-bs-theme="dark"] #userSettingsModal .accordion-button:not(.collapsed) {
     background-color: var(--bg-tertiary);
+}
+
+/* SweetAlert2 (Saved popup) - Dark theme */
+[data-bs-theme="dark"] .swal2-popup {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px var(--shadow-medium);
+}
+[data-bs-theme="dark"] .swal2-title {
+    color: var(--text-primary) !important;
+}
+[data-bs-theme="dark"] .swal2-html-container {
+    color: var(--text-secondary) !important;
+}
+[data-bs-theme="dark"] .swal2-icon.swal2-success {
+    border-color: rgba(25, 135, 84, 0.4) !important;
+    color: var(--text-primary) !important;
+}
+[data-bs-theme="dark"] .swal2-icon.swal2-success .swal2-success-ring {
+    border: 0.25em solid rgba(25, 135, 84, 0.25) !important;
+}
+[data-bs-theme="dark"] .swal2-icon.swal2-success [class^='swal2-success-line'] {
+    background-color: #34d399 !important; /* soft green for visibility on dark */
+}
+[data-bs-theme="dark"] .swal2-actions .swal2-confirm {
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%) !important;
+    color: #fff !important;
+    border: none !important;
+}
+[data-bs-theme="dark"] .swal2-actions .swal2-cancel,
+[data-bs-theme="dark"] .swal2-actions .swal2-deny {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+[data-bs-theme="dark"] .swal2-timer-progress-bar-container {
+    background: var(--bg-tertiary) !important;
+}
+[data-bs-theme="dark"] .swal2-timer-progress-bar {
+    background: var(--accent-color) !important;
 }
