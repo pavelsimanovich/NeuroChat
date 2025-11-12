@@ -47,6 +47,7 @@ public class WebSecurityConfig {
                                 "/actuator/health")
                         .permitAll()
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest()
                         .authenticated()
                 )

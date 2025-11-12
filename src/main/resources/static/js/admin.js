@@ -117,19 +117,15 @@
       // Silent fail
     }
 
-    // Heap: jvm.memory.used?tag=area:heap -> bytes
+    // Heap: sum all heap regions (area=heap) -> MB
     try {
-      const heap = await fetchMetric('jvm.memory.used', 'tag=area:heap');
-      const bytes = heap.measurements?.[0]?.value ?? 0;
-      heapValue = bytes / (1024*1024);
+      heapValue = await fetchHeapUsedMB();
     } catch(e) {
       // Silent fail
     }
 
-    // Push all points in order to maintain synchronization
-    if (rpsValue !== null) pushPoint(rpsValue, 'rps');
-    if (cpuValue !== null) pushPoint(cpuValue, 'cpu');
-    if (heapValue !== null) pushPoint(heapValue, 'heap');
+    // Push a single synchronized sample for all metrics
+    pushSample({ rps: rpsValue, cpu: cpuValue, heap: heapValue });
   }
 
   function getMaxPoints() {
@@ -210,65 +206,49 @@
     }
   }
 
-  function pushPoint(value, key) {
+  function pushSample(sample) {
     const now = Date.now();
-    
-    // Ensure all raw data arrays have the same length before adding new point
-    const currentLength = state.rawData.timestamps.length;
-    if (key === 'rps' && state.rawData.rps.length < currentLength) {
-      while (state.rawData.rps.length < currentLength) state.rawData.rps.push(null);
-    }
-    if (key === 'cpu' && state.rawData.cpu.length < currentLength) {
-      while (state.rawData.cpu.length < currentLength) state.rawData.cpu.push(null);
-    }
-    if (key === 'heap' && state.rawData.heap.length < currentLength) {
-      while (state.rawData.heap.length < currentLength) state.rawData.heap.push(null);
-    }
-    
-    // Add to raw data (keeps all points for up to 6 hours)
-    if (key === 'rps') {
-      state.rawData.timestamps.push(now);
-      state.rawData.rps.push(value);
-    } else if (key === 'cpu') {
-      // Only push timestamp if this is the first metric in the cycle
-      if (state.rawData.cpu.length === state.rawData.timestamps.length - 1) {
-        state.rawData.cpu.push(value);
-      } else {
-        // Replace null with actual value
-        state.rawData.cpu[state.rawData.cpu.length - 1] = value;
-      }
-    } else if (key === 'heap') {
-      // Only push timestamp if this is the first metric in the cycle
-      if (state.rawData.heap.length === state.rawData.timestamps.length - 1) {
-        state.rawData.heap.push(value);
-      } else {
-        // Replace null with actual value
-        state.rawData.heap[state.rawData.heap.length - 1] = value;
-      }
-    }
-    
+    const { rps = null, cpu = null, heap = null } = sample || {};
+
+    // Push single timestamp and synchronized values
+    state.rawData.timestamps.push(now);
+    state.rawData.rps.push(rps);
+    state.rawData.cpu.push(cpu);
+    state.rawData.heap.push(heap);
+
     // Clean up old data (older than 6 hours)
     const sixHoursAgo = now - (360 * 60 * 1000);
     const firstValidIndex = state.rawData.timestamps.findIndex(ts => ts >= sixHoursAgo);
-    
     if (firstValidIndex > 0) {
       state.rawData.timestamps = state.rawData.timestamps.slice(firstValidIndex);
       state.rawData.rps = state.rawData.rps.slice(firstValidIndex);
       state.rawData.cpu = state.rawData.cpu.slice(firstValidIndex);
       state.rawData.heap = state.rawData.heap.slice(firstValidIndex);
     }
-    
-    // Filter data for current time range and update charts
+
+    // Filter and refresh all charts together (ensures alignment)
     filterDataForTimeRange();
-    
-    // Update the specific chart
-    updateChart(key);
-    
-    // If this is the last metric in the sampling cycle, update all charts to ensure consistency
-    if (key === 'heap') {
-      updateChart('rps');
-      updateChart('cpu');
+    updateChart('rps');
+    updateChart('cpu');
+    updateChart('heap');
+  }
+
+  // Helper: sum heap usage across all heap regions
+  async function fetchHeapUsedMB(){
+    // First, query for area=heap to discover heap region IDs
+    const base = await fetchMetric('jvm.memory.used', 'tag=area:heap');
+    const idTag = (base.availableTags || []).find(t => t.tag === 'id');
+    const ids = Array.isArray(idTag?.values) ? idTag.values : [];
+    if(ids.length === 0){
+      // Fall back to first measurement if regions not exposed
+      const bytes = base.measurements?.[0]?.value ?? 0;
+      return bytes / (1024*1024);
     }
+    const parts = await Promise.all(
+      ids.map(id => fetchMetric('jvm.memory.used', `tag=area:heap&tag=id:${encodeURIComponent(id)}`))
+    );
+    const totalBytes = parts.reduce((sum, m) => sum + (m.measurements?.[0]?.value ?? 0), 0);
+    return totalBytes / (1024*1024);
   }
 
   function createChart(ctx, label, color){
