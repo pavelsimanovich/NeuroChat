@@ -1,22 +1,18 @@
 // Theme toggle functionality
 const themeToggle = {
     init() {
-        // Find all theme toggle buttons
+        // Load saved theme or system preference and ALWAYS apply it
+        this.currentTheme = localStorage.getItem('chat_theme') ||
+                           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        this.applyTheme(this.currentTheme);
+
+        // Find all theme toggle buttons (optional)
         this.themeToggleBtns = [
             document.getElementById('themeToggleBtn'),
             document.getElementById('themeToggleBtnModal')
-        ].filter(Boolean); // Remove null/undefined
-        
-        if (this.themeToggleBtns.length === 0) return;
-        
-        // Load saved theme or use system preference
-        this.currentTheme = localStorage.getItem('chat_theme') || 
-                           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        
-        // Apply the theme
-        this.applyTheme(this.currentTheme);
-        
-        // Add event listeners to all theme toggle buttons
+        ].filter(Boolean);
+
+        // If buttons exist, wire them up
         this.themeToggleBtns.forEach(btn => {
             // Remove any existing listeners to prevent duplicates
             const newBtn = btn.cloneNode(true);

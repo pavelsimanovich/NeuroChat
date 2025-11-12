@@ -34,7 +34,7 @@ public class FileController {
             final FileData fileData = fileStorageService.storeFile(file);
             final FileDataDto dto = fileDataToDtoConverter.convertToDto(fileData);
             return ResponseEntity.ok(dto);
-        }  catch (Exception e) {
+        }  catch (Exception _) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
         }

@@ -68,8 +68,9 @@ public class ChatRoomApiController {
     }
 
     @PostMapping("/rooms/{roomId}/update")
-    public CompletableFuture<ResponseEntity<ChatRoomDto>> generateRoomName(final @PathVariable String roomId,
-                                                                         final @RequestParam("context") String context) {
+    public CompletableFuture<ResponseEntity<ChatRoomDto>> generateRoomName(
+            final @PathVariable String roomId,
+            final @RequestParam("context") String context) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 final String generatedName = ollamaService.generateChatName(context);
