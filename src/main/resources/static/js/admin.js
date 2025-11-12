@@ -79,12 +79,13 @@
       const uptimeElement = document.getElementById('uptime');
       if (uptimeElement) {
         uptimeElement.textContent = formattedTime;
-      } else {
-        console.error('Element with id "uptime" not found');
       }
-    } catch(e) {
-      console.error('Error processing uptime:', e);
-    }
+    } catch(e) {}
+
+    // Collect all metrics first to ensure synchronization
+    let rpsValue = null;
+    let cpuValue = null;
+    let heapValue = null;
 
     // HTTP Requests per second (derived from COUNT delta / deltaTime)
     try {
@@ -94,28 +95,41 @@
         if(state.prev.httpCount != null && state.prev.ts != null){
           const dt = (now - state.prev.ts) / 1000.0;
           const dc = Math.max(0, count - state.prev.httpCount);
-          const rps = dt > 0 ? dc / dt : 0;
-          document.getElementById('httpRps').textContent = rps.toFixed(2);
-          pushPoint(rps, 'rps');
+          rpsValue = dt > 0 ? dc / dt : 0;
+          const rpsElement = document.getElementById('httpRps');
+          if (rpsElement) {
+            rpsElement.textContent = rpsValue.toFixed(2);
+          }
         }
         state.prev.httpCount = count;
         state.prev.ts = now;
       }
-    } catch(e){}
+    } catch(e) {
+      // Silent fail
+    }
 
     // CPU: process.cpu.usage -> 0..1
     try {
       const cpu = await fetchMetric('process.cpu.usage');
       const val = cpu.measurements?.[0]?.value ?? 0;
-      pushPoint((val || 0) * 100, 'cpu');
-    } catch(e){}
+      cpuValue = (val || 0) * 100;
+    } catch(e) {
+      // Silent fail
+    }
 
     // Heap: jvm.memory.used?tag=area:heap -> bytes
     try {
       const heap = await fetchMetric('jvm.memory.used', 'tag=area:heap');
       const bytes = heap.measurements?.[0]?.value ?? 0;
-      pushPoint(bytes / (1024*1024), 'heap');
-    } catch(e){}
+      heapValue = bytes / (1024*1024);
+    } catch(e) {
+      // Silent fail
+    }
+
+    // Push all points in order to maintain synchronization
+    if (rpsValue !== null) pushPoint(rpsValue, 'rps');
+    if (cpuValue !== null) pushPoint(cpuValue, 'cpu');
+    if (heapValue !== null) pushPoint(heapValue, 'heap');
   }
 
   function getMaxPoints() {
@@ -129,7 +143,27 @@
     const timeAgo = now - (state.timeRange * 60 * 1000);
     
     // Ensure we have data to process
-    if (state.rawData.timestamps.length === 0) return;
+    if (state.rawData.timestamps.length === 0) {
+      state.series = {
+        timestamps: [],
+        labels: [],
+        rps: [],
+        cpu: [],
+        heap: []
+      };
+      return;
+    }
+    
+    // Ensure all raw data arrays have the same length
+    const dataLength = state.rawData.timestamps.length;
+    while (state.rawData.rps.length < dataLength) state.rawData.rps.push(null);
+    while (state.rawData.cpu.length < dataLength) state.rawData.cpu.push(null);
+    while (state.rawData.heap.length < dataLength) state.rawData.heap.push(null);
+    
+    // Trim arrays if they're longer than timestamps
+    if (state.rawData.rps.length > dataLength) state.rawData.rps.length = dataLength;
+    if (state.rawData.cpu.length > dataLength) state.rawData.cpu.length = dataLength;
+    if (state.rawData.heap.length > dataLength) state.rawData.heap.length = dataLength;
     
     // Find the index of the first point within the time range
     const firstIndex = state.rawData.timestamps.findIndex(ts => ts >= timeAgo);
@@ -178,13 +212,40 @@
 
   function pushPoint(value, key) {
     const now = Date.now();
-    const timeLabel = new Date(now).toLocaleTimeString();
+    
+    // Ensure all raw data arrays have the same length before adding new point
+    const currentLength = state.rawData.timestamps.length;
+    if (key === 'rps' && state.rawData.rps.length < currentLength) {
+      while (state.rawData.rps.length < currentLength) state.rawData.rps.push(null);
+    }
+    if (key === 'cpu' && state.rawData.cpu.length < currentLength) {
+      while (state.rawData.cpu.length < currentLength) state.rawData.cpu.push(null);
+    }
+    if (key === 'heap' && state.rawData.heap.length < currentLength) {
+      while (state.rawData.heap.length < currentLength) state.rawData.heap.push(null);
+    }
     
     // Add to raw data (keeps all points for up to 6 hours)
-    state.rawData.timestamps.push(now);
-    if (key === 'rps') state.rawData.rps.push(value);
-    if (key === 'cpu') state.rawData.cpu.push(value);
-    if (key === 'heap') state.rawData.heap.push(value);
+    if (key === 'rps') {
+      state.rawData.timestamps.push(now);
+      state.rawData.rps.push(value);
+    } else if (key === 'cpu') {
+      // Only push timestamp if this is the first metric in the cycle
+      if (state.rawData.cpu.length === state.rawData.timestamps.length - 1) {
+        state.rawData.cpu.push(value);
+      } else {
+        // Replace null with actual value
+        state.rawData.cpu[state.rawData.cpu.length - 1] = value;
+      }
+    } else if (key === 'heap') {
+      // Only push timestamp if this is the first metric in the cycle
+      if (state.rawData.heap.length === state.rawData.timestamps.length - 1) {
+        state.rawData.heap.push(value);
+      } else {
+        // Replace null with actual value
+        state.rawData.heap[state.rawData.heap.length - 1] = value;
+      }
+    }
     
     // Clean up old data (older than 6 hours)
     const sixHoursAgo = now - (360 * 60 * 1000);
@@ -197,31 +258,16 @@
       state.rawData.heap = state.rawData.heap.slice(firstValidIndex);
     }
     
-    // Filter data for current time range
+    // Filter data for current time range and update charts
     filterDataForTimeRange();
     
-    // Only update the chart if it's the last point being added
+    // Update the specific chart
+    updateChart(key);
+    
+    // If this is the last metric in the sampling cycle, update all charts to ensure consistency
     if (key === 'heap') {
-      // Update all charts
       updateChart('rps');
       updateChart('cpu');
-      updateChart('heap');
-    }
-    if(key === 'rps'){
-      state.series.labels.push(timeLabel);
-      if(state.series.labels.length > MAX_POINTS) state.series.labels.shift();
-    }
-    const arr = state.series[key];
-    arr.push(value);
-    if(arr.length > MAX_POINTS) arr.shift();
-    updateChart(key);
-    if(key === 'heap'){
-      // last key in cycle -> also update labels for other series lengths to match
-      ['cpu','rps','heap'].forEach(k=>{
-        while(state.series[k].length < state.series.labels.length){ state.series[k].unshift(null); }
-        while(state.series[k].length > state.series.labels.length){ state.series[k].shift(); }
-      });
-      ['rps','cpu','heap'].forEach(updateChart);
     }
   }
 
@@ -347,26 +393,14 @@
     const chart = state.charts[key];
     if(!chart) return;
     
-    // Validate data before updating
-    const seriesData = state.series[key];
-    const labels = state.series.labels;
-
-    // Ensure data and labels are in sync
-    if (seriesData.length !== labels.length) {
-      // Truncate to the smallest array to maintain sync
-      const minLength = Math.min(seriesData.length, labels.length, state.series.timestamps.length);
-      seriesData.length = minLength;
-      labels.length = minLength;
-      state.series.timestamps.length = minLength;
-    }
+    // Get the current series data
+    const seriesData = state.series[key] || [];
+    const labels = state.series.labels || [];
     
     // Update chart data
-    const data = chart.data.datasets[0].data;
-    data.length = 0;
-    data.push(...seriesData);
+    chart.data.datasets[0].data = [...seriesData];
+    chart.data.labels = [...labels];
     
-    // Update chart labels
-    chart.data.labels = labels;
     // Update chart with new data
     chart.update('none');
   }
@@ -415,9 +449,8 @@
     if(state.poll.id) clearInterval(state.poll.id);
     state.poll.ms = ms;
     
-    // Clear existing data when changing intervals
-    state.rawData = { timestamps: [], rps: [], cpu: [], heap: [] };
-    state.series = { timestamps: [], labels: [], rps: [], cpu: [], heap: [] };
+    // Don't clear data when just changing interval - preserve history
+    // Only clear if explicitly needed
     
     sampleMetrics(); // immediate first sample
     state.poll.id = setInterval(sampleMetrics, ms);
@@ -553,15 +586,10 @@
     attachHandlers();
     // refresh user stats every 10s
     state.users.statsIntervalId = setInterval(loadUserStats, 10000);
-    // setup polling interval select
+    // setup polling with initial interval from select
     const select = document.getElementById('metricsIntervalSelect');
     const initialMs = parseInt(select?.value || '5000', 10);
     startSampling(isNaN(initialMs) ? 5000 : initialMs);
-    if(select){
-      select.addEventListener('change', ()=>{
-        const ms = parseInt(select.value, 10);
-        startSampling(isNaN(ms) ? state.poll.ms : ms);
-      });
-    }
+    // Note: event listener for interval change is already attached in attachHandlers()
   });
 })();

@@ -54,7 +54,7 @@
             'admin.monitoring.httpRps': 'HTTP req/s (посл. замер)',
             'admin.monitoring.chart.rps': 'HTTP запросов в секунду',
             'admin.monitoring.chart.cpu': 'Нагрузка CPU (%)',
-            'admin.monitoring.chart.heap': 'Куча памяти (MB)',
+            'admin.monitoring.chart.heap': 'Heap Size (MB)',
             'admin.monitoring.legend.rps': 'RPS',
             'admin.monitoring.legend.cpu': 'CPU %',
             'admin.monitoring.legend.heap': 'Heap MB',
