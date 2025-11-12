@@ -24,10 +24,10 @@ spring:
             - qwen2.5-coder:7b
       chat:
         options:
-          model: gemma3:12b
-          temperature: 1
+          model: gemma3:4b
+          temperature: 0.8
           num-ctx: 32000
-          keep-alive: 1s
+          keep-alive: 10s
   datasource:
     url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
     username: ${MYSQL_ROOT_USER:root}
