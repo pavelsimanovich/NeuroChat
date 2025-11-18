@@ -36,6 +36,10 @@
       rps: [],
       cpu: [],
       heap: []
+    },
+    rpsUrisCache: {
+      uris: null,
+      ts: 0
     }
   };
 
@@ -87,21 +91,20 @@
     let cpuValue = null;
     let heapValue = null;
 
-    // HTTP Requests per second (derived from COUNT delta / deltaTime)
+    // HTTP Requests per second (derived from COUNT delta / deltaTime). Exclude actuator URIs to avoid self-inflation
     try {
-      const http = await fetchMetric('http.server.requests');
-      const count = getMeasurementByStat(http.measurements, 'COUNT') ?? null;
-      if(count != null){
+      const totalCount = await getHttpCountExcludingActuator();
+      if(totalCount != null){
         if(state.prev.httpCount != null && state.prev.ts != null){
           const dt = (now - state.prev.ts) / 1000.0;
-          const dc = Math.max(0, count - state.prev.httpCount);
+          const dc = Math.max(0, totalCount - state.prev.httpCount);
           rpsValue = dt > 0 ? dc / dt : 0;
           const rpsElement = document.getElementById('httpRps');
           if (rpsElement) {
             rpsElement.textContent = rpsValue.toFixed(2);
           }
         }
-        state.prev.httpCount = count;
+        state.prev.httpCount = totalCount;
         state.prev.ts = now;
       }
     } catch(e) {
@@ -249,6 +252,43 @@
     );
     const totalBytes = parts.reduce((sum, m) => sum + (m.measurements?.[0]?.value ?? 0), 0);
     return totalBytes / (1024*1024);
+  }
+
+  // Helper: get http.server.requests COUNT excluding actuator URIs
+  async function getHttpCountExcludingActuator(){
+    const nowTs = Date.now();
+    const cacheValid = (nowTs - state.rpsUrisCache.ts) < 5 * 60 * 1000; // 5 minutes
+    let uris = state.rpsUrisCache.uris;
+    if(!cacheValid || !Array.isArray(uris)){
+      const base = await fetchMetric('http.server.requests');
+      const uriTag = (base.availableTags || []).find(t => t.tag === 'uri');
+      const values = Array.isArray(uriTag?.values) ? uriTag.values : [];
+      const excludePrefixes = ['/actuator', '/css', '/js', '/img', '/webjars', '/admin', '/api/admin'];
+      const excludeExact = ['/favicon.ico', '/robots.txt'];
+      uris = values.filter(v => {
+        if (typeof v !== 'string') return false;
+        if (v === 'UNKNOWN') return false;
+        if (excludeExact.includes(v)) return false;
+        return !excludePrefixes.some(p => v.startsWith(p));
+      });
+      state.rpsUrisCache = { uris, ts: nowTs };
+      if(uris.length === 0){
+        const total = await fetchMetric('http.server.requests');
+        return getMeasurementByStat(total.measurements, 'COUNT') ?? null;
+      }
+    }
+
+    const parts = await Promise.all(
+      uris.map(u => fetchMetric('http.server.requests', `tag=uri:${encodeURIComponent(u)}`))
+    );
+    const sum = parts.reduce((acc, m) => acc + (getMeasurementByStat(m.measurements, 'COUNT') ?? 0), 0);
+    if(sum === 0){
+      try{
+        const total = await fetchMetric('http.server.requests');
+        return getMeasurementByStat(total.measurements, 'COUNT') ?? 0;
+      }catch(_){/* ignore */}
+    }
+    return sum;
   }
 
   function createChart(ctx, label, color){
