@@ -8,8 +8,8 @@ import com.ps.neurochat.service.ChatMessageService;
 import com.ps.neurochat.service.ChatRoomService;
 import com.ps.neurochat.service.FileStorageService;
 import com.ps.neurochat.service.ReactiveService;
-import com.ps.neurochat.service.UserPreferencesService;
 import com.ps.neurochat.service.TokenQuotaService;
+import com.ps.neurochat.service.UserPreferencesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,8 +20,10 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
-import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
@@ -33,8 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -154,7 +154,7 @@ public class ChatAIController {
                 .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
 
         if (StringUtils.hasText(preferredModel)) {
-            var options = OllamaOptions.builder()
+            var options = OllamaChatOptions.builder()
                     .model(preferredModel)
                     .build();
             spec = spec.options(options);
