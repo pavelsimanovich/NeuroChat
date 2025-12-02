@@ -7,7 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.ollama.OllamaChatModel;
-import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -29,7 +29,7 @@ class OllamaServiceTest {
     @Test
     @DisplayName("getCurrentModelName returns from default options")
     void currentModelName() {
-        OllamaOptions opts = mock(OllamaOptions.class);
+        OllamaChatOptions opts = mock(OllamaChatOptions.class);
         when(opts.getModel()).thenReturn("llama3");
         when(model.getDefaultOptions()).thenReturn(opts);
         assertThat(service.getCurrentModelName()).isEqualTo("llama3");
