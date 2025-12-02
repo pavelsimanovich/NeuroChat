@@ -1,4 +1,5 @@
-# NEUROCHAT. Chat with Ollama and Spring Boot AI
+# NEUROCHAT. Chat with LLM
+### Chat based on Ollama and Spring Boot AI
 
 ## First steps:
 
