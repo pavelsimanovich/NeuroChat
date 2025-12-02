@@ -26,10 +26,12 @@ class AnnouncementDisplay {
             this.initializeEventListeners();
             this.rotateInterval = null;
             this.isModalOpen = false;
-            this.progressBarEl = null;
+            this.progressBarEl = document.getElementById('announcementReadingProgress');
+            this.copyBtn = document.getElementById('announcementCopyBtn');
             this._bindedScrollHandler = null;
             this._touchStartX = null;
             this._touchStartY = null;
+            this._clipboardTooltip = null;
             this.loadAnnouncements();
         } catch (error) {
             console.error('Error initializing AnnouncementDisplay:', error);
@@ -49,6 +51,22 @@ class AnnouncementDisplay {
                 e.preventDefault();
                 if (this.announcements && this.announcements.length > 0) {
                     this.showModal(this.announcements[this.currentAnnouncementIndex]);
+                }
+            });
+        }
+
+        // Copy to clipboard button inside modal footer
+        if (this.copyBtn) {
+            this.copyBtn.addEventListener('click', async () => {
+                const content = document.getElementById('announcementModalContent');
+                if (!content) return;
+                try {
+                    const text = content.innerText.trim();
+                    if (!text) return;
+                    await navigator.clipboard.writeText(text);
+                    this.showCopyFeedback();
+                } catch (error) {
+                    console.error('Failed to copy announcement:', error);
                 }
             });
         }
@@ -222,40 +240,39 @@ class AnnouncementDisplay {
                       (announcement.content.includes('<') || announcement.content.includes('&'));
 
         const imageBlock = announcement.imageUrl ? `
-            <div class="mb-3 text-center">
-                <img src="${announcement.imageUrl}" alt="${this.escapeHtml(announcement.title || 'Изображение')}" 
-                     class="img-fluid rounded announcement-image" style="max-height: 360px; object-fit: contain; cursor: zoom-in;">
-            </div>` : '';
+            <figure class="announcement-modal__media mb-0">
+                <div class="announcement-modal__media-inner text-center">
+                    <img src="${announcement.imageUrl}" alt="${this.escapeHtml(announcement.title || 'Изображение')}" 
+                         class="img-fluid announcement-image" style="max-height: 360px; object-fit: contain;">
+                </div>
+            </figure>` : '';
 
         const contentBlock = `
-            <div class="announcement-content">
+            <div class="announcement-modal__richtext">
                 ${isHtml ? announcement.content : this.escapeHtml(announcement.content || '').replace(/\n/g, '<br>')}
             </div>`;
 
         const ctaBlock = (announcement.isAd && announcement.adTargetUrl) ? `
-            <div class="mt-3 d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                <div class="small text-muted">
+            <div class="announcement-modal__cta">
+                <div class="announcement-modal__cta-label small text-muted">
                     Реклама · Переход по внешней ссылке
                 </div>
-                <div class="d-flex gap-2">
-                    <a href="${announcement.adTargetUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-                        Перейти <i class="bi bi-box-arrow-up-right ms-1"></i>
-                    </a>
-                </div>
+                <a href="${announcement.adTargetUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary announcement-modal__cta-button">
+                    Перейти <i class="bi bi-box-arrow-up-right ms-1"></i>
+                </a>
             </div>` : '';
 
         // Action buttons: dismiss today/forever and copy
         const actionsBlock = `
-            <div class="mt-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                <div class="small text-muted d-none d-md-block">Подсказка: ← → для навигации, Esc — закрыть</div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-warning btn-sm" id="annDismissTodayBtn" title="Скрыть до завтра">
-                        <i class="bi bi-eye-slash"></i> До завтра
-                    </button>
-<!--                    <button type="button" class="btn btn-outline-danger btn-sm" id="annDismissForeverBtn" title="Больше не показывать">-->
-<!--                        <i class="bi bi-x-octagon"></i> Не показывать-->
-<!--                    </button>-->
+            <div class="announcement-modal__secondary-actions">
+                <div class="announcement-modal__tips small text-muted d-none d-md-inline-flex align-items-center gap-1">
+                    <i class="bi bi-keyboard"></i>
+                    <span>Подсказка: ← → для навигации, Esc — закрыть</span>
                 </div>
+                <button type="button" class="btn btn-outline-warning btn-sm rounded-pill" id="annDismissTodayBtn" title="Скрыть до завтра">
+                    <i class="bi bi-eye-slash"></i>
+                    <span class="ms-1">До завтра</span>
+                </button>
             </div>`;
 
         modalContent.innerHTML = `${imageBlock}${contentBlock}${ctaBlock}${actionsBlock}`;
@@ -360,18 +377,15 @@ class AnnouncementDisplay {
             // Add reading progress bar and scroll listener
             const modalBody = modalElement.querySelector('.modal-body');
             if (modalBody) {
-                if (!this.progressBarEl) {
-                    this.progressBarEl = document.createElement('div');
-                    this.progressBarEl.id = 'announcementReadingProgress';
-                    modalBody.prepend(this.progressBarEl);
-                }
                 const updateProgress = () => {
                     const content = document.getElementById('announcementModalContent');
                     if (!content) return;
                     const scrollTop = modalBody.scrollTop;
                     const scrollHeight = content.scrollHeight - modalBody.clientHeight;
                     const pct = scrollHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100)) : 0;
-                    this.progressBarEl.style.setProperty('--progress', pct + '%');
+                    if (this.progressBarEl) {
+                        this.progressBarEl.style.setProperty('--progress', pct + '%');
+                    }
                 };
                 this._bindedScrollHandler = updateProgress;
                 modalBody.addEventListener('scroll', updateProgress);
@@ -415,6 +429,9 @@ class AnnouncementDisplay {
                 this._bindedScrollHandler = null;
                 modalElement.removeEventListener('touchstart', onTouchStart);
                 modalElement.removeEventListener('touchend', onTouchEnd);
+                if (this.progressBarEl) {
+                    this.progressBarEl.style.setProperty('--progress', '0%');
+                }
             };
             
             modalElement.addEventListener('hidden.bs.modal', onModalHidden, { once: true });
@@ -574,6 +591,23 @@ class AnnouncementDisplay {
 
     resumeRotation() {
         this.startAutoRotation();
+    }
+    showCopyFeedback() {
+        if (!this.copyBtn) return;
+        const label = this.copyBtn.querySelector('.announcement-modal__copy-label');
+        if (!label) return;
+
+        const originalText = label.textContent;
+        label.textContent = 'Скопировано!';
+        this.copyBtn.classList.add('btn-success', 'text-white');
+        this.copyBtn.classList.remove('btn-outline-secondary');
+
+        clearTimeout(this._clipboardTooltip);
+        this._clipboardTooltip = setTimeout(() => {
+            label.textContent = originalText;
+            this.copyBtn.classList.remove('btn-success', 'text-white');
+            this.copyBtn.classList.add('btn-outline-secondary');
+        }, 2000);
     }
 }
 
