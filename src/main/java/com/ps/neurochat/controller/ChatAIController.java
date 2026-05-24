@@ -187,8 +187,9 @@ public class ChatAIController {
 
     private List<Message> buildMessages(String question, FileData fileData, List<Message> currentHistory,
                                         String systemPrompt) {
-        final List<Message> messages = new ArrayList<>(currentHistory);
+        final List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(systemPrompt));
+        messages.addAll(currentHistory);
         messages.add(buildUserMessage(question, fileData));
         return messages;
     }
