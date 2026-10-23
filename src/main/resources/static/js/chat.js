@@ -766,41 +766,20 @@ function getTempMessage(roomId, messageContent, idPrefix, userId) {
 }
 
 
-async function generateChatNameFromMessage(message, roomId) {
-    try {
-        const response = await fetch(
-            `${config.apiBaseUrl}/rooms/${roomId}/update?context=${encodeURIComponent(message)}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        if (response.ok) {
-            const updatedRoom = await response.json();
-            // Update the room in the state
-            const roomIndex = state.rooms.findIndex(r => r.id === updatedRoom.id);
-            if (roomIndex !== -1) {
-                state.rooms[roomIndex] = updatedRoom;
-            }
-
-            // Update the UI
-            renderRoomsList();
-
-            // If this is the current room, update the title
-            if (state.currentRoom && state.currentRoom.id === updatedRoom.id) {
-                state.currentRoom.title = updatedRoom.title;
-                if (elements.currentRoomTitle) {
-                    elements.currentRoomTitle.textContent = updatedRoom.title;
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error updating chat name:', error);
-        // Don't show error to user as this is a background operation
+function applyRoomTitle(roomId, title) {
+    const room = state.rooms.find(r => r.id === roomId);
+    if (room) {
+        room.title = title;
     }
+
+    if (state.currentRoom && state.currentRoom.id === roomId) {
+        state.currentRoom.title = title;
+        if (elements.currentRoomTitle) {
+            elements.currentRoomTitle.textContent = title;
+        }
+    }
+
+    renderRoomsList();
 }
 
 async function sendMessage() {
@@ -816,14 +795,7 @@ async function sendMessage() {
     }
 
     const roomId = state.currentRoom.id;
-    const isFirstMessage = state.messages.length === 0;
     let fileData = null;
-
-    // If this is the first message in the chat, generate a name based on the message
-    if (isFirstMessage && messageContent) {
-        // Don't await this, let it happen in the background
-        generateChatNameFromMessage(messageContent, roomId);
-    }
 
     // Upload file first if exists
     if (files.length) {
@@ -901,6 +873,16 @@ async function sendMessage() {
         let speakBuf = '';
 
         eventSource.onmessage = (e) => {
+            const message = JSON.parse(e.data);
+
+            // The backend auto-generates the room title on the first message
+            // and streams it as a dedicated chunk — apply it even if the user
+            // switched to another room while streaming.
+            if (message.roomTitle) {
+                applyRoomTitle(roomId, message.roomTitle);
+                return;
+            }
+
             if (roomId !== state.currentRoom.id || !isStreamActive) return;
 
             typingIndicator.hide();
@@ -908,8 +890,6 @@ async function sendMessage() {
             if (!document.getElementById(uuid)) {
                 elements.chatMessages.appendChild(messageElement);
             }
-
-            const message = JSON.parse(e.data);
 
             if (message.isEnd) {
                 isStreamActive = false;
@@ -2161,6 +2141,11 @@ function handleContextMenuAction(action) {
             break;
         case 'export':
             exportChatHistory(roomId);
+            break;
+        case 'export-md':
+            if (typeof window.exportChatMarkdown === 'function') {
+                window.exportChatMarkdown(roomId);
+            }
             break;
         case 'delete':
             handleDeleteRoom(roomId, roomElement.getAttribute('data-room-title'));

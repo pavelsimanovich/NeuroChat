@@ -6,8 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="app.title">AI Чат</title>
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link th:href="@{/css/lib/prism.css}" rel="stylesheet"/>
     <link th:href="@{/css/chat.css}" rel="stylesheet"/>
+    <link th:href="@{/css/modern.css}" rel="stylesheet"/>
     <link th:href="@{/css/sidebar-resize.css}" rel="stylesheet"/>
         <style>
             .transition-all {
@@ -129,6 +133,9 @@
                 <div class="context-menu-item" data-action="export">
                     <i class="bi bi-filetype-txt"></i> <span data-i18n="context.exportTxt">Экспортировать историю TXT</span>
                 </div>
+                <div class="context-menu-item" data-action="export-md">
+                    <i class="bi bi-filetype-md"></i> <span data-i18n="context.exportMd">Экспортировать в Markdown</span>
+                </div>
                 <div class="divider"></div>
                 <div class="context-menu-item text-danger" data-action="delete">
                     <i class="bi bi-trash"></i> <span data-i18n="context.delete">Удалить чат</span>
@@ -194,6 +201,12 @@
                     <button id="toggleSearch" class="btn btn-link text-decoration-none p-1 ms-2" data-i18n-title="search.title" title="Поиск по сообщениям">
                         <i class="bi bi-search"></i>
                     </button>
+                    <button id="paletteBtn" class="btn btn-link text-decoration-none p-1 ms-2 d-none d-md-inline-block" data-i18n-title="palette.title" title="Командная палитра (Ctrl+K)">
+                        <i class="bi bi-command"></i>
+                    </button>
+                    <button id="themeToggleBtn" class="btn btn-link text-decoration-none p-1 ms-2" data-i18n-title="chat.theme.toggle.title" title="Переключить тему">
+                        <i class="bi bi-moon-stars"></i>
+                    </button>
                     <a sec:authorize="hasRole('ADMIN')" href="/admin" class="btn btn-outline-secondary btn-sm ms-2" data-i18n-title="chat.model.admin.title" title="Админ-панель">
                         <i class="bi bi-shield-lock"></i>
                         <span class="d-none d-md-inline" data-i18n="chat.model.admin">Админ</span>
@@ -253,7 +266,7 @@
                     </div>
                     <h3 class="mb-3 fw-bold" data-i18n="welcome.title">Добро пожаловать в AI Чат-ассистент</h3>
                     <p class="text-muted mb-4 fs-5" data-i18n="welcome.subtitle">Ваш интеллектуальный помощник для решения любых задач. Задавайте вопросы, получайте консультации и находите решения прямо сейчас!</p>
-                    <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm" onclick="createRoom()">
+                    <button id="createRoomBtn1" class="btn btn-primary btn-lg px-4 py-2 shadow-sm">
                         <i class="bi bi-plus-lg me-2"></i><span data-i18n="welcome.start">Начать новый диалог</span>
                     </button>
                     <div class="mt-5 pt-4 border-top w-100">
@@ -428,6 +441,23 @@
                                         <button id="themeToggleBtnModal" class="btn btn-outline-secondary btn-sm" data-i18n-title="settings.theme.toggle.title" title="Переключить тему">
                                             <i class="bi bi-moon-stars"></i> <span data-i18n="settings.theme.toggle">Темная тема</span>
                                         </button>
+                                    </div>
+                                    <div class="border-bottom mb-4"></div>
+                                    <div class="mb-3">
+                                        <label class="form-label"><strong data-i18n="settings.appearance.accent">Акцентный цвет</strong></label>
+                                        <div class="appearance-accents" id="accentSwatches">
+                                            <button type="button" class="accent-swatch" data-accent-swatch="indigo" title="Indigo"></button>
+                                            <button type="button" class="accent-swatch" data-accent-swatch="blue" title="Blue"></button>
+                                            <button type="button" class="accent-swatch" data-accent-swatch="violet" title="Violet"></button>
+                                            <button type="button" class="accent-swatch" data-accent-swatch="emerald" title="Emerald"></button>
+                                            <button type="button" class="accent-swatch" data-accent-swatch="rose" title="Rose"></button>
+                                            <button type="button" class="accent-swatch" data-accent-swatch="amber" title="Amber"></button>
+                                        </div>
+                                        <div class="form-text" data-i18n="settings.appearance.accent.help">Цвет кнопок, ссылок и активных элементов интерфейса.</div>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="compactModeSwitch">
+                                        <label class="form-check-label" for="compactModeSwitch" data-i18n="settings.appearance.compact">Компактный режим (меньше отступы)</label>
                                     </div>
                                     <div class="border-bottom mb-4"></div>
                                     <div class="mb-3">
@@ -653,5 +683,6 @@
 <script type="text/javascript" th:src="@{/js/user-settings.js}"></script>
 <script type="text/javascript" th:src="@{/js/sidebar-resize.js}"></script>
 <script type="text/javascript" th:src="@{/js/sidebar.js}"></script>
+<script type="text/javascript" th:src="@{/js/modern-features.js}"></script>
 </body>
 </html>

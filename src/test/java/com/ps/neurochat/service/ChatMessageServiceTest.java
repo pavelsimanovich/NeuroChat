@@ -80,10 +80,11 @@ class ChatMessageServiceTest {
         hist.add(h);
         when(historyEntryService.getRoomHistory(roomId)).thenReturn(hist);
 
-        List<Message> out = service.processChatMessage("question", roomId, "user@example.com", null);
-        assertThat(out).hasSize(2);
-        assertThat(out.get(0)).isInstanceOf(UserMessage.class);
-        assertThat(out.get(1)).isInstanceOf(AssistantMessage.class);
+        ChatProcessingResult out = service.processChatMessage("question", roomId, "user@example.com", null);
+        assertThat(out.history()).hasSize(2);
+        assertThat(out.history().get(0)).isInstanceOf(UserMessage.class);
+        assertThat(out.history().get(1)).isInstanceOf(AssistantMessage.class);
+        assertThat(out.firstMessage()).isTrue();
 
         boolean savedViaPrimary = org.mockito.Mockito.mockingDetails(chatMessageRepository)
                 .getInvocations().stream()

@@ -8,6 +8,7 @@ import com.ps.neurochat.exceptions.LimitExceededException;
 import com.ps.neurochat.service.ChatMessageService;
 import com.ps.neurochat.service.ChatRoomService;
 import com.ps.neurochat.service.FileStorageService;
+import com.ps.neurochat.service.OllamaService;
 import com.ps.neurochat.service.ReactiveService;
 import com.ps.neurochat.service.TokenQuotaService;
 import com.ps.neurochat.service.UserPreferencesService;
@@ -39,6 +40,7 @@ import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
 
 import java.security.Principal;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -55,11 +57,13 @@ import static com.ps.neurochat.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 @RequestMapping("/api/direct")
 public class ChatAIController {
 
-    private static final ChunkResponseDTO DONE_CHUNK = new ChunkResponseDTO("[DONE]", true, null);
+    private static final ChunkResponseDTO DONE_CHUNK = new ChunkResponseDTO("[DONE]", true, null, null);
+    private static final Duration TITLE_GENERATION_TIMEOUT = Duration.ofSeconds(60);
 
     private final ChatClient chatClient;
     private final ChatMessageService chatMessageService;
     private final ChatRoomService chatRoomService;
+    private final OllamaService ollamaService;
     private final ReactiveService reactiveService;
     private final FileStorageService fileStorageService;
     private final UserPreferencesService userPreferencesService;
@@ -76,7 +80,6 @@ public class ChatAIController {
             @RequestParam(required = false) String fileId,
             Principal principal) {
 
-        // Capture locale on the request thread — it is not propagated to reactor threads
         final Locale locale = LocaleContextHolder.getLocale();
 
         if (!StringUtils.hasText(question) || !StringUtils.hasText(chatId)) {
@@ -88,10 +91,10 @@ public class ChatAIController {
         return loadFileData(fileId)
                 .flatMapMany(fileData -> reactiveService
                         .processChatMessageReactive(question, chatId, username, fileData.orElse(null))
-                        .flatMapMany(currentHistory -> loadUserPreferences(username)
+                        .flatMapMany(result -> loadUserPreferences(username)
                                 .flatMapMany(prefs -> streamResponse(
                                         question, chatId, username, fileData.orElse(null),
-                                        currentHistory, prefs, locale))))
+                                        result.history(), result.firstMessage(), prefs, locale))))
                 .onErrorResume(LimitExceededException.class, e -> Mono
                         .fromRunnable(() -> chatRoomService.setInactive(chatId))
                         .subscribeOn(Schedulers.boundedElastic())
@@ -114,6 +117,7 @@ public class ChatAIController {
                                                   String username,
                                                   FileData fileData,
                                                   List<Message> currentHistory,
+                                                  boolean firstMessage,
                                                   UserPreferencesDTO prefs,
                                                   Locale locale) {
         if (useTokenLimits) {
@@ -126,13 +130,52 @@ public class ChatAIController {
         final Prompt prompt = new Prompt(
                 buildMessages(question, fileData, currentHistory, resolveSystemPrompt(prefs)));
 
-        return buildRequestSpec(prompt, chatId, prefs.getPreferredModel())
+        final Flux<ChunkResponseDTO> content = buildRequestSpec(prompt, chatId, prefs.getPreferredModel())
                 .stream()
                 .content()
                 .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk))
-                .map(chunk -> new ChunkResponseDTO(chunk, false, null))
+                .map(chunk -> new ChunkResponseDTO(chunk, false, null, null));
+
+        final String titleContext = resolveTitleContext(question, fileData);
+        final Flux<ChunkResponseDTO> stream = firstMessage && StringUtils.hasText(titleContext)
+                ? content.mergeWith(generateRoomTitle(chatId, titleContext))
+                : content;
+
+        return stream
                 .concatWith(Mono.just(DONE_CHUNK))
                 .doFinally(signal -> finalizeStream(signal, username, chatId, question, currentHistory));
+    }
+
+    /**
+     * Context for title generation: the user question, or the attached file
+     * name when the first message contains only a file.
+     */
+    private String resolveTitleContext(String question, FileData fileData) {
+        if (StringUtils.hasText(question)) {
+            return question;
+        }
+        return fileData != null ? fileData.getFileName() : null;
+    }
+
+    /**
+     * Generates a room title off the request thread and renames the room.
+     * Emits a single chunk carrying the new title; completes empty on any
+     * failure or timeout so the main stream is never broken.
+     */
+    private Mono<ChunkResponseDTO> generateRoomTitle(String chatId, String titleContext) {
+        return Mono.fromCallable(() -> {
+                    final String generated = ollamaService.generateChatName(titleContext);
+                    if (!StringUtils.hasText(generated)) {
+                        return null;
+                    }
+                    return chatRoomService.renameRoom(chatId, generated).getTitle();
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .timeout(TITLE_GENERATION_TIMEOUT)
+                .map(title -> new ChunkResponseDTO(null, false, null, title))
+                .doOnError(e -> log.warn("Failed to auto-generate room title for chatId={}: {}",
+                        chatId, e.toString()))
+                .onErrorResume(e -> Mono.empty());
     }
 
     /**
@@ -222,7 +265,7 @@ public class ChatAIController {
     }
 
     private ChunkResponseDTO errorChunk(String message, ErrorType errorType) {
-        return new ChunkResponseDTO(message, true, errorType.name());
+        return new ChunkResponseDTO(message, true, errorType.name(), null);
     }
 
     private String msg(String key, Object[] args, Locale locale) {

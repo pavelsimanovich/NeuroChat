@@ -60,10 +60,11 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public List<Message> processChatMessage(String message, String chatId, String userName, FileData fileData)
+    public ChatProcessingResult processChatMessage(String message, String chatId, String userName, FileData fileData)
             throws LimitExceededException {
         final User user = userService.findByEmail(userName);
-        saveUserMessage(chatId, user.getId(), message, fileData);
+        final ChatMessage savedMessage = saveUserMessage(chatId, user.getId(), message, fileData);
+        final boolean firstMessage = savedMessage.getOrder() != null && savedMessage.getOrder() == 1L;
 
         checkHistory(chatId);
 
@@ -78,7 +79,7 @@ public class ChatMessageService {
                     new Object[]{ex.getMessage()}, LocaleContextHolder.getLocale()));
         }
 
-        return currentHistory;
+        return new ChatProcessingResult(currentHistory, firstMessage);
     }
 
     public void saveChunk(String chatId, String chunk) {
@@ -99,12 +100,13 @@ public class ChatMessageService {
         return fullResponse;
     }
 
-    public void saveUserMessage(final String roomId, final String userId, final String userPrompt, FileData fileData) {
+    public ChatMessage saveUserMessage(final String roomId, final String userId, final String userPrompt, FileData fileData) {
         final ChatMessage message = createChatMessage(roomId, userId, USER_MESSAGE, userPrompt);
         if (fileData != null) {
             message.setFileData(fileData);
         }
-       chatMessageRepository.save(message);
+        chatMessageRepository.save(message);
+        return message;
     }
 
     private ChatMessage createChatMessage(String roomId, String userId, ChatMessage.MessageType userMessage,
