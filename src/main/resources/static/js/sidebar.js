@@ -12,17 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Создаем элемент оверлея для затемнения фона
+    // Создаем элемент оверлея для затемнения фона (стили — в chat.css, класс .sidebar-overlay)
     const overlay = document.createElement('div');
     overlay.className = 'sidebar-overlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.right = '0';
-    overlay.style.bottom = '0';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    overlay.style.zIndex = '1029'; // Понижаем z-index, чтобы оверлей был ниже сайдбара
-    overlay.style.display = 'none';
     document.body.appendChild(overlay);
 
     // Функция открытия сайдбара
@@ -30,14 +22,14 @@ document.addEventListener('DOMContentLoaded', function() {
         mobileSidebar.classList.add('show');
         // Небольшая задержка перед показом оверлея для плавности
         setTimeout(() => {
-            overlay.style.display = 'block';
+            overlay.classList.add('show');
         }, 10);
     }
 
     // Функция закрытия сайдбара
     function closeSidebar() {
         mobileSidebar.classList.remove('show');
-        overlay.style.display = 'none';
+        overlay.classList.remove('show');
 
         // Сбрасываем стили ширины на мобильных устройствах
         if (window.innerWidth < 768) {

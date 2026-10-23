@@ -3,6 +3,7 @@ package com.ps.neurochat.controller;
 import com.ps.neurochat.domain.FileData;
 import com.ps.neurochat.dto.ChunkResponseDTO;
 import com.ps.neurochat.dto.UserPreferencesDTO;
+import com.ps.neurochat.dto.enums.ErrorType;
 import com.ps.neurochat.exceptions.LimitExceededException;
 import com.ps.neurochat.service.ChatMessageService;
 import com.ps.neurochat.service.ChatRoomService;
@@ -34,11 +35,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
 
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 import static com.ps.neurochat.dto.enums.ErrorType.LIMIT_EXCEEDED;
 import static com.ps.neurochat.dto.enums.ErrorType.SERVER_ERROR;
@@ -50,6 +54,8 @@ import static com.ps.neurochat.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 @RequiredArgsConstructor
 @RequestMapping("/api/direct")
 public class ChatAIController {
+
+    private static final ChunkResponseDTO DONE_CHUNK = new ChunkResponseDTO("[DONE]", true, null);
 
     private final ChatClient chatClient;
     private final ChatMessageService chatMessageService;
@@ -70,71 +76,79 @@ public class ChatAIController {
             @RequestParam(required = false) String fileId,
             Principal principal) {
 
-        final FileData fileData = getFileData(fileId);
+        // Capture locale on the request thread — it is not propagated to reactor threads
+        final Locale locale = LocaleContextHolder.getLocale();
+
+        if (!StringUtils.hasText(question) || !StringUtils.hasText(chatId)) {
+            return Flux.just(errorChunk(msg("error.server", null, locale), SERVER_ERROR));
+        }
+
         final String username = principal.getName();
 
-        return reactiveService.processChatMessageReactive(question, chatId, username, fileData)
-                .flatMapMany(currentHistory -> loadUserPreferences(username)
-                        .flatMapMany(prefs -> {
-                            final String systemPrompt = resolveSystemPrompt(prefs);
-                            final String preferredModel = prefs.getPreferredModel();
-
-                            if (useTokenLimits) {
-                                Flux<ChunkResponseDTO> ex = estimate(question, username);
-                                if (ex != null) return ex;
-                            }
-
-                            final List<Message> messages =
-                                    buildMessages(question, fileData, currentHistory, systemPrompt);
-                            final Prompt prompt = new Prompt(messages);
-
-                            var spec = buildRequestSpec(prompt, chatId, preferredModel);
-
-                            return spec
-                                    .stream()
-                                    .content()
-                                    .map(chunk -> new ChunkResponseDTO(chunk, false, null))
-                                    .flatMap(chunk ->
-                                            Mono.fromRunnable(() ->
-                                                            chatMessageService.saveChunk(chatId, chunk.content()))
-                                                    .subscribeOn(Schedulers.boundedElastic())
-                                                    .thenReturn(chunk))
-                                    .doOnComplete(() -> Mono.fromRunnable(() ->
-                                                    onCompletionUpdate(username, chatId, question, currentHistory))
-                                            .subscribeOn(Schedulers.boundedElastic())
-                                            .subscribe())
-                                    .concatWith(Mono.just(
-                                            new ChunkResponseDTO("[DONE]", true, null)));
-                        }))
-                .onErrorResume(LimitExceededException.class, e -> Mono.<Void>fromCallable(() -> {
-                            chatRoomService.setInactive(chatId);
-                            return null;
-                        })
+        return loadFileData(fileId)
+                .flatMapMany(fileData -> reactiveService
+                        .processChatMessageReactive(question, chatId, username, fileData.orElse(null))
+                        .flatMapMany(currentHistory -> loadUserPreferences(username)
+                                .flatMapMany(prefs -> streamResponse(
+                                        question, chatId, username, fileData.orElse(null),
+                                        currentHistory, prefs, locale))))
+                .onErrorResume(LimitExceededException.class, e -> Mono
+                        .fromRunnable(() -> chatRoomService.setInactive(chatId))
                         .subscribeOn(Schedulers.boundedElastic())
-                        .thenReturn(new ChunkResponseDTO(
-                                messageSource.getMessage("error.limit.exceeded",
-                                        new Object[]{e.getMessage()}, LocaleContextHolder.getLocale()),
-                                true,
-                                LIMIT_EXCEEDED.name()))
-                        .flux())
+                        .thenMany(Flux.just(errorChunk(
+                                msg("error.limit.exceeded", new Object[]{e.getMessage()}, locale),
+                                LIMIT_EXCEEDED))))
                 .onErrorResume(e -> {
-                    log.error("Error processing chat message", e);
-                    String msg = messageSource.getMessage("error.server",
-                            null, LocaleContextHolder.getLocale());
-                    return Mono.just(new ChunkResponseDTO(msg, true, SERVER_ERROR.name()));
+                    log.error("Error processing chat message for chatId={}", chatId, e);
+                    return Flux.just(errorChunk(msg("error.server", null, locale), SERVER_ERROR));
                 });
     }
 
-    private Flux<ChunkResponseDTO> estimate(String question, String username) {
-        // Quota pre-check (includes expected assistant answer by heuristic)
+    /**
+     * Runs the model stream for a single chat turn: buffers every chunk for
+     * persistence, forwards it to the client and finalizes the turn on any
+     * termination signal (complete, cancel or error).
+     */
+    private Flux<ChunkResponseDTO> streamResponse(String question,
+                                                  String chatId,
+                                                  String username,
+                                                  FileData fileData,
+                                                  List<Message> currentHistory,
+                                                  UserPreferencesDTO prefs,
+                                                  Locale locale) {
+        if (useTokenLimits) {
+            final Optional<ChunkResponseDTO> quotaError = checkQuota(question, username, locale);
+            if (quotaError.isPresent()) {
+                return Flux.just(quotaError.get());
+            }
+        }
+
+        final Prompt prompt = new Prompt(
+                buildMessages(question, fileData, currentHistory, resolveSystemPrompt(prefs)));
+
+        return buildRequestSpec(prompt, chatId, prefs.getPreferredModel())
+                .stream()
+                .content()
+                .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk))
+                .map(chunk -> new ChunkResponseDTO(chunk, false, null))
+                .concatWith(Mono.just(DONE_CHUNK))
+                .doFinally(signal -> finalizeStream(signal, username, chatId, question, currentHistory));
+    }
+
+    /**
+     * Pre-checks the estimated cost of this turn (question + expected answer by
+     * heuristic) against the user's monthly token quota. Returns an error chunk
+     * when the quota is exceeded, or empty when streaming may proceed.
+     */
+    private Optional<ChunkResponseDTO> checkQuota(String question, String username, Locale locale) {
         try {
             estimateAndCheckQuota(username, question);
+            return Optional.empty();
         } catch (LimitExceededException ex) {
-            String msg = messageSource.getMessage("error.limit.exceeded",
-                    new Object[]{ex.getMessage()}, LocaleContextHolder.getLocale());
-            return Mono.just(new ChunkResponseDTO(msg, true, LIMIT_EXCEEDED.name())).flux();
+            return Optional.of(errorChunk(
+                    msg("error.limit.exceeded", new Object[]{ex.getMessage()}, locale),
+                    LIMIT_EXCEEDED));
         }
-        return null;
     }
 
     private String resolveSystemPrompt(UserPreferencesDTO prefs) {
@@ -162,18 +176,30 @@ public class ChatAIController {
         return spec;
     }
 
-    private void onCompletionUpdate(String username,
-                                    String chatId,
-                                    String question,
-                                    List<Message> currentHistory) {
-        final String response = chatMessageService.saveAiResponse(chatId);
-        // Extend in-memory history for next turn
-        currentHistory.add(new UserMessage(question));
-        currentHistory.add(new AssistantMessage(response));
-        // Add usage (approx): system + question + response
-        int used = TokenQuotaService.estimateTokensForMessages(question)
-                + tokenQuotaService.estimateTokensForText(response);
-        tokenQuotaService.addUsage(username, used);
+    /**
+     * Persists the buffered assistant response and records token usage when the
+     * stream terminates. Runs on every termination signal — including client
+     * disconnects (cancel) and mid-stream errors — so partial answers are saved
+     * and the chunk buffer never leaks.
+     */
+    private void finalizeStream(SignalType signal, String username, String chatId,
+                                String question, List<Message> currentHistory) {
+        log.debug("Stream terminated for chatId={} with signal {}", chatId, signal);
+        Mono.fromRunnable(() -> {
+                    final String response = chatMessageService.saveAiResponse(chatId);
+                    if (response.isBlank()) {
+                        return;
+                    }
+                    // Extend in-memory history for the next turn
+                    currentHistory.add(new UserMessage(question));
+                    currentHistory.add(new AssistantMessage(response));
+                    // Add usage (approx): question + response
+                    final int used = TokenQuotaService.estimateTokensForMessages(question)
+                            + tokenQuotaService.estimateTokensForText(response);
+                    tokenQuotaService.addUsage(username, used);
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 
     private Mono<UserPreferencesDTO> loadUserPreferences(String username) {
@@ -181,8 +207,26 @@ public class ChatAIController {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
+    /**
+     * Loads the optional attachment off the request thread. Emits an Optional so
+     * the chain keeps flowing when no file was attached; a missing file surfaces
+     * as a server-error chunk instead of a synchronous exception.
+     */
+    private Mono<Optional<FileData>> loadFileData(String fileId) {
+        return Mono.fromCallable(() -> Optional.ofNullable(getFileData(fileId)))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
     private FileData getFileData(String fileId) {
         return StringUtils.hasText(fileId) ? fileStorageService.getFile(fileId) : null;
+    }
+
+    private ChunkResponseDTO errorChunk(String message, ErrorType errorType) {
+        return new ChunkResponseDTO(message, true, errorType.name());
+    }
+
+    private String msg(String key, Object[] args, Locale locale) {
+        return messageSource.getMessage(key, args, locale);
     }
 
     private List<Message> buildMessages(String question, FileData fileData, List<Message> currentHistory,

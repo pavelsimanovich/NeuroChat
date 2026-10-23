@@ -1,8 +1,8 @@
 package com.ps.neurochat.dto.enums;
 
 public enum SupportedOllamaModel  {
-    GEMMA3_4B("gemma3:4b", "Gemma 3 (4B)"),
-    GEMMA3_12B("gemma3:12b", "Gemma 3 (12B)"),
+//    GEMMA3_4B("gemma3:4b", "Gemma 3 (4B)"),
+    GEMMA3_12B("gemma4:12b", "Gemma 4 (12B)"),
     QWEN_25_CODER("qwen2.5-coder:7b", "Qwen 2.5 Coder");
 
     private final String id;

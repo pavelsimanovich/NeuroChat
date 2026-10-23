@@ -24,7 +24,7 @@ spring:
             - qwen2.5-coder:7b
       chat:
         options:
-          model: gemma3:4b
+          model: gemma4:12b
           temperature: 0.8
           num-ctx: 32000
           keep-alive: 10s

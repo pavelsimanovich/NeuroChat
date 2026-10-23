@@ -526,7 +526,11 @@ body {
     flex: 1;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+[data-bs-theme="dark"] .rooms-list {
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
 .rooms-list::-webkit-scrollbar {
@@ -538,12 +542,55 @@ body {
 }
 
 .rooms-list::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.12);
     border-radius: 3px;
 }
 
 .rooms-list::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.22);
+}
+
+[data-bs-theme="dark"] .rooms-list::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme="dark"] .rooms-list::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Chat messages scrollbar — thin, theme-aware */
+.chat-messages {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+[data-bs-theme="dark"] .chat-messages {
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+[data-bs-theme="dark"] .chat-messages::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+[data-bs-theme="dark"] .chat-messages::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.24);
 }
 
 .room-item {
@@ -1315,7 +1362,7 @@ body {
     align-items: center;
     justify-content: center;
     margin-bottom: 1.5rem;
-    animation: pulse 2s infinite;
+    animation: pulse-ring 2s infinite;
 }
 
 .empty-chat-illustration i {
@@ -1622,12 +1669,12 @@ pre[class*="language-"] {
 
 #voiceInputBtn.recording {
     color: #dc3545;
-    animation: pulse 1.5s infinite;
+    animation: pulse-ring-danger 1.5s infinite;
     opacity: 1;
 }
 
-/* Pulse animation for recording state */
-@keyframes pulse {
+/* Pulse ring animation for danger/recording states */
+@keyframes pulse-ring-danger {
     0% {
         box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
     }
@@ -2104,14 +2151,54 @@ border-color: rgba(255, 193, 7, 0.15);
     position: fixed;
     bottom: 20px;
     right: 20px;
-    padding: 12px 16px;
-    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 10px 12px 16px;
+    border-radius: 10px;
     color: white;
     z-index: 1000;
     animation: slideIn 0.3s forwards;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 4px 12px var(--shadow-medium);
+    min-width: 240px;
+    max-width: 380px;
+    font-size: 0.9rem;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.notification.hiding {
+    opacity: 0;
+    transform: translateX(24px);
+}
+
+.notification > i {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.notification .notification-text {
+    flex: 1;
+    word-break: break-word;
+}
+
+.notification .notification-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.notification .notification-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
 .notification.success {
@@ -2124,6 +2211,10 @@ border-color: rgba(255, 193, 7, 0.15);
 
 .notification.error {
     background: linear-gradient(135deg, var(--danger-color), #c82333);
+}
+
+.notification.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
 /* Limit messages styles */
@@ -2506,4 +2597,202 @@ border-color: rgba(255, 193, 7, 0.15);
 }
 [data-bs-theme="dark"] .swal2-timer-progress-bar {
     background: var(--accent-color) !important;
+}
+
+/* ============ UX polish additions ============ */
+
+/* Keyboard focus visibility (accessibility) */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.room-item:focus-visible,
+.context-menu-item:focus-visible {
+    outline-offset: -2px;
+}
+
+/* Respect users preferring reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Message sender label */
+.message-sender {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    opacity: 0.65;
+}
+
+.user-message .message-sender {
+    text-align: right;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Better meta contrast on user (blue) bubbles */
+.user-message .message-meta {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.user-message .message-time {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Code inside user bubbles stays readable on the accent gradient */
+.user-message .message-content code {
+    background: rgba(0, 0, 0, 0.22);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.user-message .message-content pre {
+    background: rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.user-message .message-content a {
+    color: #cfe3ff;
+}
+
+/* Date separators between message days */
+.date-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1.25rem 0 0.75rem;
+    width: 100%;
+    position: sticky;
+    top: 8px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.date-separator > span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 3px 14px;
+    border-radius: 999px;
+    box-shadow: 0 1px 4px var(--shadow-light);
+}
+
+/* Code block wrapper with language label + copy button */
+.code-block {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px 4px 12px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.code-block-header .code-lang {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.code-copy-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.code-copy-btn:hover {
+    background: rgba(13, 110, 253, 0.12);
+    color: var(--accent-color);
+}
+
+.code-copy-btn.copied {
+    color: var(--success-color);
+}
+
+.code-block > pre {
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+/* Empty rooms list state */
+.no-rooms {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.no-rooms::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-tertiary)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23adb5bd'%3E%3Cpath d='M2.678 11.894a1 1 0 0 1 .287.801 10.97 10.97 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8.06 8.06 0 0 0 8 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9.06 9.06 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105z'/%3E%3C/svg%3E")
+        center / 20px 20px no-repeat;
+}
+
+/* Mobile sidebar overlay with fade transition */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 1029;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Wider bubbles on small screens */
+@media (max-width: 768px) {
+    .message {
+        max-width: 92%;
+    }
 }

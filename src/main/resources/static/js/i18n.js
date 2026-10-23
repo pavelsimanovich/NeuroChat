@@ -42,6 +42,10 @@
             'chat.header.selectOrCreate': 'выберите или создайте чат',
             'chat.model.admin': 'Админ',
             'chat.model.admin.title': 'Админ-панель',
+            'chat.theme.toggle.title': 'Переключить тему',
+
+            'code.copy': 'Копировать',
+            'code.copied': 'Скопировано',
 
             // Admin / Monitoring
             'admin.title': 'Админ-панель',
@@ -356,6 +360,10 @@
             'chat.header.selectOrCreate': 'select or create a chat',
             'chat.model.admin': 'Admin',
             'chat.model.admin.title': 'Admin panel',
+            'chat.theme.toggle.title': 'Toggle theme',
+
+            'code.copy': 'Copy',
+            'code.copied': 'Copied',
 
             // Admin / Monitoring
             'admin.title': 'Admin panel',

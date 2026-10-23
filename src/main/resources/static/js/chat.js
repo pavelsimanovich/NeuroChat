@@ -609,6 +609,9 @@ async function switchRoom(room) {
         // Закрываем сайдбар в мобильной версии после выбора чата
         if (window.innerWidth < 768 && window.sidebarManager) {
             setTimeout(() => window.sidebarManager.close(), 150);
+        } else if (elements.messageInput && !elements.messageInput.disabled) {
+            // On desktop put focus straight into the input for faster typing
+            elements.messageInput.focus();
         }
     } catch (error) {
         console.error('Error switching room:', error);
@@ -650,7 +653,21 @@ async function loadRoomMessages(roomId) {
 }
 
 function formatTime(timestamp) {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Label for day separators between messages ("Today", "Yesterday" or a localized date)
+function formatDateSeparator(timestamp) {
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffDays = Math.round((today - thatDay) / 86400000);
+    if (diffDays === 0) return window.i18n?.t('rooms.today', 'Сегодня');
+    if (diffDays === 1) return window.i18n?.t('rooms.yesterday', 'Вчера');
+    const sameYear = d.getFullYear() === now.getFullYear();
+    return d.toLocaleDateString([], { day: 'numeric', month: 'long', ...(sameYear ? {} : { year: 'numeric' }) });
 }
 
 // Track if user has scrolled up
@@ -935,6 +952,7 @@ async function sendMessage() {
                 if (contentDiv) {
                     contentDiv.innerHTML = marked.parse(response);
                     Prism.highlightAllUnder(contentDiv);
+                    try { uxFeatures.codeBlocks.enhance(contentDiv); } catch (ex) { console.error(ex); }
                     scrollToBottom();
                 }
                 // Live TTS chunking if enabled
@@ -1583,7 +1601,7 @@ const uxFeatures = {
             const copyBtn = document.createElement('button');
             copyBtn.className = 'message-copy-btn';
             copyBtn.innerHTML = '<i class="bi bi-copy"></i>';
-            copyBtn.title = 'Копировать сообщение';
+            copyBtn.title = window.i18n?.t('notify.copyMessage', 'Копировать сообщение');
 
             copyBtn.addEventListener('click', async () => {
                 try {
@@ -1592,7 +1610,7 @@ const uxFeatures = {
                     setTimeout(() => {
                         copyBtn.innerHTML = '<i class="bi bi-copy"></i>';
                     }, 2000);
-                    showNotification('Сообщение скопировано', 'success');
+                    showNotification(window.i18n?.t('notify.copied', 'Сообщение скопировано'), 'success');
                 } catch (error) {
                     console.error('Failed to copy:', error);
                     showNotification(window.i18n?.t('notify.copyError', 'Ошибка копирования'), 'error');
@@ -1600,6 +1618,59 @@ const uxFeatures = {
             });
 
             messageElement.appendChild(copyBtn);
+        }
+    },
+
+    // Wraps rendered <pre> blocks with a header showing language + copy button
+    codeBlocks: {
+        enhance(root) {
+            const scope = root || elements.chatMessages;
+            if (!scope) return;
+
+            const copyLabel = window.i18n?.t('code.copy', 'Копировать');
+            const copiedLabel = window.i18n?.t('code.copied', 'Скопировано');
+
+            scope.querySelectorAll('pre').forEach(pre => {
+                // Skip already wrapped blocks
+                if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+
+                const code = pre.querySelector('code');
+                const langClass = code
+                    ? Array.from(code.classList).find(c => c.startsWith('language-'))
+                    : null;
+                const lang = langClass ? langClass.replace('language-', '') : '';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-block';
+
+                const header = document.createElement('div');
+                header.className = 'code-block-header';
+                header.innerHTML = `
+                    <span class="code-lang">${lang || 'code'}</span>
+                    <button type="button" class="code-copy-btn" title="${copyLabel}">
+                        <i class="bi bi-clipboard"></i><span>${copyLabel}</span>
+                    </button>`;
+
+                const btn = header.querySelector('.code-copy-btn');
+                btn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
+                        btn.classList.add('copied');
+                        btn.innerHTML = `<i class="bi bi-check-lg"></i><span>${copiedLabel}</span>`;
+                        setTimeout(() => {
+                            btn.classList.remove('copied');
+                            btn.innerHTML = `<i class="bi bi-clipboard"></i><span>${copyLabel}</span>`;
+                        }, 2000);
+                    } catch (error) {
+                        console.error('Failed to copy code:', error);
+                        showNotification(window.i18n?.t('notify.copyError', 'Ошибка копирования'), 'error');
+                    }
+                });
+
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(header);
+                wrapper.appendChild(pre);
+            });
         }
     }
 };
@@ -1891,12 +1962,31 @@ async function confirmDeleteChat(title) {
 }
 
 function showNotification(message, type = 'info') {
-    const notification = Object.assign(document.createElement('div'), {
-        className: `notification ${type}`,
-        textContent: message
-    });
+    const icons = {
+        success: 'bi-check-circle-fill',
+        error: 'bi-x-circle-fill',
+        warning: 'bi-exclamation-triangle-fill',
+        info: 'bi-info-circle-fill'
+    };
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.setAttribute('role', 'alert');
+    notification.innerHTML = `
+        <i class="bi ${icons[type] || icons.info}"></i>
+        <span class="notification-text"></span>
+        <button type="button" class="notification-close" aria-label="Close"><i class="bi bi-x"></i></button>
+    `;
+    notification.querySelector('.notification-text').textContent = message;
+
+    const dismiss = () => {
+        notification.classList.add('hiding');
+        setTimeout(() => notification.remove(), 250);
+    };
+    notification.querySelector('.notification-close').addEventListener('click', dismiss);
+
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 4000);
+    setTimeout(dismiss, 4000);
 }
 
 function hideInputs(disabled) {
@@ -2038,6 +2128,8 @@ function showContextMenu(event, roomId, roomElement, isPinned = false) {
 
 // Hide context menu
 function hideContextMenu() {
+    isContextMenuOpen = false;
+    lastClickedRoom = null;
     const contextMenu = document.getElementById('roomContextMenu');
     if (contextMenu) {
         contextMenu.classList.remove('visible');
@@ -2430,7 +2522,21 @@ function renderMessages() {
         new Date(a.timestamp) - new Date(b.timestamp)
     );
 
+    // Insert a date separator whenever the message day changes
+    let lastDayKey = null;
     sortedMessages.forEach((message, idx) => {
+        const msgDate = new Date(message.timestamp || Date.now());
+        const dayKey = `${msgDate.getFullYear()}-${msgDate.getMonth()}-${msgDate.getDate()}`;
+        if (dayKey !== lastDayKey) {
+            lastDayKey = dayKey;
+            const label = formatDateSeparator(message.timestamp);
+            if (label) {
+                const sep = document.createElement('div');
+                sep.className = 'date-separator';
+                sep.innerHTML = `<span>${label}</span>`;
+                elements.chatMessages.appendChild(sep);
+            }
+        }
         const mid = String(
             message.id ?? message.uuid ?? message._id ?? message.messageId ?? `${message.timestamp || Date.now()}-${idx}`
         );
@@ -2490,7 +2596,7 @@ function renderMessages() {
             ${filePreviews}
             <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
             <div class="message-meta d-flex align-items-center gap-2">
-                <span class="message-time">${formatTime(message.timestamp)}</span>
+                <span class="message-time" title="${new Date(message.timestamp).toLocaleString()}">${formatTime(message.timestamp)}</span>
                 ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
                 ${ttsControls}
             </div>
@@ -2560,6 +2666,8 @@ function renderMessages() {
     });
 
     Prism.highlightAll();
+    // Wrap code blocks with language label + copy button
+    try { uxFeatures.codeBlocks.enhance(); } catch (ex) { console.error(ex); }
     // Re-apply TTS UI and playing highlight after DOM update
     try { if (window.tts && typeof window.tts.updateControlsState === 'function') window.tts.updateControlsState(); } catch (_) { /* noop */ }
     scrollToBottom(true);
@@ -2871,6 +2979,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         setupScrollHandlers();
+
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            const activeEl = document.activeElement;
+            const inField = !!activeEl && (
+                /^(INPUT|TEXTAREA|SELECT)$/.test(activeEl.tagName) || activeEl.isContentEditable
+            );
+
+            // Ctrl/Cmd + K -> focus the chat search box (opens the sidebar on mobile)
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                const searchInput = document.getElementById('chatSearchInput');
+                if (window.innerWidth < 768 && window.sidebarManager) {
+                    window.sidebarManager.open();
+                }
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+                return;
+            }
+
+            // "/" -> focus message input when not typing elsewhere
+            if (e.key === '/' && !inField && elements.messageInput && !elements.messageInput.disabled) {
+                e.preventDefault();
+                elements.messageInput.focus();
+                return;
+            }
+
+            // Escape -> close context menu, otherwise blur the input
+            if (e.key === 'Escape') {
+                if (isContextMenuOpen) {
+                    hideContextMenu();
+                } else if (activeEl === elements.messageInput) {
+                    elements.messageInput.blur();
+                }
+            }
+        });
     } catch (error) {
         console.error('Initialization error:', error);
         showNotification('Ошибка при инициализации приложения', 'error');
