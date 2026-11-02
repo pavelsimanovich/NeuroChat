@@ -15,6 +15,8 @@ spring:
     active: ${ACTIVE_PROFILE:dev}
   application:
     name: neuro-chat
+  jackson:
+    use-jackson2-defaults: true
   ai:
     ollama:
       base-url: http://localhost:11434
@@ -23,11 +25,10 @@ spring:
           additional-models:
             - qwen2.5-coder:7b
       chat:
-        options:
-          model: gemma4:12b
-          temperature: 0.8
-          num-ctx: 32000
-          keep-alive: 10s
+        model: gemma4:12b
+        temperature: 0.8
+        num-ctx: 32000
+        keep-alive: 10s
   datasource:
     url: jdbc:mysql://${MYSQL_URL:localhost}:3306/llama_ai_chat_app
     username: ${MYSQL_ROOT_USER:root}
@@ -35,9 +36,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
     show-sql: true
   flyway:
     enabled: true

@@ -31,7 +31,7 @@ class OllamaServiceTest {
     void currentModelName() {
         OllamaChatOptions opts = mock(OllamaChatOptions.class);
         when(opts.getModel()).thenReturn("llama3");
-        when(model.getDefaultOptions()).thenReturn(opts);
+        when(model.getOptions()).thenReturn(opts);
         assertThat(service.getCurrentModelName()).isEqualTo("llama3");
     }
 }

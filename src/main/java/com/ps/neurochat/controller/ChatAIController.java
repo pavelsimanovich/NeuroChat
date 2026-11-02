@@ -211,10 +211,7 @@ public class ChatAIController {
                 .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId));
 
         if (StringUtils.hasText(preferredModel)) {
-            var options = OllamaChatOptions.builder()
-                    .model(preferredModel)
-                    .build();
-            spec = spec.options(options);
+            spec = spec.options(OllamaChatOptions.builder().model(preferredModel));
         }
         return spec;
     }

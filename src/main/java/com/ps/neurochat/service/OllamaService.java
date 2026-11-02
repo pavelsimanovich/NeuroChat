@@ -18,7 +18,7 @@ public class OllamaService {
     }
 
     public String getCurrentModelName() {
-        return ollamaChatModel.getDefaultOptions().getModel();
+        return ollamaChatModel.getOptions().getModel();
     }
 
     private static final int TITLE_MAX_LENGTH = 80;

@@ -1,5 +1,6 @@
 package com.ps.neurochat.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.ps.neurochat.domain.Announcement;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
+@AllArgsConstructor(onConstructor = @__(@JsonCreator(mode = JsonCreator.Mode.DISABLED)))
 public class AnnouncementDto {
     private Long id;
     private String title;

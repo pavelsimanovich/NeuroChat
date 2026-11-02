@@ -56,7 +56,7 @@ class UserPreferencesServiceTest {
 
         UserPreferencesDTO in = new UserPreferencesDTO();
         in.setSystemPrompt("SYS");
-        in.setPreferredModel("gemma3:4b"); // supported
+        in.setPreferredModel("gemma4:12b"); // supported
         in.setAvatarFileId("a1");
         in.setLanguage("en");
         in.setTtsSpeakWhileGenerating(Boolean.TRUE);
@@ -66,7 +66,7 @@ class UserPreferencesServiceTest {
 
         UserPreferencesDTO out = service.createOrUpdatePreferences("user@example.com", in);
         assertThat(out.getSystemPrompt()).isEqualTo("SYS");
-        assertThat(out.getPreferredModel()).isEqualTo("gemma3:4b");
+        assertThat(out.getPreferredModel()).isEqualTo("gemma4:12b");
         assertThat(out.getAvatarFileId()).isEqualTo("a1");
         assertThat(out.getTtsSpeakWhileGenerating()).isTrue();
         assertThat(out.getMonthlyTokenLimit()).isEqualTo(1000);
