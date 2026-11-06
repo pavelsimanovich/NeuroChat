@@ -869,6 +869,7 @@ async function sendMessage() {
 
         let response = '';
         let isStreamActive = true;
+        let renderTimer = null;
         // Buffer for live TTS speaking by sentences
         let speakBuf = '';
 
@@ -893,6 +894,7 @@ async function sendMessage() {
 
             if (message.isEnd) {
                 isStreamActive = false;
+                if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
                 stopStream(roomId);
 
                 if (message.error === 'LIMIT_EXCEEDED') {
@@ -928,12 +930,16 @@ async function sendMessage() {
                 elements.stopButton.classList.add('d-none');
             } else {
                 response += message.content;
-                const contentDiv = document.getElementById(`cm${uuid}`);
-                if (contentDiv) {
-                    contentDiv.innerHTML = marked.parse(response);
-                    Prism.highlightAllUnder(contentDiv);
-                    try { uxFeatures.codeBlocks.enhance(contentDiv); } catch (ex) { console.error(ex); }
-                    scrollToBottom();
+                if (!renderTimer) {
+                    renderTimer = setTimeout(() => {
+                        renderTimer = null;
+                        if (!isStreamActive) return;
+                        const contentDiv = document.getElementById(`cm${uuid}`);
+                        if (contentDiv) {
+                            contentDiv.innerHTML = marked.parse(response);
+                            scrollToBottom();
+                        }
+                    }, Math.min(2000, Math.max(150, Math.floor(response.length / 10))));
                 }
                 // Live TTS chunking if enabled
                 try {

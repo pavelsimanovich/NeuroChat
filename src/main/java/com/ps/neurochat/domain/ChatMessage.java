@@ -42,7 +42,7 @@ public class ChatMessage implements Serializable {
     @Column(nullable = false)
     private MessageType type;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String content;
 
     @Column(name = "created_at", nullable = false, updatable = false)
