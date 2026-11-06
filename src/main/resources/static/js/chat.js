@@ -3008,6 +3008,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+Prism.languages.vue = Prism.languages.extend('markup', {});
+Prism.languages.insertBefore('vue', 'cdata', {
+    script: {
+        pattern: /(<script\b[^>]*>)[\s\S]*?(?=<\/script>)/i,
+        lookbehind: true,
+        greedy: true,
+        inside: Prism.languages.javascript,
+        alias: 'language-javascript'
+    },
+    style: {
+        pattern: /(<style\b[^>]*>)[\s\S]*?(?=<\/style>)/i,
+        lookbehind: true,
+        greedy: true,
+        inside: Prism.languages.css,
+        alias: 'language-css'
+    },
+    interpolation: {
+        pattern: /\{\{[\s\S]*?\}\}/,
+        inside: Prism.languages.javascript
+    }
+});
+
 marked.setOptions({
     highlight: (code, lang) => lang && Prism.languages[lang]
         ? Prism.highlight(code, Prism.languages[lang], lang)

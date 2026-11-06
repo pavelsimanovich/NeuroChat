@@ -2,7 +2,6 @@ package com.ps.neurochat.service;
 
 import com.ps.neurochat.domain.UserPreferencies;
 import com.ps.neurochat.dto.UserPreferencesDTO;
-import com.ps.neurochat.dto.enums.SupportedOllamaModel;
 import com.ps.neurochat.repository.UserPreferenciesRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +21,7 @@ import static com.ps.neurochat.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 public class UserPreferencesService {
 
     private final UserPreferenciesRepository userPreferenciesRepository;
+    private final OllamaService ollamaService;
 
     public Optional<UserPreferencies> findByUserId(String email) {
         return userPreferenciesRepository.findByUserName(email);
@@ -87,7 +87,7 @@ public class UserPreferencesService {
         entity.setUserSystemPrompt(dto.getSystemPrompt());
         String preferredModel = dto.getPreferredModel();
         if (StringUtils.hasText(preferredModel)) {
-            if (SupportedOllamaModel.isSupported(preferredModel)) {
+            if (ollamaService.isModelInstalled(preferredModel)) {
                 entity.setModel(preferredModel);
             } else {
                 log.warn("Attempt to set unsupported model '{}' for user {}. Preference not changed.",

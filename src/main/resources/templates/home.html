@@ -473,8 +473,8 @@
                                         <label for="modelSelect" class="form-label"><strong data-i18n="settings.model.label">Модель ИИ</strong></label>
                                         <select class="form-select" id="modelSelect">
                                             <option th:each="m : ${supportedModels}"
-                                                    th:value="${m.id()}"
-                                                    th:text="${m.displayName()}"></option>
+                                                    th:value="${m}"
+                                                    th:text="${m}"></option>
                                         </select>
                                         <div class="form-text" data-i18n="settings.model.help">Выберите предпочитаемую модель для ваших чатов.</div>
                                     </div>

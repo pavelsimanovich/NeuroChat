@@ -1,17 +1,41 @@
 package com.ps.neurochat.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class OllamaService {
 
     private final OllamaChatModel ollamaChatModel;
+    private final OllamaApi ollamaApi;
+
+    public List<String> listInstalledModels() {
+        try {
+            return ollamaApi.listModels().models().stream()
+                    .map(OllamaApi.Model::name)
+                    .filter(StringUtils::hasText)
+                    .sorted()
+                    .toList();
+        } catch (Exception e) {
+            log.warn("Failed to load installed Ollama models", e);
+            return List.of();
+        }
+    }
+
+    public boolean isModelInstalled(String name) {
+        return StringUtils.hasText(name)
+                && listInstalledModels().stream().anyMatch(m -> m.equalsIgnoreCase(name));
+    }
 
     public String callSimpleOllamaChat(final String message) {
         return ollamaChatModel.call(message);

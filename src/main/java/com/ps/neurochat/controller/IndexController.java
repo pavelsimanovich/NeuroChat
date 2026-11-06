@@ -1,7 +1,6 @@
 package com.ps.neurochat.controller;
 
 import com.ps.neurochat.domain.UserPreferencies;
-import com.ps.neurochat.dto.enums.SupportedOllamaModel;
 import com.ps.neurochat.service.OllamaService;
 import com.ps.neurochat.service.UserPreferencesService;
 import com.ps.neurochat.service.UserService;
@@ -46,7 +45,7 @@ public class IndexController {
         model.addAttribute("userId", user.getId());
         model.addAttribute("userName", "%s %s".formatted(user.getFirstName(), user.getLastName()));
         model.addAttribute("userAvatarUrl", avatarUrl);
-        model.addAttribute("supportedModels", SupportedOllamaModel.values());
+        model.addAttribute("supportedModels", ollamaService.listInstalledModels());
         return "home";
     }
 
