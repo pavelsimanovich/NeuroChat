@@ -24,7 +24,8 @@
     },
     poll: {
       id: null,
-      ms: 5000
+      ms: 5000,
+      busy: false
     },
     timeRange: 15, // minutes
     users: {
@@ -61,12 +62,15 @@
 
   async function fetchMetric(name, query){
     const url = query ? `/actuator/metrics/${name}?${query}` : `/actuator/metrics/${name}`;
-    const r = await fetch(url);
-    if(!r.ok) throw new Error('metric fetch failed');
+    const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+    if(!r.ok) throw new Error(`Metric ${name}: HTTP ${r.status}`);
     return r.json();
   }
 
   async function sampleMetrics(){
+    if (state.poll.busy || document.hidden) return;
+    state.poll.busy = true;
+    try {
     const now = Date.now();
 
     // Uptime
@@ -94,14 +98,14 @@
     // HTTP Requests per second (derived from COUNT delta / deltaTime). Exclude actuator URIs to avoid self-inflation
     try {
       const totalCount = await getHttpCountExcludingActuator();
-      if(totalCount != null){
+      if(Number.isFinite(totalCount)){
         if(state.prev.httpCount != null && state.prev.ts != null){
           const dt = (now - state.prev.ts) / 1000.0;
-          const dc = Math.max(0, totalCount - state.prev.httpCount);
-          rpsValue = dt > 0 ? dc / dt : 0;
+          const dc = totalCount - state.prev.httpCount;
+          rpsValue = dt > 0 && dc >= 0 ? dc / dt : null;
           const rpsElement = document.getElementById('httpRps');
           if (rpsElement) {
-            rpsElement.textContent = rpsValue.toFixed(2);
+            rpsElement.textContent = rpsValue == null ? '—' : rpsValue.toFixed(2);
           }
         }
         state.prev.httpCount = totalCount;
@@ -114,8 +118,8 @@
     // CPU: process.cpu.usage -> 0..1
     try {
       const cpu = await fetchMetric('process.cpu.usage');
-      const val = cpu.measurements?.[0]?.value ?? 0;
-      cpuValue = (val || 0) * 100;
+      const val = getMeasurementByStat(cpu.measurements, 'VALUE');
+      cpuValue = Number.isFinite(val) && val >= 0 ? Math.min(val * 100, 100) : null;
     } catch(e) {
       // Silent fail
     }
@@ -129,6 +133,10 @@
 
     // Push a single synchronized sample for all metrics
     pushSample({ rps: rpsValue, cpu: cpuValue, heap: heapValue });
+    document.getElementById('httpRps').textContent = rpsValue == null ? '—' : rpsValue.toFixed(2);
+    } finally {
+      state.poll.busy = false;
+    }
   }
 
   function getMaxPoints() {
@@ -189,18 +197,26 @@
     state.series.heap = state.rawData.heap.slice(firstIndex);
     
     // If we have too many points, downsample for better performance
-    const maxPoints = getMaxPoints();
+    const maxPoints = 1000;
     if (state.series.timestamps.length > maxPoints) {
-      const step = Math.ceil(state.series.timestamps.length / maxPoints);
-      
-      const downsample = (arr) => {
-        const result = [];
-        for (let i = 0; i < arr.length; i += step) {
-          result.push(arr[i]);
+      const indices = new Set([0, state.series.timestamps.length - 1]);
+      const step = Math.ceil(state.series.timestamps.length / Math.floor((maxPoints - 2) / 9));
+      for (let start = 0; start < state.series.timestamps.length; start += step) {
+        const end = Math.min(start + step, state.series.timestamps.length);
+        for (const key of ['rps', 'cpu', 'heap']) {
+          let min = -1, max = -1, gap = -1;
+          for (let i = start; i < end; i++) {
+            const value = state.series[key][i];
+            if (!Number.isFinite(value)) { gap = i; continue; }
+            if (min < 0 || value < state.series[key][min]) min = i;
+            if (max < 0 || value > state.series[key][max]) max = i;
+          }
+          for (const index of [min, max, gap]) if (index >= 0) indices.add(index);
         }
-        return result;
-      };
-      
+      }
+      const selected = [...indices].sort((a, b) => a - b);
+      const downsample = arr => selected.map(index => arr[index]);
+
       state.series.timestamps = downsample(state.series.timestamps);
       state.series.labels = state.series.timestamps.map(ts => new Date(ts).toLocaleTimeString());
       state.series.rps = downsample(state.series.rps);
@@ -212,6 +228,11 @@
   function pushSample(sample) {
     const now = Date.now();
     const { rps = null, cpu = null, heap = null } = sample || {};
+    const previous = state.rawData.timestamps.at(-1);
+    if (previous != null && now - previous > state.poll.ms * 2.5) {
+      state.rawData.timestamps.push(previous + 1);
+      for (const key of ['rps', 'cpu', 'heap']) state.rawData[key].push(null);
+    }
 
     // Push single timestamp and synchronized values
     state.rawData.timestamps.push(now);
@@ -241,10 +262,11 @@
     // First, query for area=heap to discover heap region IDs
     const base = await fetchMetric('jvm.memory.used', 'tag=area:heap');
     const idTag = (base.availableTags || []).find(t => t.tag === 'id');
-    const ids = Array.isArray(idTag?.values) ? idTag.values : [];
+    const ids = [];
     if(ids.length === 0){
       // Fall back to first measurement if regions not exposed
-      const bytes = base.measurements?.[0]?.value ?? 0;
+      const bytes = getMeasurementByStat(base.measurements, 'VALUE');
+      if (!Number.isFinite(bytes) || bytes < 0) throw new Error('Heap unavailable');
       return bytes / (1024*1024);
     }
     const parts = await Promise.all(
@@ -257,7 +279,7 @@
   // Helper: get http.server.requests COUNT excluding actuator URIs
   async function getHttpCountExcludingActuator(){
     const nowTs = Date.now();
-    const cacheValid = (nowTs - state.rpsUrisCache.ts) < 5 * 60 * 1000; // 5 minutes
+    const cacheValid = false; // 5 minutes
     let uris = state.rpsUrisCache.uris;
     if(!cacheValid || !Array.isArray(uris)){
       const base = await fetchMetric('http.server.requests');
@@ -273,27 +295,24 @@
       });
       state.rpsUrisCache = { uris, ts: nowTs };
       if(uris.length === 0){
-        const total = await fetchMetric('http.server.requests');
-        return getMeasurementByStat(total.measurements, 'COUNT') ?? null;
+        return 0;
       }
     }
 
     const parts = await Promise.all(
       uris.map(u => fetchMetric('http.server.requests', `tag=uri:${encodeURIComponent(u)}`))
     );
-    const sum = parts.reduce((acc, m) => acc + (getMeasurementByStat(m.measurements, 'COUNT') ?? 0), 0);
-    if(sum === 0){
-      try{
-        const total = await fetchMetric('http.server.requests');
-        return getMeasurementByStat(total.measurements, 'COUNT') ?? 0;
-      }catch(_){/* ignore */}
-    }
+    const sum = parts.reduce((acc, m) => {
+      const count = getMeasurementByStat(m.measurements, 'COUNT');
+      if (!Number.isFinite(count) || count < 0) throw new Error('HTTP count unavailable');
+      return acc + count;
+    }, 0);
     return sum;
   }
 
   function createChart(ctx, label, color){
     const theme = getChartTheme();
-    return new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: state.series.labels,
@@ -303,7 +322,9 @@
           borderColor: color,
           backgroundColor: color + '33',
           borderWidth: 2,
-          tension: 0.25,
+          tension: 0,
+          spanGaps: false,
+          fill: true,
           pointRadius: 0
         }]
       },
@@ -311,16 +332,17 @@
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { 
+          x: {
+            type: 'linear',
             display: true,
             grid: { display: false },
-            ticks: { color: theme.tickColor }
+            ticks: { color: theme.tickColor, maxTicksLimit: 7, maxRotation: 0, callback: value => new Date(value).toLocaleTimeString() }
           },
           y: { 
             beginAtZero: true,
             min: 0,
             ticks: {
-              precision: 0,
+              precision: 2,
               color: theme.tickColor
             },
             grid: {
@@ -331,7 +353,11 @@
         plugins: { 
           legend: { display: false },
           tooltip: {
-            mode: 'index',
+            mode: 'nearest',
+            callbacks: {
+              title: items => items.length ? new Date(items[0].parsed.x).toLocaleTimeString() : '',
+              label: item => `${item.dataset.label}: ${item.parsed.y == null ? '—' : item.parsed.y.toFixed(2)}`
+            },
             intersect: false,
             backgroundColor: theme.tooltipBg,
             titleColor: theme.tooltipColor,
@@ -341,7 +367,7 @@
           }
         },
         animation: {
-          duration: 200
+          duration: 0
         },
         elements: {
           line: {
@@ -355,12 +381,7 @@
       }
     });
 
-    // Re-apply i18n to chart labels when language changes
-    window.addEventListener('i18n:changed', ()=>{
-      refreshChartI18nLabels();
-      loadUsers();
-      loadUserStats();
-    });
+    return chart;
   }
 
   // Theme helpers for Chart.js
@@ -418,7 +439,9 @@
     const labels = state.series.labels || [];
     
     // Update chart data
-    chart.data.datasets[0].data = [...seriesData];
+    chart.data.datasets[0].data = seriesData.map((y, i) => ({ x: state.series.timestamps[i], y: Number.isFinite(y) ? y : null }));
+    chart.options.scales.x.max = Date.now();
+    chart.options.scales.x.min = chart.options.scales.x.max - state.timeRange * 60000;
     chart.data.labels = [...labels];
     
     // Update chart with new data
@@ -443,9 +466,10 @@
       i18nLabel('admin.monitoring.legend.cpu', 'CPU %'),
       '#20c997'
     );
+    state.charts.cpu.options.scales.y.max = 100;
     state.charts.heap = createChart(
       document.getElementById('heapChart'),
-      i18nLabel('admin.monitoring.legend.heap', 'Heap MB'),
+      i18nLabel('admin.monitoring.legend.heap', 'Heap MiB'),
       '#6f42c1'
     );
   }
@@ -513,6 +537,13 @@
   }
 
   function attachHandlers() {
+    // Re-apply i18n to chart labels when language changes
+    window.addEventListener('i18n:changed', ()=>{
+      refreshChartI18nLabels();
+      loadUsers();
+      loadUserStats();
+    });
+
     // Handle time range change
     document.getElementById('timeRangeSelect').addEventListener('change', (e) => {
       state.timeRange = parseInt(e.target.value);
@@ -607,6 +638,13 @@
     // refresh user stats every 10s
     state.users.statsIntervalId = setInterval(loadUserStats, 10000);
     // setup polling with initial interval from select
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        state.prev.httpCount = null;
+        state.prev.ts = null;
+        sampleMetrics();
+      }
+    });
     const select = document.getElementById('metricsIntervalSelect');
     const initialMs = parseInt(select?.value || '5000', 10);
     startSampling(isNaN(initialMs) ? 5000 : initialMs);

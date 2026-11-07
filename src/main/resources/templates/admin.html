@@ -40,6 +40,27 @@
     <div class="tab-content pt-3" id="adminTabsContent">
         <!-- Monitoring Pane -->
         <div class="tab-pane fade show active" id="monitoring" role="tabpanel" aria-labelledby="monitoring-tab" tabindex="0">
+            <section class="card mb-4" aria-labelledby="ollamaHeading">
+                <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+                    <h3 id="ollamaHeading" class="h5 mb-0">Ollama — загруженные модели</h3>
+                    <span id="ollamaStatus" role="status" class="small text-muted">Загрузка…</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-4">Моделей в памяти: <strong id="ollamaCount">—</strong></div>
+                        <div class="col-sm-4">Память моделей: <strong id="ollamaMemory">—</strong></div>
+                        <div class="col-sm-4">Из неё VRAM: <strong id="ollamaVram">—</strong></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead><tr><th>Модель</th><th>Параметры / квантование</th><th>Память</th><th>VRAM</th><th>Контекст</th><th>Выгрузка после</th></tr></thead>
+                            <tbody id="ollamaProcesses"></tbody>
+                        </table>
+                    </div>
+                    <div style="position: relative; height: 240px;"><canvas id="ollamaMemoryChart" aria-label="Память моделей Ollama в GiB" role="img"></canvas></div>
+                    <p class="small text-muted mb-0 mt-2">Данные Ollama /api/ps: модели в памяти, не список системных PID. CPU/GPU % и полная память процесса этим API не предоставляются. На Apple Silicon VRAM использует общую память; не складывайте её с памятью моделей.</p>
+                </div>
+            </section>
             <div class="row g-3">
                 <div class="col-12">
                     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -325,6 +346,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/js/theme-toggle.js"></script>
 <script src="/js/admin.js"></script>
+<script src="/js/ollama-monitoring.js"></script>
 <script src="/js/announcement-display.js"></script>
 <script src="/js/announcements.js"></script>
 </body>
