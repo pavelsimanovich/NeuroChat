@@ -73,3 +73,133 @@
 .admin-page .text-muted { color: var(--text-secondary) !important; }
 .admin-page .border { border-color: var(--border-color) !important; }
 .admin-page .bg-light { background-color: var(--bg-tertiary) !important; color: var(--text-primary) !important; }
+
+/* ===== Modern UI/UX layer ===== */
+:root {
+  --radius-card: 14px;
+  --radius-sm: 8px;
+  --accent-soft: rgba(13, 110, 253, 0.12);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-bs-theme="dark"] { --accent-soft: rgba(96, 165, 250, 0.16); }
+
+.admin-page { min-height: 100vh; background-image: radial-gradient(1200px 400px at 80% -10%, var(--accent-soft), transparent); }
+
+/* Navbar: sticky glass */
+.admin-page .admin-navbar {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+.admin-page .admin-badge {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 20px;
+  padding: 0.3em 0.7em;
+}
+.admin-page .admin-theme-btn { color: var(--text-primary) !important; font-size: 1.1rem; }
+
+/* Tabs: pill-style inside a bar */
+.admin-page .nav-tabs {
+  gap: 4px;
+  border-bottom: none;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  padding: 5px;
+}
+.admin-page .nav-tabs .nav-link {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: background var(--transition), color var(--transition);
+}
+.admin-page .nav-tabs .nav-link:hover { background: var(--accent-soft); color: var(--text-primary); }
+.admin-page .nav-tabs .nav-link.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.35);
+}
+
+/* Cards */
+.admin-page .card {
+  border-radius: var(--radius-card);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.admin-page .card:hover { box-shadow: 0 4px 18px var(--shadow-light); }
+.admin-page .card .card-header { border-radius: var(--radius-card) var(--radius-card) 0 0; font-weight: 600; }
+
+/* Mini stat tiles (Ollama summary) */
+.admin-page .stat-mini {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  height: 100%;
+}
+.admin-page .stat-mini-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  font-size: 1.15rem;
+  color: var(--accent-color);
+  background: var(--accent-soft);
+}
+.admin-page .stat-mini-label { font-size: 0.78rem; color: var(--text-secondary); }
+.admin-page .stat-mini-value { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+
+/* Tables: sticky header, cleaner rows */
+.admin-page .table-responsive { border-radius: var(--radius-sm); }
+.admin-page .table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.admin-page .table tbody tr { transition: background var(--transition); }
+
+/* Inputs focus */
+.admin-page .form-control:focus,
+.admin-page .form-select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 0.2rem var(--accent-soft);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Buttons */
+.admin-page .btn { border-radius: var(--radius-sm); transition: all var(--transition); }
+.admin-page .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35); }
+
+/* Focus visible for a11y */
+.admin-page :focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+
+/* Scrollbars */
+.admin-page ::-webkit-scrollbar { width: 8px; height: 8px; }
+.admin-page ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 8px; }
+.admin-page ::-webkit-scrollbar-track { background: transparent; }
+
+/* Tab content entrance */
+.admin-page .tab-pane.show.active { animation: adminFadeIn 0.25s ease; }
+@keyframes adminFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-page * { animation: none !important; transition: none !important; }
+}

@@ -77,6 +77,7 @@
 
             // Admin / Monitoring
             'admin.title': 'Админ-панель',
+            'admin.badge': 'Админ',
             'admin.nav.back': 'Назад',
             'admin.tabs.monitoring': 'Мониторинг',
             'admin.monitoring.title': 'Мониторинг',
@@ -435,6 +436,7 @@
 
             // Admin / Monitoring
             'admin.title': 'Admin panel',
+            'admin.badge': 'Admin',
             'admin.nav.back': 'Back',
             'admin.tabs.monitoring': 'Monitoring',
             'admin.monitoring.title': 'Monitoring',

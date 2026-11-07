@@ -11,14 +11,21 @@
     <link rel="stylesheet" href="/css/announcements.css"/>
     <style>
         .card-chart { min-height: 320px; }
+        .card-chart canvas { max-height: 280px; }
     </style>
 </head>
 <body class="admin-page">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark admin-navbar sticky-top">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/home" data-i18n="brand.name">AI Chat</a>
-        <div class="d-flex">
-            <a class="btn btn-outline-light" href="/home"><i class="bi bi-arrow-left"></i> <span data-i18n="admin.nav.back">Назад</span></a>
+        <a class="navbar-brand d-flex align-items-center gap-2" href="/home">
+            <i class="bi bi-robot"></i> <span data-i18n="brand.name">AI Chat</span>
+            <span class="badge admin-badge" data-i18n="admin.badge">Админ</span>
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <button id="themeToggleBtn" class="btn btn-link text-decoration-none p-1 admin-theme-btn" data-i18n-title="chat.theme.toggle.title" title="Переключить тему">
+                <i class="bi bi-moon-stars"></i>
+            </button>
+            <a class="btn btn-outline-light btn-sm" href="/home"><i class="bi bi-arrow-left"></i> <span data-i18n="admin.nav.back">Назад</span></a>
         </div>
     </div>
 </nav>
@@ -26,13 +33,13 @@
     <!-- Tabs header -->
     <ul class="nav nav-tabs" id="adminTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring" type="button" role="tab" aria-controls="monitoring" aria-selected="true" data-i18n="admin.tabs.monitoring">Мониторинг</button>
+            <button class="nav-link active" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring" type="button" role="tab" aria-controls="monitoring" aria-selected="true"><i class="bi bi-activity me-1"></i><span data-i18n="admin.tabs.monitoring">Мониторинг</span></button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false" data-i18n="admin.tabs.users">Пользователи</button>
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false"><i class="bi bi-people me-1"></i><span data-i18n="admin.tabs.users">Пользователи</span></button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab" aria-controls="announcements" aria-selected="false" data-i18n="admin.tabs.announcements">Объявления</button>
+            <button class="nav-link" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab" aria-controls="announcements" aria-selected="false"><i class="bi bi-megaphone me-1"></i><span data-i18n="admin.tabs.announcements">Объявления</span></button>
         </li>
     </ul>
 
@@ -47,9 +54,24 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-4">Моделей в памяти: <strong id="ollamaCount">—</strong></div>
-                        <div class="col-sm-4">Память моделей: <strong id="ollamaMemory">—</strong></div>
-                        <div class="col-sm-4">Из неё VRAM: <strong id="ollamaVram">—</strong></div>
+                        <div class="col-sm-4">
+                            <div class="stat-mini">
+                                <div class="stat-mini-icon"><i class="bi bi-boxes"></i></div>
+                                <div><div class="stat-mini-label">Моделей в памяти</div><div class="stat-mini-value" id="ollamaCount">—</div></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="stat-mini">
+                                <div class="stat-mini-icon"><i class="bi bi-memory"></i></div>
+                                <div><div class="stat-mini-label">Память моделей</div><div class="stat-mini-value" id="ollamaMemory">—</div></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="stat-mini">
+                                <div class="stat-mini-icon"><i class="bi bi-gpu-card"></i></div>
+                                <div><div class="stat-mini-label">Из неё VRAM</div><div class="stat-mini-value" id="ollamaVram">—</div></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
