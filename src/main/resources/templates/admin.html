@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/webjars/bootstrap/5.3.6/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/admin.css"/>
+    <link rel="stylesheet" href="/css/announcements.css"/>
     <style>
         .card-chart { min-height: 320px; }
     </style>
@@ -170,14 +171,25 @@
         <!-- Announcements Pane -->
         <div class="tab-pane fade" id="announcements" role="tabpanel" aria-labelledby="announcements-tab" tabindex="0">
             <div class="col-12 mt-3">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="mb-0" data-i18n="admin.ann.title">Управление объявлениями</h3>
+                <div class="ann-admin-heading">
+                    <div><span class="ann-section-label">NEUROCHAT / UPDATES</span><h3 class="mb-0" data-i18n="admin.ann.title">Управление объявлениями</h3></div>
                     <button id="newAnnouncementBtn" class="btn btn-primary">
                         <i class="bi bi-plus-lg"></i> <span data-i18n="admin.ann.new">Новое объявление</span>
                     </button>
                 </div>
                 
-                <div class="card">
+                <div class="ann-admin-toolbar">
+                    <label class="ann-search"><i class="bi bi-search" aria-hidden="true"></i><input id="announcementSearch" type="search" placeholder="Поиск публикаций" aria-label="Поиск публикаций" data-i18n="ann.search" data-i18n-attr="placeholder"></label>
+                    <select id="announcementStatusFilter" class="form-select" aria-label="Статус публикации">
+                        <option value="all" data-i18n="ann.filter.all">Все статусы</option>
+                        <option value="live" data-i18n="ann.status.live">Опубликовано</option>
+                        <option value="scheduled" data-i18n="ann.status.scheduled">Запланировано</option>
+                        <option value="expired" data-i18n="ann.status.expired">Завершено</option>
+                        <option value="draft" data-i18n="ann.status.draft">Выключено</option>
+                    </select>
+                    <span id="announcementResultCount" class="ann-result-count" aria-live="polite"></span>
+                </div>
+                <div class="card ann-admin-card">
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle" id="announcementsTable">
@@ -209,8 +221,8 @@
 </div>
 
 <!-- Announcement Modal -->
-<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade ann-editor" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="announcementModalLabel" data-i18n="admin.ann.modal.title">Новое объявление</h5>
@@ -222,7 +234,7 @@
                     <input type="hidden" id="announcementId" name="id">
                     <div class="mb-3">
                         <label for="announcementTitle" class="form-label" data-i18n="admin.ann.modal.field.title">Заголовок <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="announcementTitle" name="title" required>
+                        <input type="text" class="form-control" id="announcementTitle" name="title" maxlength="200" required>
                         <div class="invalid-feedback" data-i18n="admin.ann.modal.validation.title">Пожалуйста, укажите заголовок</div>
                     </div>
                     <div class="mb-3">
@@ -313,6 +325,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/js/theme-toggle.js"></script>
 <script src="/js/admin.js"></script>
+<script src="/js/announcement-display.js"></script>
 <script src="/js/announcements.js"></script>
 </body>
 </html>

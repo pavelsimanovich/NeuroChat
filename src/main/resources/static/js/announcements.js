@@ -4,6 +4,7 @@ class AnnouncementManager {
         this.form = document.getElementById('announcementForm');
         this.announcementId = null;
         this.initForm();
+        this.setupWorkspace();
         this.initializeEventListeners();
         this.loadAnnouncements();
         window.addEventListener('i18n:changed', () => this.loadAnnouncements());
@@ -38,8 +39,8 @@ class AnnouncementManager {
             this.endDateGroup.style.display = this.enableEndDateCheckbox.checked ? 'block' : 'none';
 
             if (this.enableEndDateCheckbox.checked && !this.endDateInput.value) {
-                const oneWeekLater = new Date(now);
-                oneWeekLater.setDate(now.getDate() + 7);
+                const oneWeekLater = new Date(this.startDateInput.value || Date.now());
+                oneWeekLater.setDate(oneWeekLater.getDate() + 7);
                 this.endDateInput.value = this.formatDateTimeForInput(oneWeekLater);
             }
         });
@@ -53,9 +54,17 @@ class AnnouncementManager {
             this.imageInput.addEventListener('change', () => {
                 const file = this.imageInput.files && this.imageInput.files[0];
                 if (file) {
+                    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+                        this.showAlert(this.label('Выберите PNG, JPG, WebP или GIF до 5 МБ', 'Choose PNG, JPG, WebP or GIF up to 5 MB'), 'danger');
+                        this.imageInput.value = '';
+                        return;
+                    }
+                    if (this.previewObjectUrl) URL.revokeObjectURL(this.previewObjectUrl);
                     const url = URL.createObjectURL(file);
+                    this.previewObjectUrl = url;
                     this.imagePreview.src = url;
                     this.imagePreviewContainer.style.display = 'block';
+                    this.updatePreview();
                 }
             });
         }
@@ -117,11 +126,15 @@ class AnnouncementManager {
                     announcements.sort((a, b) => {
                         return new Date(b.startDate) - new Date(a.startDate);
                     });
-                    this.renderAnnouncements(announcements);
+                    this.items = announcements;
+                    this.applyFilters();
                 })
                 .catch(error => {
                     console.error('Error loading announcements:', error);
-                    this.showAlert('Ошибка при загрузке уведомлений', 'danger');
+                    const tbody = document.querySelector('#announcementsTable tbody');
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4">${this.label('Не удалось загрузить публикации', 'Could not load publications')} <button type="button" class="btn btn-sm btn-outline-primary ann-retry">${this.label('Повторить', 'Retry')}</button></td></tr>`;
+                    tbody.querySelector('.ann-retry').onclick = () => this.loadAnnouncements();
+                    this.showAlert(this.label('Ошибка при загрузке объявлений', 'Error loading announcements'), 'danger');
                 });
         } catch (error) {
             console.error('Error loading announcements:', error);
@@ -136,8 +149,8 @@ class AnnouncementManager {
         if (announcements.length === 0) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td colspan="6" class="text-center py-4 text-muted">
-                    Нет объявлений
+                <td colspan="5" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox ann-empty-icon" aria-hidden="true"></i><strong>${this.label('Нет подходящих публикаций', 'No matching publications')}</strong>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -145,9 +158,8 @@ class AnnouncementManager {
         }
 
         announcements.forEach(announcement => {
-            const statusText = (window.i18n && i18n.t)
-                ? (announcement.active ? i18n.t('admin.ann.status.active', 'Active') : i18n.t('admin.ann.status.inactive', 'Inactive'))
-                : (announcement.active ? 'Active' : 'Inactive');
+            const status = this.publicationStatus(announcement);
+            const statusText = this.statusLabel(status);
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
@@ -158,13 +170,13 @@ class AnnouncementManager {
                 <td>${this.formatDate(announcement.startDate)}</td>
                 <td>${announcement.endDate ? this.formatDate(announcement.endDate) : '—'}</td>
                 <td>
-                    <span class="badge ${announcement.active ? 'bg-success' : 'bg-secondary'}">${statusText}</span>
+                    <span class="ann-status ann-status--${status}">${statusText}</span>
                 </td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary edit-announcement" data-id="${announcement.id}">
+                    <button aria-label="Редактировать" title="Редактировать" class="btn btn-sm btn-outline-primary edit-announcement" data-id="${announcement.id}">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger delete-announcement ms-1" data-id="${announcement.id}">
+                    <button aria-label="Удалить" title="Удалить" class="btn btn-sm btn-outline-danger delete-announcement ms-1" data-id="${announcement.id}">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -176,6 +188,7 @@ class AnnouncementManager {
     newAnnouncement() {
         this.resetForm();
         document.getElementById('announcementModalLabel').textContent = 'Новое объявление';
+        this.updatePreview();
         this.announcementModal.show();
     }
 
@@ -185,6 +198,7 @@ class AnnouncementManager {
             if (!response.ok) throw new Error('Ошибка при загрузке объявления');
 
             const announcement = await response.json();
+            this.resetForm();
             this.announcementId = announcement.id;
 
             // Set form values
@@ -194,10 +208,6 @@ class AnnouncementManager {
             this.isAdCheckbox.checked = announcement.isAd === true;
             this.adTargetUrlInput.value = announcement.adTargetUrl || '';
             this.currentImageUrl = announcement.imageUrl || null;
-        this.isAdCheckbox.checked = announcement.isAd === true;
-        this.adTargetUrlInput.value = announcement.adTargetUrl || '';
-        this.currentImageUrl = announcement.imageUrl || null;
-
         if (this.currentImageUrl) {
             this.imagePreview.src = this.currentImageUrl;
             this.imagePreviewContainer.style.display = 'block';
@@ -226,6 +236,7 @@ class AnnouncementManager {
 
             // Update modal title
             document.getElementById('announcementModalLabel').textContent = 'Редактировать объявление';
+            this.updatePreview();
             this.announcementModal.show();
 
         } catch (error) {
@@ -320,6 +331,8 @@ class AnnouncementManager {
     }
 
     resetForm() {
+        if (this.previewObjectUrl) URL.revokeObjectURL(this.previewObjectUrl);
+        this.previewObjectUrl = null;
         this.form.reset();
         this.announcementId = null;
         this.enableEndDateCheckbox.checked = false;
@@ -337,6 +350,7 @@ class AnnouncementManager {
         const roundedMinutes = now.getMinutes();
         now.setMinutes(roundedMinutes, 0, 0);
         this.startDateInput.value = this.formatDateTimeForInput(now);
+        this.updatePreview();
     }
 
     async deleteAnnouncement(id) {
@@ -377,6 +391,66 @@ class AnnouncementManager {
         }, 5000);
     }
 
+    label(ru, en) {
+        return window.i18n?.getLanguage?.() === 'en' ? en : ru;
+    }
+
+    publicationStatus(item) {
+        if (!item.active) return 'draft';
+        const now = Date.now();
+        if (item.endDate && new Date(item.endDate).getTime() < now) return 'expired';
+        if (item.startDate && new Date(item.startDate).getTime() > now) return 'scheduled';
+        return 'live';
+    }
+
+    statusLabel(status) {
+        const labels = {live: ['Опубликовано', 'Published'], scheduled: ['Запланировано', 'Scheduled'], expired: ['Завершено', 'Ended'], draft: ['Выключено', 'Disabled']};
+        return this.label(...labels[status]);
+    }
+
+    applyFilters() {
+        const query = document.getElementById('announcementSearch').value.trim().toLocaleLowerCase();
+        const status = document.getElementById('announcementStatusFilter').value;
+        const filtered = (this.items || []).filter(item => (status === 'all' || this.publicationStatus(item) === status) && `${item.title || ''} ${item.content || ''}`.toLocaleLowerCase().includes(query));
+        document.getElementById('announcementResultCount').textContent = `${filtered.length} / ${(this.items || []).length}`;
+        this.renderAnnouncements(filtered);
+    }
+
+    setupWorkspace() {
+        document.getElementById('announcementSearch').addEventListener('input', () => this.applyFilters());
+        document.getElementById('announcementStatusFilter').addEventListener('change', () => this.applyFilters());
+        const body = this.form.querySelector('.modal-body');
+        const fields = document.createElement('div');
+        fields.className = 'ann-editor-fields';
+        while (body.firstChild) fields.append(body.firstChild);
+        const preview = document.createElement('aside');
+        preview.className = 'ann-editor-preview';
+        preview.innerHTML = `<span class="ann-section-label">${this.label('Предпросмотр публикации', 'Publication preview')}</span><article class="ann-preview-card"><span class="ann-eyebrow">NEUROCHAT / UPDATES</span><img id="annPreviewCover" alt="" hidden><h2 id="annPreviewTitle"></h2><div id="annPreviewText" class="announcement-modal__richtext"></div><span id="annPreviewStatus" class="ann-status"></span></article>`;
+        body.append(fields, preview);
+        this.form.addEventListener('input', () => this.updatePreview());
+        this.form.addEventListener('change', () => this.updatePreview());
+    }
+
+    updatePreview() {
+        const title = document.getElementById('annPreviewTitle');
+        if (!title) return;
+        const renderer = AnnouncementDisplay.prototype;
+        title.textContent = this.titleInput.value.trim() || this.label('Заголовок вашей публикации', 'Your publication title');
+        const text = document.getElementById('annPreviewText');
+        const content = this.contentInput.value.trim();
+        const helper = {safeUrl: renderer.safeUrl};
+        text.innerHTML = content.includes('<') ? renderer.sanitizeContent.call(helper, content) : this.escapeHtml(content || this.label('Здесь появится текст объявления. Изменения видны сразу.', 'Your announcement text appears here. Changes are shown instantly.')).replace(/\n/g, '<br>');
+        const cover = document.getElementById('annPreviewCover');
+        const url = this.previewObjectUrl || renderer.safeUrl(this.currentImageUrl);
+        cover.hidden = !url;
+        if (url) cover.src = url;
+        else cover.removeAttribute('src');
+        const badge = document.getElementById('annPreviewStatus');
+        const status = this.publicationStatus({active:this.activeCheckbox.checked, startDate:this.startDateInput.value, endDate:this.enableEndDateCheckbox.checked ? this.endDateInput.value : null});
+        badge.className = `ann-status ann-status--${status}`;
+        badge.textContent = this.statusLabel(status);
+    }
+
     formatDate(dateString) {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -392,7 +466,7 @@ class AnnouncementManager {
     }
 
     escapeHtml(unsafe) {
-        return unsafe
+        return String(unsafe || '')
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")

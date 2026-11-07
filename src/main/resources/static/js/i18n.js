@@ -5,6 +5,12 @@
 
     const dictionaries = {
         ru: {
+            'ann.search': 'Поиск публикаций',
+            'ann.filter.all': 'Все статусы',
+            'ann.status.live': 'Опубликовано',
+            'ann.status.scheduled': 'Запланировано',
+            'ann.status.expired': 'Завершено',
+            'ann.status.draft': 'Выключено',
             'app.title': 'AI Чат',
             'brand.name': 'NeuroChat',
 
@@ -353,6 +359,12 @@
             'settings.theme.toDark': 'Переключить на тёмную тему'
         },
         en: {
+            'ann.search': 'Search publications',
+            'ann.filter.all': 'All statuses',
+            'ann.status.live': 'Published',
+            'ann.status.scheduled': 'Scheduled',
+            'ann.status.expired': 'Ended',
+            'ann.status.draft': 'Disabled',
             'app.title': 'AI Chat',
             'brand.name': 'NeuroChat',
 

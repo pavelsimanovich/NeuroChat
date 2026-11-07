@@ -24,6 +24,7 @@ class AnnouncementDisplay {
             
             // Initialize event listeners and load announcements
             this.copyBtn = document.getElementById('announcementCopyBtn');
+            this.setupPublicationList(modalElement);
             this.initializeEventListeners();
             this.rotateInterval = null;
             this.isModalOpen = false;
@@ -65,7 +66,7 @@ class AnnouncementDisplay {
                 const content = document.getElementById('announcementModalContent');
                 if (!content) return;
                 try {
-                    const text = content.innerText.trim();
+                    const text = content.querySelector('.announcement-modal__richtext')?.innerText.trim();
                     if (!text) return;
                     await navigator.clipboard.writeText(text);
                     this.showCopyFeedback();
@@ -145,14 +146,15 @@ class AnnouncementDisplay {
         
         try {
             // Update announcement bar content
-            const adBadge = announcement.isAd ? '<span class="badge bg-warning text-dark ms-2">Реклама</span>' : '';
+            const adBadge = announcement.isAd ? `<span class="badge bg-warning text-dark ms-2">${this.label('Реклама', 'Ad')}</span>` : '';
             const announcementBarContent = `
-                <i class="bi bi-megaphone me-2"></i>
-                <span>${this.escapeHtml(announcement.title || 'Новое объявление')}</span>
+                <i class="bi bi-megaphone" aria-hidden="true"></i>
+                <span class="ann-teaser-text">
+                    <span class="ann-eyebrow">${this.label('Обновления NeuroChat', 'NeuroChat updates')}</span>
+                    <strong>${this.escapeHtml(announcement.title || this.label('Новое объявление', 'New announcement'))}</strong>
+                    <span class="ann-excerpt">${this.escapeHtml(this.plainText(announcement.content).slice(0, 120))}</span>
+                </span>
                 ${adBadge}
-                ${hasMultiple ? 
-                    `<span class="badge bg-primary ms-2">${this.currentAnnouncementIndex + 1}/${this.announcements.length}</span>` : ''
-                }
             `;
             
             // Update announcement bar
@@ -162,12 +164,7 @@ class AnnouncementDisplay {
                 this.announcementContent.title = 'Открыть объявление';
                 this.announcementContent.setAttribute('aria-label', 'Открыть объявление');
                 this.announcementContent.classList.add('clickable');
-                this.announcementContent.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.showModal(announcement);
-                    }
-                };
+
                 
                 // Add click handler to the close button
                 const closeBtn = this.announcementContent.querySelector('.close-announcement');
@@ -190,6 +187,8 @@ class AnnouncementDisplay {
             this.updateModalContent(announcement, hasMultiple);
             // Inject quick actions into the announcement bar
             this.announcementContainer.dataset.kind = announcement.isAd ? 'ad' : 'news';
+            this.renderPublicationList();
+            this.renderTeaserNavigation();
             
         } catch (error) {
             console.error('Error displaying announcement:', error);
@@ -200,7 +199,7 @@ class AnnouncementDisplay {
         if (!dateString) return '';
         try {
             const date = new Date(dateString);
-            return date.toLocaleString('ru-RU', {
+            return date.toLocaleString(this.label('ru-RU', 'en-US'), {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -227,7 +226,7 @@ class AnnouncementDisplay {
         }
         
         // Update modal title and content
-        modalTitle.innerHTML = `${this.escapeHtml(announcement.title || 'Объявление')}` + (announcement.isAd ? ' <span class="badge bg-warning text-dark ms-2">Реклама</span>' : '');
+        modalTitle.innerHTML = `${this.escapeHtml(announcement.title || 'Объявление')}` + (announcement.isAd ? ` <span class="badge bg-warning text-dark ms-2">${this.label('Реклама', 'Ad')}</span>` : '');
         
         // Format and set the date
         const startDate = this.formatDate(announcement.startDate);
@@ -235,9 +234,9 @@ class AnnouncementDisplay {
         
         if (dateElement) {
             if (startDate && endDate) {
-                dateElement.textContent = `Действует с ${startDate} до ${endDate}`;
+                dateElement.textContent = `${this.label('Действует с', 'Available from')} ${startDate} ${this.label('до', 'to')} ${endDate}`;
             } else if (startDate) {
-                dateElement.textContent = `Опубликовано: ${startDate}`;
+                dateElement.textContent = `${this.label('Опубликовано:', 'Published:')} ${startDate}`;
             } else {
                 dateElement.textContent = '';
             }
@@ -263,10 +262,10 @@ class AnnouncementDisplay {
         const ctaBlock = (announcement.isAd && this.safeUrl(announcement.adTargetUrl)) ? `
             <div class="announcement-modal__cta">
                 <div class="announcement-modal__cta-label small text-muted">
-                    Реклама · Переход по внешней ссылке
+                    ${this.label('Реклама · Переход по внешней ссылке', 'Ad · External link')}
                 </div>
                 <a href="${this.escapeHtml(this.safeUrl(announcement.adTargetUrl))}" target="_blank" rel="noopener noreferrer" class="btn btn-primary announcement-modal__cta-button">
-                    Перейти <i class="bi bi-box-arrow-up-right ms-1"></i>
+                    ${this.label('Перейти', 'Visit website')} <i class="bi bi-box-arrow-up-right ms-1"></i>
                 </a>
             </div>` : '';
 
@@ -275,11 +274,11 @@ class AnnouncementDisplay {
             <div class="announcement-modal__secondary-actions">
                 <div class="announcement-modal__tips small text-muted d-none d-md-inline-flex align-items-center gap-1">
                     <i class="bi bi-keyboard"></i>
-                    <span>Подсказка: ← → для навигации, Esc — закрыть</span>
+                    <span>${this.label('← → для навигации, Esc — закрыть', '← → to navigate, Esc to close')}</span>
                 </div>
                 <button type="button" class="btn btn-outline-warning btn-sm rounded-pill" id="annDismissTodayBtn" title="Скрыть до завтра">
                     <i class="bi bi-eye-slash"></i>
-                    <span class="ms-1">До завтра</span>
+                    <span class="ms-1">${this.label('До завтра', 'Until tomorrow')}</span>
                 </button>
             </div>`;
 
@@ -365,6 +364,7 @@ class AnnouncementDisplay {
             
             // Add keyboard navigation
             const handleKeyDown = (e) => {
+                if (e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
                 if (e.key === 'ArrowLeft') {
                     this.showPreviousAnnouncement();
                 } else if (e.key === 'ArrowRight') {
@@ -384,7 +384,7 @@ class AnnouncementDisplay {
                     if (!content) return;
                     const scrollTop = modalBody.scrollTop;
                     const scrollHeight = modalBody.scrollHeight - modalBody.clientHeight;
-                    const pct = scrollHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100)) : 0;
+                    const pct = scrollHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100)) : 100;
                     if (this.progressBarEl) {
                         this.progressBarEl.style.setProperty('--progress', pct + '%');
                     }
@@ -520,6 +520,7 @@ class AnnouncementDisplay {
             this.hideAnnouncement();
             this.stopAutoRotation();
             if (this.isModalOpen) this.announcementModal.hide();
+            this.renderPublicationList();
             return;
         }
         if (this.currentAnnouncementIndex >= this.announcements.length) {
@@ -530,13 +531,6 @@ class AnnouncementDisplay {
 
     startAutoRotation() {
         this.stopAutoRotation();
-        if (!this.announcements || this.announcements.length <= 1 || this.isModalOpen || !this.announcementContainer.classList.contains('show')) return;
-        this.rotateInterval = setInterval(() => {
-            if (!this.isModalOpen && !document.hidden) {
-                this.currentAnnouncementIndex = (this.currentAnnouncementIndex + 1) % this.announcements.length;
-                this.displayCurrentAnnouncement();
-            }
-        }, 8000);
     }
 
     stopAutoRotation() {
@@ -554,6 +548,73 @@ class AnnouncementDisplay {
         if (this.announcementContainer.matches(':hover') || this.announcementContainer.contains(document.activeElement)) return;
         this.startAutoRotation();
     }
+    label(ru, en) {
+        return window.i18n?.getLanguage?.() === 'en' ? en : ru;
+    }
+
+    plainText(value) {
+        const template = document.createElement('template');
+        template.innerHTML = this.sanitizeContent(value || '');
+        return (template.content.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+
+    setupPublicationList(modalElement) {
+        const body = modalElement.querySelector('.modal-body');
+        const layout = document.createElement('div');
+        layout.className = 'ann-reader-layout';
+        const sidebar = document.createElement('aside');
+        sidebar.className = 'ann-reader-sidebar';
+        sidebar.innerHTML = `<div class="ann-section-label">${this.label('Все публикации', 'All updates')}</div><nav id="announcementPublicationList" aria-label="${this.label('Объявления', 'Announcements')}"></nav>`;
+        body.parentNode.insertBefore(layout, body);
+        layout.append(sidebar, body);
+        sidebar.querySelector('nav').addEventListener('click', event => {
+            const button = event.target.closest('[data-ann-index]');
+            if (!button) return;
+            this.currentAnnouncementIndex = Number(button.dataset.annIndex);
+            this.displayCurrentAnnouncement();
+            this.resetReadingPosition();
+        });
+        window.addEventListener('i18n:changed', () => {
+            sidebar.querySelector('.ann-section-label').textContent = this.label('Все публикации', 'All updates');
+            if (this.announcements?.length) this.displayCurrentAnnouncement();
+        });
+    }
+
+    renderPublicationList() {
+        const list = document.getElementById('announcementPublicationList');
+        if (!list) return;
+        const hadFocus = list.contains(document.activeElement);
+        list.innerHTML = this.announcements.map((item, index) => `
+            <button type="button" class="ann-publication ${index === this.currentAnnouncementIndex ? 'is-selected' : ''}" data-ann-index="${index}" aria-current="${index === this.currentAnnouncementIndex ? 'true' : 'false'}">
+                <span class="ann-publication-meta">${this.label(item.isAd ? 'Партнёры' : 'Новости продукта', item.isAd ? 'Partners' : 'Product news')}</span>
+                <strong>${this.escapeHtml(item.title || this.label('Объявление', 'Announcement'))}</strong>
+                <span class="ann-publication-date">${this.escapeHtml(this.formatDate(item.startDate))}</span>
+            </button>`).join('');
+        if (hadFocus) list.querySelector(`[data-ann-index="${this.currentAnnouncementIndex}"]`)?.focus({preventScroll: true});
+    }
+
+    renderTeaserNavigation() {
+        let navigation = document.getElementById('announcementTeaserNav');
+        if (!navigation) {
+            navigation = document.createElement('div');
+            navigation.id = 'announcementTeaserNav';
+            navigation.className = 'ann-teaser-nav';
+            this.announcementContainer.querySelector('.announcement-actions').prepend(navigation);
+        }
+        const focusedIndex = Array.from(navigation.querySelectorAll('button')).indexOf(document.activeElement);
+        navigation.innerHTML = `<span>${this.currentAnnouncementIndex + 1} / ${this.announcements.length}</span>
+            <button type="button" aria-label="${this.label('Предыдущее объявление', 'Previous announcement')}" ${this.currentAnnouncementIndex === 0 ? 'disabled' : ''}><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+            <button type="button" aria-label="${this.label('Следующее объявление', 'Next announcement')}" ${this.currentAnnouncementIndex === this.announcements.length - 1 ? 'disabled' : ''}><i class="bi bi-chevron-right" aria-hidden="true"></i></button>`;
+        const buttons = navigation.querySelectorAll('button');
+        buttons[0].onclick = () => this.showPreviousAnnouncement();
+        buttons[1].onclick = () => this.showNextAnnouncement();
+        navigation.hidden = this.announcements.length < 2;
+        if (focusedIndex >= 0 && !navigation.hidden) {
+            const target = buttons[focusedIndex].disabled ? buttons[1 - focusedIndex] : buttons[focusedIndex];
+            target.focus({preventScroll: true});
+        }
+    }
+
     safeUrl(value) {
         if (!value) return '';
         try {
@@ -593,7 +654,8 @@ class AnnouncementDisplay {
     resetReadingPosition() {
         const body = document.querySelector('#announcementModal .modal-body');
         if (body) body.scrollTop = 0;
-        if (this.progressBarEl) this.progressBarEl.style.setProperty('--progress', '0%');
+        if (this._bindedScrollHandler) this._bindedScrollHandler();
+        else if (this.progressBarEl) this.progressBarEl.style.setProperty('--progress', '0%');
     }
 
     showCopyFeedback() {
@@ -602,7 +664,7 @@ class AnnouncementDisplay {
         if (!label) return;
 
         const originalText = label.textContent;
-        label.textContent = 'Скопировано!';
+        label.textContent = this.label('Скопировано!', 'Copied!');
         this.copyBtn.classList.add('btn-success', 'text-white');
         this.copyBtn.classList.remove('btn-outline-secondary');
 
