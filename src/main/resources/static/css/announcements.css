@@ -965,3 +965,5 @@
 .announcement-modal #annDismissTodayBtn { color: var(--ann-muted); border-color: var(--ann-line); background: transparent; }
 .announcement-modal #annDismissTodayBtn:hover { background: var(--ann-subtle); color: var(--ann-ink); }
 .ann-editor-preview a { pointer-events: none; }
+
+.ann-updates-launcher { white-space: nowrap; flex-shrink: 0; border-radius: 9px; font-size: .75rem; }

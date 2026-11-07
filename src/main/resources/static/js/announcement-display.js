@@ -105,8 +105,9 @@ class AnnouncementDisplay {
             const all = await response.json();
             if (!Array.isArray(all)) throw new Error('Invalid announcements response');
             // Filter hidden announcements based on localStorage flags
-            this.announcements = (all || []).filter(a => !this.isAnnouncementHidden(a));
-            this.currentAnnouncementIndex = 0;
+            this.announcements = all;
+            this.currentAnnouncementIndex = Math.max(0, all.findIndex(item => !this.isAnnouncementHidden(item) && !this.dismissedAnnouncementIds?.has(item.id)));
+            this.renderUpdatesLauncher();
             
             if (this.announcements && this.announcements.length > 0) {
                 this.displayCurrentAnnouncement();
@@ -189,6 +190,7 @@ class AnnouncementDisplay {
             this.announcementContainer.dataset.kind = announcement.isAd ? 'ad' : 'news';
             this.renderPublicationList();
             this.renderTeaserNavigation();
+            if (this.isAnnouncementHidden(announcement) || this.dismissedAnnouncementIds?.has(announcement.id)) this.hideAnnouncement();
             
         } catch (error) {
             console.error('Error displaying announcement:', error);
@@ -515,18 +517,41 @@ class AnnouncementDisplay {
     }
 
     reloadAfterDismiss(id) {
-        this.announcements = this.announcements.filter(x => x.id !== id && !this.isAnnouncementHidden(x));
-        if (this.announcements.length === 0) {
+        this.dismissedAnnouncementIds ??= new Set();
+        this.dismissedAnnouncementIds.add(id);
+        if (!this.isModalOpen) {
+            const nextIndex = this.announcements.findIndex(item => !this.dismissedAnnouncementIds.has(item.id) && !this.isAnnouncementHidden(item));
+            if (nextIndex >= 0) {
+                this.currentAnnouncementIndex = nextIndex;
+                this.displayCurrentAnnouncement();
+            } else {
+                this.hideAnnouncement();
+            }
+        } else {
             this.hideAnnouncement();
-            this.stopAutoRotation();
-            if (this.isModalOpen) this.announcementModal.hide();
-            this.renderPublicationList();
-            return;
         }
-        if (this.currentAnnouncementIndex >= this.announcements.length) {
-            this.currentAnnouncementIndex = this.announcements.length - 1;
+    }
+
+    renderUpdatesLauncher() {
+        let button = document.getElementById('announcementUpdatesBtn');
+        if (!button) {
+            button = document.createElement('button');
+            button.id = 'announcementUpdatesBtn';
+            button.type = 'button';
+            button.className = 'btn btn-sm btn-outline-secondary ms-2 ann-updates-launcher';
+            button.setAttribute('aria-controls', 'announcementModal');
+            const themeButton = document.getElementById('themeToggleBtn');
+            const header = document.querySelector('.chat-header');
+            if (themeButton) themeButton.before(button);
+            else if (header) header.append(button);
+            else this.announcementContainer.before(button);
+            button.addEventListener('click', () => {
+                const current = this.announcements?.[this.currentAnnouncementIndex];
+                if (current) this.showModal(current);
+            });
         }
-        this.displayCurrentAnnouncement();
+        button.hidden = !this.announcements.length;
+        button.textContent = `${this.label('Обновления', 'Updates')} · ${this.announcements.length}`;
     }
 
     startAutoRotation() {
@@ -576,6 +601,7 @@ class AnnouncementDisplay {
         });
         window.addEventListener('i18n:changed', () => {
             sidebar.querySelector('.ann-section-label').textContent = this.label('Все публикации', 'All updates');
+            this.renderUpdatesLauncher();
             if (this.announcements?.length) this.displayCurrentAnnouncement();
         });
     }
