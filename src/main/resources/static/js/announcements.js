@@ -27,7 +27,7 @@ class AnnouncementManager {
         // Set default start date to now
         const now = new Date();
         // Round to nearest 5 minutes
-        const roundedMinutes = Math.ceil(now.getMinutes() / 5) * 5;
+        const roundedMinutes = now.getMinutes();
         now.setMinutes(roundedMinutes, 0, 0);
 
         this.startDateInput.value = this.formatDateTimeForInput(now);
@@ -61,7 +61,7 @@ class AnnouncementManager {
         }
 
         // Set up form validation
-        this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+        this.form.addEventListener('input', () => this.form.classList.remove('was-validated'));
 
         // Add input validation
         this.titleInput.addEventListener('input', () => {
@@ -107,8 +107,11 @@ class AnnouncementManager {
 
     async loadAnnouncements() {
         try {
-            fetch('/api/announcements')
-                .then(response => response.json())
+            fetch('/api/announcements/all')
+                .then(response => {
+                    if (!response.ok) throw new Error(`Announcements: ${response.status}`);
+                    return response.json();
+                })
                 .then(announcements => {
                     // Sort by start date (newest first)
                     announcements.sort((a, b) => {
@@ -233,6 +236,12 @@ class AnnouncementManager {
 
     async saveAnnouncement(e) {
         e.preventDefault();
+        if (this.isSaving) return;
+        if (!this.form.reportValidity()) return;
+        if (this.enableEndDateCheckbox.checked && (!this.endDateInput.value || this.endDateInput.value <= this.startDateInput.value)) {
+            this.showAlert('Дата окончания должна быть позже даты начала', 'danger');
+            return;
+        }
 
         // Validate form
         if (!this.titleInput.value.trim()) {
@@ -245,6 +254,9 @@ class AnnouncementManager {
             return;
         }
 
+        this.isSaving = true;
+        const saveButton = this.form.querySelector('[type=submit]');
+        saveButton.disabled = true;
         try {
             // Upload image via FileController if a new file is selected
             let imageUrl = this.currentImageUrl;
@@ -266,9 +278,9 @@ class AnnouncementManager {
                 title: this.titleInput.value.trim(),
                 content: this.contentInput.value.trim(),
                 active: this.activeCheckbox.checked,
-                startDate: this.startDateInput.value ? new Date(this.startDateInput.value).toISOString() : null,
+                startDate: this.startDateInput.value ? this.startDateInput.value : null,
                 endDate: this.enableEndDateCheckbox.checked && this.endDateInput.value
-                    ? new Date(this.endDateInput.value).toISOString()
+                    ? this.endDateInput.value
                     : null,
                 imageUrl: imageUrl || null,
                 isAd: this.isAdCheckbox.checked,
@@ -301,6 +313,9 @@ class AnnouncementManager {
         } catch (error) {
             console.error('Error saving announcement:', error);
             this.showAlert(error.message || 'Ошибка при сохранении объявления', 'danger');
+        } finally {
+            this.isSaving = false;
+            saveButton.disabled = false;
         }
     }
 
@@ -319,7 +334,7 @@ class AnnouncementManager {
 
         // Reset to default start date (now)
         const now = new Date();
-        const roundedMinutes = Math.ceil(now.getMinutes() / 5) * 5;
+        const roundedMinutes = now.getMinutes();
         now.setMinutes(roundedMinutes, 0, 0);
         this.startDateInput.value = this.formatDateTimeForInput(now);
     }
@@ -349,7 +364,7 @@ class AnnouncementManager {
         alertDiv.role = 'alert';
         alertDiv.style.zIndex = '1060';
         alertDiv.innerHTML = `
-            ${message}
+            ${this.escapeHtml(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
 

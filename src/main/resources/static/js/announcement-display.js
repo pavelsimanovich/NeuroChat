@@ -23,6 +23,7 @@ class AnnouncementDisplay {
             this.announcementModal = new bootstrap.Modal(modalElement);
             
             // Initialize event listeners and load announcements
+            this.copyBtn = document.getElementById('announcementCopyBtn');
             this.initializeEventListeners();
             this.rotateInterval = null;
             this.isModalOpen = false;
@@ -41,7 +42,10 @@ class AnnouncementDisplay {
     initializeEventListeners() {
         // Close button in the announcement bar
         if (this.closeAnnouncementBtn) {
-            this.closeAnnouncementBtn.addEventListener('click', () => this.hideAnnouncement());
+            this.closeAnnouncementBtn.addEventListener('click', () => {
+                const current = this.announcements?.[this.currentAnnouncementIndex];
+                if (current) this.dismissToday(current);
+            });
         }
 
         // Add click handler for announcement details button if it exists
@@ -88,13 +92,17 @@ class AnnouncementDisplay {
         if (this.announcementContainer) {
             this.announcementContainer.addEventListener('mouseenter', () => this.pauseRotation());
             this.announcementContainer.addEventListener('mouseleave', () => this.resumeRotation());
+            this.announcementContainer.addEventListener('focusin', () => this.pauseRotation());
+            this.announcementContainer.addEventListener('focusout', () => this.resumeRotation());
         }
     }
 
     async loadAnnouncements() {
         try {
             const response = await fetch('/api/announcements');
+            if (!response.ok) throw new Error(`Announcements: ${response.status}`);
             const all = await response.json();
+            if (!Array.isArray(all)) throw new Error('Invalid announcements response');
             // Filter hidden announcements based on localStorage flags
             this.announcements = (all || []).filter(a => !this.isAnnouncementHidden(a));
             this.currentAnnouncementIndex = 0;
@@ -154,12 +162,12 @@ class AnnouncementDisplay {
                 this.announcementContent.title = 'Открыть объявление';
                 this.announcementContent.setAttribute('aria-label', 'Открыть объявление');
                 this.announcementContent.classList.add('clickable');
-                this.announcementContent.addEventListener('keydown', (e) => {
+                this.announcementContent.onkeydown = (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         this.showModal(announcement);
                     }
-                });
+                };
                 
                 // Add click handler to the close button
                 const closeBtn = this.announcementContent.querySelector('.close-announcement');
@@ -181,7 +189,7 @@ class AnnouncementDisplay {
             // Update modal content
             this.updateModalContent(announcement, hasMultiple);
             // Inject quick actions into the announcement bar
-            this.injectActions(announcement);
+            this.announcementContainer.dataset.kind = announcement.isAd ? 'ad' : 'news';
             
         } catch (error) {
             console.error('Error displaying announcement:', error);
@@ -242,22 +250,22 @@ class AnnouncementDisplay {
         const imageBlock = announcement.imageUrl ? `
             <figure class="announcement-modal__media mb-0">
                 <div class="announcement-modal__media-inner text-center">
-                    <img src="${announcement.imageUrl}" alt="${this.escapeHtml(announcement.title || 'Изображение')}" 
+                    <img src="${this.escapeHtml(this.safeUrl(announcement.imageUrl))}" alt="${this.escapeHtml(announcement.title || 'Изображение')}"
                          class="img-fluid announcement-image" style="max-height: 360px; object-fit: contain;">
                 </div>
             </figure>` : '';
 
         const contentBlock = `
             <div class="announcement-modal__richtext">
-                ${isHtml ? announcement.content : this.escapeHtml(announcement.content || '').replace(/\n/g, '<br>')}
+                ${isHtml ? this.sanitizeContent(announcement.content) : this.escapeHtml(announcement.content || '').replace(/\n/g, '<br>')}
             </div>`;
 
-        const ctaBlock = (announcement.isAd && announcement.adTargetUrl) ? `
+        const ctaBlock = (announcement.isAd && this.safeUrl(announcement.adTargetUrl)) ? `
             <div class="announcement-modal__cta">
                 <div class="announcement-modal__cta-label small text-muted">
                     Реклама · Переход по внешней ссылке
                 </div>
-                <a href="${announcement.adTargetUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary announcement-modal__cta-button">
+                <a href="${this.escapeHtml(this.safeUrl(announcement.adTargetUrl))}" target="_blank" rel="noopener noreferrer" class="btn btn-primary announcement-modal__cta-button">
                     Перейти <i class="bi bi-box-arrow-up-right ms-1"></i>
                 </a>
             </div>` : '';
@@ -318,6 +326,7 @@ class AnnouncementDisplay {
     }
     
     showModal(announcement) {
+        if (!announcement || this.isModalOpen) return;
         console.log('Showing modal for announcement:', announcement);
         
         const modalElement = document.getElementById('announcementModal');
@@ -347,15 +356,11 @@ class AnnouncementDisplay {
             this.isModalOpen = true;
             
             // Ensure modal is visible
-            modalElement.style.display = 'block';
-            modalElement.classList.add('show');
-            document.body.classList.add('modal-open');
+            this.pauseRotation();
             
             // Add backdrop if it doesn't exist
             if (!document.querySelector('.modal-backdrop')) {
-                const backdrop = document.createElement('div');
-                backdrop.className = 'modal-backdrop fade show';
-                document.body.appendChild(backdrop);
+                this.announcementModal.handleUpdate();
             }
             
             // Add keyboard navigation
@@ -378,12 +383,13 @@ class AnnouncementDisplay {
                     const content = document.getElementById('announcementModalContent');
                     if (!content) return;
                     const scrollTop = modalBody.scrollTop;
-                    const scrollHeight = content.scrollHeight - modalBody.clientHeight;
+                    const scrollHeight = modalBody.scrollHeight - modalBody.clientHeight;
                     const pct = scrollHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100)) : 0;
                     if (this.progressBarEl) {
                         this.progressBarEl.style.setProperty('--progress', pct + '%');
                     }
                 };
+                this.resetReadingPosition();
                 this._bindedScrollHandler = updateProgress;
                 modalBody.addEventListener('scroll', updateProgress);
                 // Initialize once opened
@@ -412,12 +418,9 @@ class AnnouncementDisplay {
             const onModalHidden = () => {
                 document.removeEventListener('keydown', handleKeyDown);
                 modalElement.removeEventListener('hidden.bs.modal', onModalHidden);
-                document.body.classList.remove('modal-open');
-                const backdrop = document.querySelector('.modal-backdrop');
-                if (backdrop) {
-                    backdrop.remove();
-                }
+
                 this.isModalOpen = false;
+                this.resumeRotation();
                 // Cleanup listeners
                 const modalBody = modalElement.querySelector('.modal-body');
                 if (modalBody && this._bindedScrollHandler) {
@@ -442,7 +445,8 @@ class AnnouncementDisplay {
         if (this.currentAnnouncementIndex > 0) {
             this.currentAnnouncementIndex--;
             const announcement = this.announcements[this.currentAnnouncementIndex];
-            this.updateModalContent(announcement, this.announcements.length > 1);
+            this.displayCurrentAnnouncement();
+            this.resetReadingPosition();
         }
     }
     
@@ -450,14 +454,16 @@ class AnnouncementDisplay {
         if (this.currentAnnouncementIndex < this.announcements.length - 1) {
             this.currentAnnouncementIndex++;
             const announcement = this.announcements[this.currentAnnouncementIndex];
-            this.updateModalContent(announcement, this.announcements.length > 1);
+            this.displayCurrentAnnouncement();
+            this.resetReadingPosition();
         }
     }
     
     hideAnnouncement() {
         if (this.announcementContainer) {
             this.announcementContainer.classList.remove('show');
-            document.body.style.paddingTop = '0';
+            this.announcementContainer.classList.add('d-none');
+            this.stopAutoRotation();
         }
     }
     
@@ -490,12 +496,13 @@ class AnnouncementDisplay {
 
     dismissToday(a) {
         try {
-            const until = Date.now() + 24 * 60 * 60 * 1000;
-            localStorage.setItem(`ann_hide_until_${a.id}`, String(until));
+            const until = new Date();
+            until.setHours(24, 0, 0, 0);
+            localStorage.setItem(`ann_hide_until_${a.id}`, String(until.getTime()));
         } catch (e) {
             console.error('Error setting announcement hide status:', e);
         }
-        this.reloadAfterDismiss();
+        this.reloadAfterDismiss(a.id);
     }
 
     dismissForever(a) {
@@ -504,14 +511,15 @@ class AnnouncementDisplay {
         } catch (e) {
             console.error('Error setting announcement hide status:', e);
         }
-        this.reloadAfterDismiss();
+        this.reloadAfterDismiss(a.id);
     }
 
-    reloadAfterDismiss() {
-        this.announcements = this.announcements.filter(x => !this.isAnnouncementHidden(x));
+    reloadAfterDismiss(id) {
+        this.announcements = this.announcements.filter(x => x.id !== id && !this.isAnnouncementHidden(x));
         if (this.announcements.length === 0) {
             this.hideAnnouncement();
             this.stopAutoRotation();
+            if (this.isModalOpen) this.announcementModal.hide();
             return;
         }
         if (this.currentAnnouncementIndex >= this.announcements.length) {
@@ -522,10 +530,11 @@ class AnnouncementDisplay {
 
     startAutoRotation() {
         this.stopAutoRotation();
-        if (!this.announcements || this.announcements.length <= 1) return;
+        if (!this.announcements || this.announcements.length <= 1 || this.isModalOpen || !this.announcementContainer.classList.contains('show')) return;
         this.rotateInterval = setInterval(() => {
-            if (!this.isModalOpen) {
-                this.showNextAnnouncement();
+            if (!this.isModalOpen && !document.hidden) {
+                this.currentAnnouncementIndex = (this.currentAnnouncementIndex + 1) % this.announcements.length;
+                this.displayCurrentAnnouncement();
             }
         }, 8000);
     }
@@ -542,8 +551,51 @@ class AnnouncementDisplay {
     }
 
     resumeRotation() {
+        if (this.announcementContainer.matches(':hover') || this.announcementContainer.contains(document.activeElement)) return;
         this.startAutoRotation();
     }
+    safeUrl(value) {
+        if (!value) return '';
+        try {
+            const url = new URL(value, window.location.origin);
+            return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
+        } catch {
+            return '';
+        }
+    }
+
+    sanitizeContent(value) {
+        const template = document.createElement('template');
+        template.innerHTML = value;
+        const allowed = new Set('P BR STRONG B EM I U S UL OL LI H1 H2 H3 H4 H5 H6 BLOCKQUOTE PRE CODE A IMG HR DIV SPAN TABLE THEAD TBODY TR TH TD'.split(' '));
+        for (const node of Array.from(template.content.querySelectorAll('*'))) {
+            if (!allowed.has(node.tagName)) {
+                node.remove();
+                continue;
+            }
+            for (const attr of Array.from(node.attributes)) {
+                if (!['href', 'src', 'alt', 'title'].includes(attr.name)) node.removeAttribute(attr.name);
+            }
+            for (const attr of ['href', 'src']) {
+                if (!node.hasAttribute(attr)) continue;
+                const safe = this.safeUrl(node.getAttribute(attr));
+                if (safe) node.setAttribute(attr, safe);
+                else node.removeAttribute(attr);
+            }
+            if (node.tagName === 'A') {
+                node.setAttribute('target', '_blank');
+                node.setAttribute('rel', 'noopener noreferrer');
+            }
+        }
+        return template.innerHTML;
+    }
+
+    resetReadingPosition() {
+        const body = document.querySelector('#announcementModal .modal-body');
+        if (body) body.scrollTop = 0;
+        if (this.progressBarEl) this.progressBarEl.style.setProperty('--progress', '0%');
+    }
+
     showCopyFeedback() {
         if (!this.copyBtn) return;
         const label = this.copyBtn.querySelector('.announcement-modal__copy-label');

@@ -182,7 +182,7 @@
                     <button type="button" class="btn btn-sm btn-outline-primary me-2" id="announcementDetailsBtn" aria-controls="announcementModal" data-i18n-title="announcement.details.title" title="Подробнее об объявлении">
                         <i class="bi bi-arrows-angle-expand me-1"></i> <span data-i18n="announcement.more">Подробнее</span>
                     </button>
-                    <button type="button" class="btn-close" id="closeAnnouncement" data-i18n-attr="aria-label" data-i18n="announcement.hide" aria-label="Скрыть"></button>
+                    <button type="button" class="btn-close" id="closeAnnouncement" aria-label="Скрыть до завтра" title="Скрыть до завтра"></button>
                 </div>
             </div>
         </div>
@@ -612,7 +612,7 @@
 </div>
 
 <!-- Announcement Modal -->
-<div class="modal fade announcement-modal" id="announcementModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade announcement-modal" id="announcementModal" tabindex="-1" aria-labelledby="announcementTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
         <div class="modal-content announcement-modal__card border-0 shadow-lg">
             <div class="modal-header announcement-modal__header border-0">
