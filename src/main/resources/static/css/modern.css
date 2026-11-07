@@ -608,3 +608,8 @@ a:hover { color: var(--accent-2); }
     }
     body::before { display: none; }
 }
+
+@media (hover: none) {
+    .room-actions { opacity: 1; }
+    .message-copy-btn { opacity: 1; }
+}

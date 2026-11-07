@@ -577,7 +577,7 @@ searchStyles.textContent = `
         right: 0;
         width: 400px;
         max-width: 100%;
-        background: white;
+        background: var(--bg-secondary);
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         max-height: 400px;
@@ -591,7 +591,7 @@ searchStyles.textContent = `
         border-left: 3px solid transparent;
     }
     .search-result-item:hover, .search-result-item.selected-result {
-        background-color: #f8f9fa;
+        background-color: var(--bg-tertiary);
         border-left-color: #0d6efd;
     }
     .search-result-content {

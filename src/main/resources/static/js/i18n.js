@@ -338,7 +338,19 @@
             'rename.label': 'Новое название',
             'rename.placeholder': 'Введите новое название',
             'rename.charcount.suffix': 'символов',
-            'rename.cancel': 'Отмена'
+            'rename.cancel': 'Отмена',
+
+            'message.you': 'Вы',
+            'message.notSent': '(не отправлено)',
+            'message.retry': 'Повторить',
+            'message.retryBusy': 'Очистите поле ввода, чтобы повторить отправку',
+            'error.sendMessage': 'Ошибка отправки сообщения',
+            'error.fileType': 'Можно прикрепить только изображение',
+            'error.fileLimit': 'Можно прикрепить только одно изображение',
+            'settings.theme.light': 'Светлая тема',
+            'settings.theme.dark': 'Тёмная тема',
+            'settings.theme.toLight': 'Переключить на светлую тему',
+            'settings.theme.toDark': 'Переключить на тёмную тему'
         },
         en: {
             'app.title': 'AI Chat',
@@ -673,7 +685,19 @@
             'rename.label': 'New name',
             'rename.placeholder': 'Enter a new name',
             'rename.charcount.suffix': 'characters',
-            'rename.cancel': 'Cancel'
+            'rename.cancel': 'Cancel',
+
+            'message.you': 'You',
+            'message.notSent': '(not sent)',
+            'message.retry': 'Retry',
+            'message.retryBusy': 'Clear the input field to retry sending',
+            'error.sendMessage': 'Failed to send message',
+            'error.fileType': 'Only images can be attached',
+            'error.fileLimit': 'Only one image can be attached',
+            'settings.theme.light': 'Light theme',
+            'settings.theme.dark': 'Dark theme',
+            'settings.theme.toLight': 'Switch to light theme',
+            'settings.theme.toDark': 'Switch to dark theme'
         }
     };
 

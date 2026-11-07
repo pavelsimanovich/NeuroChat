@@ -1091,7 +1091,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
+    background: color-mix(in srgb, var(--bg-secondary) 90%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1106,7 +1106,7 @@ body {
     color: var(--accent-color);
     text-align: center;
     padding: 2rem;
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 8px;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 }
@@ -1356,7 +1356,7 @@ body {
 .empty-chat-illustration {
     width: 80px;
     height: 80px;
-    background-color: var(--light-bg-color, #f5f7fb);
+    background-color: var(--bg-tertiary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1367,13 +1367,13 @@ body {
 
 .empty-chat-illustration i {
     font-size: 2.5rem;
-    color: var(--primary-color, #4f46e5);
+    color: var(--accent-color);
 }
 
 .empty-chat-container h4 {
     margin-bottom: 0.75rem;
     font-weight: 600;
-    color: var(--text-color, #333);
+    color: var(--text-primary);
 }
 
 .empty-chat-container p {
@@ -1391,17 +1391,17 @@ body {
 
 .suggestion-btn {
     padding: 0.5rem 1rem;
-    background-color: var(--light-bg-color, #f5f7fb);
-    border: 1px solid var(--border-color, #e0e4e8);
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 20px;
     font-size: 0.9rem;
-    color: var(--text-color, #333);
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .suggestion-btn:hover {
-    background-color: var(--hover-bg-color, #e9ecef);
+    background-color: var(--bg-tertiary);
     transform: translateY(-2px);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
@@ -1861,8 +1861,11 @@ pre[class*="language-"] {
 }
 
 .message {
-    animation: fadeInUp 0.3s ease;
     position: relative;
+}
+
+.message:last-child {
+    animation: fadeInUp 0.3s ease;
 }
 
 /* Smart scroll indicator */
@@ -2148,9 +2151,7 @@ border-color: rgba(255, 193, 7, 0.15);
 
 /* Notification styles */
 .notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -2795,4 +2796,73 @@ a:focus-visible,
     .message {
         max-width: 92%;
     }
+}
+
+.notification-stack {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.notification-stack .notification {
+    pointer-events: auto;
+}
+
+#stopGenerationBtn.d-none {
+    display: none !important;
+}
+
+.search-results-header {
+    background: var(--bg-primary);
+}
+
+.message-retry-btn {
+    background: none;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: var(--danger-color);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 1px 10px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.message-retry-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.user-message .message-status,
+.user-message .message-retry-btn {
+    color: #fff;
+}
+
+.user-message .message-retry-btn {
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.user-message .message-retry-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.message-meta .message-copy-btn {
+    position: static;
+    margin-left: auto;
+}
+
+.user-message .message-copy-btn {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.user-message .message-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
 }

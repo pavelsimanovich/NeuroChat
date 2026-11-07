@@ -57,11 +57,11 @@ const themeToggle = {
                 icon.classList.toggle('bi-moon-stars', !isDark);
             }
             
-            const newTitle = isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему';
+            const newTitle = isDark ? window.i18n?.t('settings.theme.toLight', 'Переключить на светлую тему') : window.i18n?.t('settings.theme.toDark', 'Переключить на тёмную тему');
             btn.setAttribute('title', newTitle);
             
             if (text) {
-                text.textContent = isDark ? 'Светлая тема' : 'Темная тема';
+                text.textContent = isDark ? window.i18n?.t('settings.theme.light', 'Светлая тема') : window.i18n?.t('settings.theme.dark', 'Тёмная тема');
             }
         });
     }

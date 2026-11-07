@@ -199,6 +199,7 @@ window.tts = tts;
 
 let eventSource = null;
 let chatConnections = {};
+const roomDrafts = new Map();
 // Используем глобальное состояние чата
 const state = window.chatState;
 
@@ -233,7 +234,7 @@ const elements = (function() {
         if (elements.stopButton) {
             elements.stopButton.addEventListener('click', () => {
                 if (state.currentRoom && state.currentRoom.id) {
-                    stopStream(state.currentRoom.id);
+                    Object.keys(chatConnections).forEach(stopStream);
                     showNotification(window.i18n?.t('notify.generationStopped', 'Генерация остановлена'), 'info');
                 }
             });
@@ -406,7 +407,7 @@ function groupRoomsByDate(rooms) {
     );
 
     sortedRooms.forEach(room => {
-        if (!room?.id || !room?.title) return;
+        if (!room?.id) return;
 
         if (isPinned(room.id)) {
             groups.pinned.push(room);
@@ -505,15 +506,16 @@ function createRoomElement(room) {
     const isActive = state.currentRoom?.id === room.id;
     const pinned = isPinned(room.id);
 
+    const title = room.title || window.i18n?.t('rooms.untitled', 'Без названия');
     roomElement.className = `room-item ${isActive ? 'active' : ''} ${pinned ? 'pinned' : ''}`;
     roomElement.setAttribute('data-room-id', room.id);
-    roomElement.setAttribute('data-room-title', room.title);
+    roomElement.setAttribute('data-room-title', title);
 
     // Название комнаты
     const nameElement = document.createElement('span');
     nameElement.className = 'room-name flex-grow-1';
-    nameElement.textContent = room.title || 'Без названия';
-    nameElement.title = room.title;
+    nameElement.textContent = title;
+    nameElement.title = title;
 
     // Контейнер для действий
     const actionsContainer = document.createElement('div');
@@ -537,16 +539,11 @@ function createRoomElement(room) {
     roomElement.appendChild(nameElement);
     roomElement.appendChild(actionsContainer);
 
-    // Обработчик клика на комнату для переключения
-    roomElement.addEventListener('click', (e) => {
-        // Проверяем, не является ли клик на кнопке меню
-        if (e.target.closest('.btn-menu')) {
-            return; // Пропускаем клик на кнопке меню
-        }
-
-        const room = state.rooms.find(r => r.id === roomElement.getAttribute('data-room-id'));
-        if (room) {
-            switchRoom(room);
+    roomElement.tabIndex = 0;
+    roomElement.addEventListener('keydown', (e) => {
+        if (e.target === roomElement && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            roomElement.click();
         }
     });
 
@@ -585,6 +582,17 @@ async function switchRoom(room) {
     if (!room) return;
 
     const previousRoomId = state.currentRoom?.id;
+    if (previousRoomId !== room.id) {
+        if (previousRoomId) roomDrafts.set(previousRoomId, { text: elements.messageInput.value, files: Array.from(elements.fileInput.files) });
+        const draft = roomDrafts.get(room.id) || { text: '', files: [] };
+        elements.messageInput.value = draft.text;
+        const dataTransfer = new DataTransfer();
+        draft.files.forEach(file => dataTransfer.items.add(file));
+        elements.fileInput.files = dataTransfer.files;
+        showFilePreviews(draft.files);
+        autoResize(elements.messageInput);
+        updateSendButtonState();
+    }
     state.currentRoom = room;
     localStorage.setItem('lastRoomId', room.id);
 
@@ -936,10 +944,10 @@ async function sendMessage() {
                         if (!isStreamActive) return;
                         const contentDiv = document.getElementById(`cm${uuid}`);
                         if (contentDiv) {
-                            contentDiv.innerHTML = marked.parse(response);
+                            contentDiv.innerHTML = window.renderMarkdown(response);
                             scrollToBottom();
                         }
-                    }, Math.min(2000, Math.max(150, Math.floor(response.length / 10))));
+                    }, Math.min(300, Math.max(150, Math.floor(response.length / 10))));
                 }
                 // Live TTS chunking if enabled
                 try {
@@ -980,7 +988,7 @@ async function sendMessage() {
     } catch (error) {
         onErrorSendMessage(error, roomId, tempMessage);
     } finally {
-        elements.sendButton.disabled = false;
+        updateSendButtonState();
     }
 }
 
@@ -998,10 +1006,24 @@ function handleLimitExceeded(uuid) {
     `;
 }
 
+function retryMessage(messageId) {
+    const failed = state.messages.find(m => String(m.id) === String(messageId));
+    if (!failed || !failed.content || failed.fileData || isStreamingAny()) return;
+    if (elements.messageInput.value.trim() || elements.fileInput?.files?.length) {
+        showNotification(window.i18n?.t('message.retryBusy', 'Очистите поле ввода, чтобы повторить отправку'), 'warning');
+        return;
+    }
+
+    state.messages = state.messages.filter(m => m !== failed);
+    elements.messageInput.value = failed.content;
+    updateSendButtonState();
+    sendMessage();
+}
+
 function onErrorSendMessage(error, roomId, tempMessage) {
     if (error) {
         console.error('Error sending message:', error);
-        showNotification('Ошибка отправки сообщения', 'error');
+        showNotification(window.i18n?.t('error.sendMessage', 'Ошибка отправки сообщения'), 'error');
     }
 
     typingIndicator.hide();
@@ -1023,6 +1045,7 @@ function toggleStreamingUI(isStreaming) {
     if (isStreaming) {
         // Show and activate stop button
         elements.stopButton.classList.add('active');
+        elements.stopButton.classList.remove('d-none');
         elements.stopButton.disabled = false;
         elements.stopButton.style.display = 'flex';
         elements.stopButton.style.visibility = 'visible';
@@ -1038,10 +1061,11 @@ function toggleStreamingUI(isStreaming) {
     } else {
         // Deactivate stop button but keep it in the layout
         elements.stopButton.classList.remove('active');
+        elements.stopButton.classList.add('d-none');
         elements.stopButton.disabled = true;
 
         // Re-enable send button and upload button
-        elements.sendButton.disabled = false;
+        updateSendButtonState();
         if (elements.uploadButton) elements.uploadButton.disabled = false;
 
         // Update current room state
@@ -1049,6 +1073,10 @@ function toggleStreamingUI(isStreaming) {
             state.currentRoom.isStreaming = false;
         }
     }
+}
+
+function isStreamingAny() {
+    return Object.keys(chatConnections).length > 0;
 }
 
 function stopStream(chatId) {
@@ -1070,6 +1098,26 @@ function createDragOverlay(container) {
         innerHTML: '<p>Перетащите файлы сюда</p>',
         style: 'display: none;'
     });
+}
+
+function setPendingFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    const image = files.find(file => file.type.startsWith('image/'));
+    if (!image) {
+        showNotification(window.i18n?.t('error.fileType', 'Можно прикрепить только изображение'), 'warning');
+        return;
+    }
+    if (files.length > 1) {
+        showNotification(window.i18n?.t('error.fileLimit', 'Можно прикрепить только одно изображение'), 'info');
+    }
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(image);
+    elements.fileInput.files = dataTransfer.files;
+    showFilePreviews([image]);
+    updateSendButtonState();
 }
 
 function setupFileUpload() {
@@ -1128,10 +1176,7 @@ function setupFileUpload() {
             e.stopPropagation();
             dragCounter = 0; // Reset drag counter
             hideDragOverlay();
-            if (e.dataTransfer.files?.length) {
-                elements.fileInput.files = e.dataTransfer.files;
-                showFilePreviews(Array.from(e.dataTransfer.files));
-            }
+            setPendingFiles(e.dataTransfer.files);
         }
     };
 
@@ -1275,7 +1320,7 @@ function updateSendButtonState() {
     const hasText = elements.messageInput?.value.trim().length > 0;
     const hasFiles = elements.fileInput?.files?.length > 0;
 
-    elements.sendButton.disabled = !(hasText || hasFiles);
+    elements.sendButton.disabled = !(hasText || hasFiles) || isStreamingAny();
     elements.sendButton.setAttribute('aria-label',
         elements.sendButton.disabled
             ? 'Введите сообщение или прикрепите файл'
@@ -1408,6 +1453,7 @@ const voiceInput = {
     isListening: false,
     recognition: null,
     finalTranscript: '',
+    baseText: '',
 
     init() {
         // Check for browser support
@@ -1424,7 +1470,7 @@ const voiceInput = {
         this.recognition.maxAlternatives = 1;
         this.recognition.lang = ((navigator.language || navigator.userLanguage || 'en')
             .toLowerCase()
-            .startsWith('ru')) ? 'ru-RU' : 'en-EN';
+            .startsWith('ru')) ? 'ru-RU' : 'en-US';
 
         // Setup event handlers
         this.recognition.onstart = this.onStart.bind(this);
@@ -1459,6 +1505,7 @@ const voiceInput = {
 
         this.finalTranscript = '';
         this.isListening = true;
+        this.baseText = (document.getElementById('messageInput')?.value || '').trim();
         document.getElementById('voiceInputBtn').classList.add('recording');
 
         try {
@@ -1516,7 +1563,7 @@ const voiceInput = {
 
         // Update the input field with both final and interim results
         const input = document.getElementById('messageInput');
-        const displayText = (this.finalTranscript + ' ' + interimTranscript).trim();
+        const displayText = [this.baseText, this.finalTranscript, interimTranscript].filter(Boolean).join(' ');
         input.value = displayText;
 
         // Move cursor to the end of the input
@@ -1603,7 +1650,7 @@ const uxFeatures = {
                 }
             });
 
-            messageElement.appendChild(copyBtn);
+            (messageElement.querySelector('.message-meta') || messageElement).appendChild(copyBtn);
         }
     },
 
@@ -1971,13 +2018,20 @@ function showNotification(message, type = 'info') {
     };
     notification.querySelector('.notification-close').addEventListener('click', dismiss);
 
-    document.body.appendChild(notification);
+    let stack = document.getElementById('notificationStack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'notificationStack';
+        stack.className = 'notification-stack';
+        document.body.appendChild(stack);
+    }
+    stack.appendChild(notification);
     setTimeout(dismiss, 4000);
 }
 
 function hideInputs(disabled) {
     elements.messageInput.disabled = disabled;
-    elements.sendButton.disabled = disabled;
+    elements.sendButton.disabled = disabled || isStreamingAny();
     elements.uploadButton.disabled = disabled;
     elements.uploadButton.classList.toggle('d-none', disabled);
     elements.messageInput.classList.toggle('d-none', disabled);
@@ -2583,12 +2637,13 @@ function renderMessages() {
         ` : '';
 
         messageElement.innerHTML = `
-            <div class="message-sender">${isAI ? 'AI' : 'Вы'}</div>
+            <div class="message-sender">${isAI ? 'AI' : window.i18n?.t('message.you', 'Вы')}</div>
             ${filePreviews}
-            <div class="message-content">${message.content ? marked.parse(message.content) : ''}</div>
+            <div class="message-content">${message.content ? window.renderMarkdown(message.content) : ''}</div>
             <div class="message-meta d-flex align-items-center gap-2">
                 <span class="message-time" title="${new Date(message.timestamp).toLocaleString()}">${formatTime(message.timestamp)}</span>
-                ${message.error ? '<span class="message-status">(не отправлено)</span>' : ''}
+                ${message.error ? `<span class="message-status">${window.i18n?.t('message.notSent', '(не отправлено)')}</span>` : ''}
+                ${message.error && !message.fileData ? `<button type="button" class="message-retry-btn">${window.i18n?.t('message.retry', 'Повторить')}</button>` : ''}
                 ${ttsControls}
             </div>
         `;
@@ -2597,6 +2652,9 @@ function renderMessages() {
         if (message.content && message.content.trim()) {
             uxFeatures.copyMessage.addCopyButton(messageElement, message.content);
         }
+
+        const retryBtn = messageElement.querySelector('.message-retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', () => retryMessage(mid));
 
         elements.chatMessages.appendChild(messageElement);
 
@@ -2786,7 +2844,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('click', (e) => {
             // Handle room item click (for switching rooms)
             const roomItem = e.target.closest('.room-item');
-            if (roomItem && !e.target.closest('.room-actions') && !e.target.closest('.context-menu-item')) {
+            if (roomItem && !e.target.closest('.context-menu-item')) {
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -2817,8 +2875,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (elements.messageInput) {
+            const isTouchInput = window.matchMedia('(pointer: coarse)').matches;
             elements.messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !isTouchInput) {
                     e.preventDefault();
                     sendMessage();
                 }
@@ -2827,17 +2886,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.messageInput.addEventListener('input', () => {
                 autoResize(elements.messageInput);
                 updateSendButtonState();
-            });
-
-            elements.messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && e.shiftKey) {
-                    e.preventDefault();
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    this.value = this.value.substring(0, start) + '\n' + this.value.substring(end);
-                    this.selectionStart = this.selectionEnd = start + 1;
-                    autoResize(this);
-                }
             });
         }
 
@@ -2871,11 +2919,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageInputContainer.addEventListener('drop', (e) => {
                     e.preventDefault();
                     messageInputContainer.classList.remove('drag-over');
-                    if (e.dataTransfer.files.length) {
-                        elements.fileInput.files = e.dataTransfer.files;
-                        updateSendButtonState();
-                        showFilePreviews(Array.from(e.dataTransfer.files));
-                    }
+                    setPendingFiles(e.dataTransfer.files);
                 });
             }
         }
