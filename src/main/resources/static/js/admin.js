@@ -262,7 +262,7 @@
     // First, query for area=heap to discover heap region IDs
     const base = await fetchMetric('jvm.memory.used', 'tag=area:heap');
     const idTag = (base.availableTags || []).find(t => t.tag === 'id');
-    const ids = [];
+    const ids = Array.isArray(idTag?.values) ? idTag.values : [];
     if(ids.length === 0){
       // Fall back to first measurement if regions not exposed
       const bytes = getMeasurementByStat(base.measurements, 'VALUE');
