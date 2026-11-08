@@ -73,6 +73,7 @@
             'rooms.untitled': 'Без названия',
 
             'code.copy': 'Копировать',
+            'chat.thinking': 'Рассуждение',
             'code.copied': 'Скопировано',
 
             // Admin / Monitoring
@@ -432,6 +433,7 @@
             'rooms.untitled': 'Untitled',
 
             'code.copy': 'Copy',
+            'chat.thinking': 'Thinking',
             'code.copied': 'Copied',
 
             // Admin / Monitoring

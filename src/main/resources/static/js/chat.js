@@ -876,10 +876,25 @@ async function sendMessage() {
         messageElement.setAttribute('data-message-id', streamMid);
 
         let response = '';
+        let thinking = '';
         let isStreamActive = true;
         let renderTimer = null;
         // Buffer for live TTS speaking by sentences
         let speakBuf = '';
+
+        const ensureThinkingBlock = () => {
+            let el = document.getElementById(`th${uuid}`);
+            if (!el) {
+                el = document.createElement('details');
+                el.id = `th${uuid}`;
+                el.className = 'thinking-block';
+                el.open = true;
+                el.innerHTML = `<summary>${window.i18n?.t('chat.thinking', 'Рассуждение')}</summary><div class="thinking-content"></div>`;
+                const contentDiv = document.getElementById(`cm${uuid}`);
+                messageElement.insertBefore(el, contentDiv);
+            }
+            return el;
+        };
 
         eventSource.onmessage = (e) => {
             const message = JSON.parse(e.data);
@@ -900,10 +915,29 @@ async function sendMessage() {
                 elements.chatMessages.appendChild(messageElement);
             }
 
+            // Reasoning chunks from thinking models (e.g. gemma4:12b) stream
+            // before the answer — render them in a collapsible block.
+            if (message.thinking) {
+                thinking += message.thinking;
+                const block = ensureThinkingBlock();
+                block.querySelector('.thinking-content').textContent = thinking;
+                scrollToBottom();
+                return;
+            }
+
             if (message.isEnd) {
                 isStreamActive = false;
                 if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
                 stopStream(roomId);
+
+                const thBlock = document.getElementById(`th${uuid}`);
+                if (thBlock) {
+                    thBlock.open = false;
+                    const thContent = thBlock.querySelector('.thinking-content');
+                    if (thContent && thinking) {
+                        thContent.innerHTML = window.renderMarkdown(thinking);
+                    }
+                }
 
                 if (message.error === 'LIMIT_EXCEEDED') {
                     handleLimitExceeded(uuid);

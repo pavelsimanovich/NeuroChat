@@ -57,7 +57,7 @@ import static com.ps.neurochat.llm.Prompts.PROMPT_GENERAL_INSTRUCTIONS;
 @RequestMapping("/api/direct")
 public class ChatAIController {
 
-    private static final ChunkResponseDTO DONE_CHUNK = new ChunkResponseDTO("[DONE]", true, null, null);
+    private static final ChunkResponseDTO DONE_CHUNK = new ChunkResponseDTO("[DONE]", true, null, null, null);
     private static final Duration TITLE_GENERATION_TIMEOUT = Duration.ofSeconds(60);
 
     private final ChatClient chatClient;
@@ -132,9 +132,26 @@ public class ChatAIController {
 
         final Flux<ChunkResponseDTO> content = buildRequestSpec(prompt, chatId, prefs.getPreferredModel())
                 .stream()
-                .content()
-                .doOnNext(chunk -> chatMessageService.saveChunk(chatId, chunk))
-                .map(chunk -> new ChunkResponseDTO(chunk, false, null, null));
+                .chatResponse()
+                .flatMap(chatResponse -> {
+                    if (chatResponse.getResult() == null) {
+                        return Flux.empty();
+                    }
+                    final var output = chatResponse.getResult().getOutput();
+                    final var chunks = new ArrayList<ChunkResponseDTO>(2);
+                    final Object thinking = output.getMetadata().get("thinking");
+                    if (thinking != null && !thinking.toString().isEmpty()) {
+                        chunks.add(new ChunkResponseDTO(null, false, null, null, thinking.toString()));
+                    }
+                    final String text = output.getText();
+                    // Whitespace-only chunks ("\n\n") carry markdown formatting —
+                    // hasText() would drop them and flatten the answer into one paragraph.
+                    if (text != null && !text.isEmpty()) {
+                        chatMessageService.saveChunk(chatId, text);
+                        chunks.add(new ChunkResponseDTO(text, false, null, null, null));
+                    }
+                    return Flux.fromIterable(chunks);
+                });
 
         final String titleContext = resolveTitleContext(question, fileData);
         final Flux<ChunkResponseDTO> stream = firstMessage && StringUtils.hasText(titleContext)
@@ -172,7 +189,7 @@ public class ChatAIController {
                 })
                 .subscribeOn(Schedulers.boundedElastic())
                 .timeout(TITLE_GENERATION_TIMEOUT)
-                .map(title -> new ChunkResponseDTO(null, false, null, title))
+                .map(title -> new ChunkResponseDTO(null, false, null, title, null))
                 .doOnError(e -> log.warn("Failed to auto-generate room title for chatId={}: {}",
                         chatId, e.toString()))
                 .onErrorResume(e -> Mono.empty());
@@ -262,7 +279,7 @@ public class ChatAIController {
     }
 
     private ChunkResponseDTO errorChunk(String message, ErrorType errorType) {
-        return new ChunkResponseDTO(message, true, errorType.name(), null);
+        return new ChunkResponseDTO(message, true, errorType.name(), null, null);
     }
 
     private String msg(String key, Object[] args, Locale locale) {

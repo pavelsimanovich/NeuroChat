@@ -4,5 +4,6 @@ public record ChunkResponseDTO(
         String content,
         boolean isEnd,
         String error,
-        String roomTitle
+        String roomTitle,
+        String thinking
 ) {}

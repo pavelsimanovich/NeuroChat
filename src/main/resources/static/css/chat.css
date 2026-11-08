@@ -2866,3 +2866,38 @@ a:focus-visible,
     background: rgba(255, 255, 255, 0.25);
     color: #fff;
 }
+
+/* Thinking (reasoning) block streamed by thinking models */
+.thinking-block {
+    margin: 0.25rem 0 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--accent-color, #6c757d);
+    border-radius: 0 0.5rem 0.5rem 0;
+    background: rgba(108, 117, 125, 0.08);
+    font-size: 0.85em;
+    color: var(--text-secondary, #6c757d);
+}
+
+.thinking-block > summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-style: italic;
+    opacity: 0.8;
+    user-select: none;
+}
+
+.thinking-block > summary::marker {
+    color: var(--accent-color, #6c757d);
+}
+
+.thinking-block .thinking-content {
+    margin-top: 0.4rem;
+    white-space: pre-wrap;
+    font-style: italic;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+[data-bs-theme="dark"] .thinking-block {
+    background: rgba(173, 181, 189, 0.1);
+}
