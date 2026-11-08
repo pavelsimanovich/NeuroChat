@@ -790,12 +790,25 @@ function applyRoomTitle(roomId, title) {
     renderRoomsList();
 }
 
-async function sendMessage() {
-    if (!elements.sendButton || elements.sendButton.disabled) return;
+function generationStatusText(stats) {
+    const t = key => window.i18n?.t(`generation.${key}`) || key;
+    const now = stats.endedAt ?? performance.now();
+    const parts = [t(stats.phase), `${((now - stats.startedAt) / 1000).toFixed(1)} ${t('seconds')}`];
+    if (stats.firstChunkAt != null) {
+        parts.push(`${t('wait')}: ${((stats.firstChunkAt - stats.startedAt) / 1000).toFixed(1)} ${t('seconds')}`);
+        const seconds = ((stats.lastChunkAt ?? now) - stats.firstChunkAt) / 1000;
+        if (seconds > 0 && stats.characters > 0) parts.push(`${(stats.characters / seconds).toFixed(1)} ${t('charsPerSecond')}`);
+    }
+    return parts.join(' · ');
+}
 
-    const messageContent = elements.messageInput?.value.trim() || '';
+async function sendMessage(retryData = null) {
+    if (!elements.sendButton || elements.sendButton.disabled || !state.currentRoom || isStreamingAny()) return;
+    const retry = retryData?.error === true ? retryData : null;
+
+    const messageContent = retry ? retry.content : elements.messageInput?.value.trim() || '';
     const files = elements.fileInput?.files || [];
-    if (!messageContent && !files.length) return;
+    if (!messageContent && !files.length && !retry?.fileData) return;
 
     elements.sendButton.disabled = true;
     if (voiceInput.isListening) {
@@ -803,7 +816,7 @@ async function sendMessage() {
     }
 
     const roomId = state.currentRoom.id;
-    let fileData = null;
+    let fileData = retry?.fileData || null;
 
     // Upload file first if exists
     if (files.length) {
@@ -882,6 +895,40 @@ async function sendMessage() {
         // Buffer for live TTS speaking by sentences
         let speakBuf = '';
 
+        const stats = { startedAt: performance.now(), phase: 'waiting', characters: 0 };
+        const statusElement = document.createElement('div');
+        statusElement.className = 'generation-status';
+        const phaseElement = document.createElement('span');
+        phaseElement.setAttribute('role', 'status');
+        phaseElement.setAttribute('aria-live', 'polite');
+        const metricsElement = document.createElement('span');
+        statusElement.append(phaseElement, metricsElement);
+        messageElement.appendChild(statusElement);
+        elements.chatMessages.appendChild(messageElement);
+        typingIndicator.hide();
+        scrollToBottom(true);
+        const updateStatus = () => {
+            const [phase, ...metrics] = generationStatusText(stats).split(' · ');
+            phaseElement.textContent = phase;
+            metricsElement.textContent = metrics.join(' · ');
+            statusElement.dataset.phase = stats.phase;
+            messageElement.classList.toggle('generation-pending', stats.phase === 'waiting');
+        };
+        updateStatus();
+        const statusTimer = setInterval(updateStatus, 250);
+        const source = eventSource;
+        source.finishGeneration = (phase = 'stopped') => {
+            if (stats.endedAt != null) return;
+            stats.phase = phase;
+            stats.endedAt = performance.now();
+            isStreamActive = false;
+            clearInterval(statusTimer);
+            if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
+            const contentDiv = messageElement.querySelector('.message-content');
+            if (contentDiv) contentDiv.innerHTML = window.renderMarkdown(response);
+            updateStatus();
+        };
+
         const ensureThinkingBlock = () => {
             let el = document.getElementById(`th${uuid}`);
             if (!el) {
@@ -897,7 +944,14 @@ async function sendMessage() {
         };
 
         eventSource.onmessage = (e) => {
-            const message = JSON.parse(e.data);
+            let message;
+            try {
+                message = JSON.parse(e.data);
+            } catch (error) {
+                source.finishGeneration('failed');
+                onErrorSendMessage(error, roomId, tempMessage);
+                return;
+            }
 
             // The backend auto-generates the room title on the first message
             // and streams it as a dedicated chunk — apply it even if the user
@@ -907,7 +961,19 @@ async function sendMessage() {
                 return;
             }
 
-            if (roomId !== state.currentRoom.id || !isStreamActive) return;
+            if (!isStreamActive) return;
+            if (roomId !== state.currentRoom?.id) {
+                if (message.isEnd) stopStream(roomId);
+                return;
+            }
+            if (!message.isEnd && (message.thinking || message.content)) {
+                const now = performance.now();
+                stats.firstChunkAt ??= now;
+                stats.lastChunkAt = now;
+                stats.characters += Array.from(message.thinking || message.content).length;
+                stats.phase = message.thinking ? 'thinking' : 'generating';
+                updateStatus();
+            }
 
             typingIndicator.hide();
 
@@ -926,7 +992,7 @@ async function sendMessage() {
             }
 
             if (message.isEnd) {
-                isStreamActive = false;
+                source.finishGeneration(message.error ? 'failed' : 'completed');
                 if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
                 stopStream(roomId);
 
@@ -945,6 +1011,7 @@ async function sendMessage() {
                     onErrorSendMessage(message.content, roomId, tempMessage);
                 } else {
                     const finalMsg = getTempMessage(roomId, response, 'temp-ai-', 'ai-assistant');
+                    finalMsg.generationStats = stats;
                     state.messages.push(finalMsg);
                     window.dispatchEvent(new CustomEvent('messageSent'));
                     renderMessages();
@@ -971,7 +1038,7 @@ async function sendMessage() {
                 }
                 elements.stopButton.classList.add('d-none');
             } else {
-                response += message.content;
+                response += message.content || '';
                 if (!renderTimer) {
                     renderTimer = setTimeout(() => {
                         renderTimer = null;
@@ -1015,8 +1082,9 @@ async function sendMessage() {
         };
 
         eventSource.onerror = (e) => {
-            isStreamActive = false;
-            onErrorSendMessage(null, roomId, tempMessage);
+            if (!isStreamActive) return;
+            source.finishGeneration('failed');
+            onErrorSendMessage(new Error('Generation stream disconnected'), roomId, tempMessage);
             toggleStreamingUI(false);
         };
     } catch (error) {
@@ -1042,16 +1110,15 @@ function handleLimitExceeded(uuid) {
 
 function retryMessage(messageId) {
     const failed = state.messages.find(m => String(m.id) === String(messageId));
-    if (!failed || !failed.content || failed.fileData || isStreamingAny()) return;
+    if (!failed || (!failed.content && !failed.fileData) || isStreamingAny()) return;
     if (elements.messageInput.value.trim() || elements.fileInput?.files?.length) {
         showNotification(window.i18n?.t('message.retryBusy', 'Очистите поле ввода, чтобы повторить отправку'), 'warning');
         return;
     }
 
     state.messages = state.messages.filter(m => m !== failed);
-    elements.messageInput.value = failed.content;
-    updateSendButtonState();
-    sendMessage();
+    elements.sendButton.disabled = false;
+    sendMessage(failed);
 }
 
 function onErrorSendMessage(error, roomId, tempMessage) {
@@ -1066,6 +1133,7 @@ function onErrorSendMessage(error, roomId, tempMessage) {
     const messageIndex = state.messages.findIndex(m => m.id === tempMessage.id);
     if (messageIndex !== -1) {
         state.messages[messageIndex].error = true;
+        state.messages[messageIndex].generationError = true;
         renderMessages();
     }
 }
@@ -1115,6 +1183,7 @@ function isStreamingAny() {
 
 function stopStream(chatId) {
     if (chatConnections[chatId]) {
+        chatConnections[chatId].finishGeneration?.();
         chatConnections[chatId].close();
         delete chatConnections[chatId];
 
@@ -2676,8 +2745,8 @@ function renderMessages() {
             <div class="message-content">${message.content ? window.renderMarkdown(message.content) : ''}</div>
             <div class="message-meta d-flex align-items-center gap-2">
                 <span class="message-time" title="${new Date(message.timestamp).toLocaleString()}">${formatTime(message.timestamp)}</span>
-                ${message.error ? `<span class="message-status">${window.i18n?.t('message.notSent', '(не отправлено)')}</span>` : ''}
-                ${message.error && !message.fileData ? `<button type="button" class="message-retry-btn">${window.i18n?.t('message.retry', 'Повторить')}</button>` : ''}
+                ${message.error ? `<span class="message-status">${window.i18n?.t(message.generationError ? 'generation.error' : 'message.notSent', 'Не удалось получить ответ')}</span>` : ''}
+                ${message.error ? `<button type="button" class="message-retry-btn">${window.i18n?.t('generation.retry', 'Повторить запрос')}</button>` : ''}
                 ${ttsControls}
             </div>
         `;
@@ -2685,6 +2754,13 @@ function renderMessages() {
         // Add copy button for non-empty messages
         if (message.content && message.content.trim()) {
             uxFeatures.copyMessage.addCopyButton(messageElement, message.content);
+        }
+
+        if (message.generationStats) {
+            const status = document.createElement('div');
+            status.className = 'generation-status';
+            status.textContent = generationStatusText(message.generationStats);
+            messageElement.appendChild(status);
         }
 
         const retryBtn = messageElement.querySelector('.message-retry-btn');

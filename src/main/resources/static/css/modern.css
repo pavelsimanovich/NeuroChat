@@ -613,3 +613,81 @@ a:hover { color: var(--accent-2); }
     .room-actions { opacity: 1; }
     .message-copy-btn { opacity: 1; }
 }
+
+.generation-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.65rem;
+    margin-top: 0.6rem;
+    padding: 0;
+    border: 0;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+.generation-status [role="status"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+.generation-status[data-phase="waiting"] [role="status"]::before,
+.generation-status[data-phase="thinking"] [role="status"]::before,
+.generation-status[data-phase="generating"] [role="status"]::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+    animation: generation-breathe 1.6s ease-in-out infinite;
+}
+.generation-status > span:last-child:not(:first-child) {
+    padding-left: 0.65rem;
+    border-left: 1px solid var(--border-color);
+}
+.message.ai-message.generation-pending {
+    align-self: flex-start;
+    width: fit-content;
+    min-width: 0;
+    max-width: min(85%, 760px);
+    min-height: 0;
+    padding: 10px 14px;
+    background: var(--accent-soft) !important;
+    border: 1px solid transparent !important;
+    border-radius: 16px;
+    box-shadow: none;
+    transform: none;
+}
+.generation-pending > .message-sender,
+.generation-pending > .message-content,
+.generation-pending > .msg-actions {
+    display: none;
+}
+.generation-pending .generation-status {
+    margin: 0;
+    font-size: 0.8rem;
+}
+@keyframes generation-breathe {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .generation-status [role="status"]::before { animation: none; }
+}
+.generation-status[data-phase="failed"] [role="status"] { color: var(--danger-color); }
+.message-meta { flex-wrap: wrap; }
+.message-retry-btn {
+    border: 1px solid currentColor;
+    border-radius: var(--r-sm);
+    padding: 0.2rem 0.55rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.message-retry-btn:hover { background: rgba(255, 255, 255, 0.15); }

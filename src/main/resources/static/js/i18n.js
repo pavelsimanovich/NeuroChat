@@ -5,6 +5,17 @@
 
     const dictionaries = {
         ru: {
+            'generation.waiting': 'Ожидание модели',
+            'generation.thinking': 'Рассуждение',
+            'generation.generating': 'Генерация',
+            'generation.completed': 'Готово',
+            'generation.stopped': 'Остановлено',
+            'generation.failed': 'Ошибка генерации',
+            'generation.seconds': 'с',
+            'generation.wait': 'Ожидание',
+            'generation.charsPerSecond': 'симв/с',
+            'generation.error': 'Не удалось получить ответ. Повторите запрос.',
+            'generation.retry': 'Повторить запрос',
             'ann.search': 'Поиск публикаций',
             'ann.filter.all': 'Все статусы',
             'ann.status.live': 'Опубликовано',
@@ -361,6 +372,17 @@
             'settings.theme.toDark': 'Переключить на тёмную тему'
         },
         en: {
+            'generation.waiting': 'Waiting for model',
+            'generation.thinking': 'Thinking',
+            'generation.generating': 'Generating',
+            'generation.completed': 'Completed',
+            'generation.stopped': 'Stopped',
+            'generation.failed': 'Generation failed',
+            'generation.seconds': 's',
+            'generation.wait': 'Wait',
+            'generation.charsPerSecond': 'chars/s',
+            'generation.error': 'Could not get a response. Please retry.',
+            'generation.retry': 'Retry request',
             'ann.search': 'Search publications',
             'ann.filter.all': 'All statuses',
             'ann.status.live': 'Published',
