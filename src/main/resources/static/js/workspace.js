@@ -26,8 +26,23 @@
         type: 'code',        // 'code' | 'table' | 'doc'
         lang: '',
         title: '',
-        content: ''          // raw text (code / markdown / html for tables)
+        content: '',         // raw text (code / markdown / html for tables)
+        roomId: null         // room the content belongs to
     };
+
+    function currentRoomId() {
+        const active = document.querySelector('.room-item.active');
+        return active ? active.getAttribute('data-room-id') : null;
+    }
+
+    function emptyDoc() {
+        return {
+            type: 'doc',
+            title: t('workspace.toggle.title', 'Панель результата'),
+            content: t('workspace.empty',
+                'Нажмите «Открыть в панели» на блоке кода, таблице или длинном ответе — и содержимое появится здесь.')
+        };
+    }
 
     let els = {};
 
@@ -50,17 +65,13 @@
         if (els.downloadBtn) els.downloadBtn.addEventListener('click', download);
         if (els.toggleBtn) {
             els.toggleBtn.addEventListener('click', () => {
+                const belongsHere = state.content && state.roomId === currentRoomId();
                 if (state.open) {
                     close();
-                } else if (state.content) {
+                } else if (belongsHere) {
                     openPanel();
                 } else {
-                    open({
-                        type: 'doc',
-                        title: t('workspace.toggle.title', 'Панель результата'),
-                        content: t('workspace.empty',
-                            'Нажмите «Открыть в панели» на блоке кода, таблице или длинном ответе — и содержимое появится здесь.')
-                    });
+                    open(emptyDoc());
                 }
             });
         }
@@ -70,6 +81,31 @@
         });
 
         observeMessages();
+        watchRoomSwitches();
+    }
+
+    // When the active room changes, drop content belonging to another room
+    function watchRoomSwitches() {
+        const list = document.getElementById('roomsList');
+        if (!list) return;
+        let scheduled = false;
+        const check = () => {
+            scheduled = false;
+            if (!state.content) return;
+            const active = currentRoomId();
+            if (active && state.roomId && active !== state.roomId) {
+                // Room switched: replace stale content with the empty state
+                const wasOpen = state.open;
+                open(emptyDoc());
+                if (!wasOpen) close();
+            }
+        };
+        new MutationObserver(() => {
+            if (!scheduled) {
+                scheduled = true;
+                setTimeout(check, 0);
+            }
+        }).observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     }
 
     /* ---------------- public API ---------------- */
@@ -80,6 +116,7 @@
         state.title = opts.title || defaultTitle(state.type, state.lang);
         state.content = opts.content || '';
         state.editing = false;
+        state.roomId = currentRoomId();
         openPanel();
     }
 
@@ -92,9 +129,6 @@
         render();
     }
 
-    function isEmptyDoc() {
-        return state.type === 'doc' && !state.lang;
-    }
 
     function close() {
         state.open = false;
@@ -121,8 +155,7 @@
 
     function render() {
         const empty = state.type === 'doc' && !state.lang
-            && state.content === t('workspace.empty',
-                'Нажмите «Открыть в панели» на блоке кода, таблице или длинном ответе — и содержимое появится здесь.');
+            && state.content === emptyDoc().content;
         if (els.title) els.title.textContent = state.title;
         if (els.badge) els.badge.textContent = state.type === 'code'
             ? (state.lang || 'text')
