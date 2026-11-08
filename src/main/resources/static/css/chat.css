@@ -2704,7 +2704,8 @@ a:focus-visible,
 .code-block-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 8px;
     padding: 4px 6px 4px 12px;
     background: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-color);

@@ -87,6 +87,17 @@
             'chat.thinking': 'Рассуждение',
             'code.copied': 'Скопировано',
 
+            'workspace.toggle.title': 'Панель результата',
+            'workspace.open': 'Открыть в панели',
+            'workspace.edit': 'Редактировать',
+            'workspace.preview': 'Предпросмотр',
+            'workspace.download': 'Скачать',
+            'workspace.close': 'Закрыть',
+            'workspace.code': 'код',
+            'workspace.table': 'Таблица',
+            'workspace.doc': 'Документ',
+            'workspace.empty': 'Нажмите «Открыть в панели» на блоке кода, таблице или длинном ответе — и содержимое появится здесь.',
+
             // Admin / Monitoring
             'admin.title': 'Админ-панель',
             'admin.badge': 'Админ',
@@ -457,6 +468,17 @@
             'code.copy': 'Copy',
             'chat.thinking': 'Thinking',
             'code.copied': 'Copied',
+
+            'workspace.toggle.title': 'Workspace panel',
+            'workspace.open': 'Open in panel',
+            'workspace.edit': 'Edit',
+            'workspace.preview': 'Preview',
+            'workspace.download': 'Download',
+            'workspace.close': 'Close',
+            'workspace.code': 'code',
+            'workspace.table': 'Table',
+            'workspace.doc': 'Document',
+            'workspace.empty': 'Click "Open in panel" on a code block, table or long answer — the content will appear here.',
 
             // Admin / Monitoring
             'admin.title': 'Admin panel',

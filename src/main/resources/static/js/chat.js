@@ -1763,9 +1763,6 @@ const uxFeatures = {
             const scope = root || elements.chatMessages;
             if (!scope) return;
 
-            const copyLabel = window.i18n?.t('code.copy', 'Копировать');
-            const copiedLabel = window.i18n?.t('code.copied', 'Скопировано');
-
             scope.querySelectorAll('pre').forEach(pre => {
                 // Skip already wrapped blocks
                 if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
@@ -1781,27 +1778,7 @@ const uxFeatures = {
 
                 const header = document.createElement('div');
                 header.className = 'code-block-header';
-                header.innerHTML = `
-                    <span class="code-lang">${lang || 'code'}</span>
-                    <button type="button" class="code-copy-btn" title="${copyLabel}">
-                        <i class="bi bi-clipboard"></i><span>${copyLabel}</span>
-                    </button>`;
-
-                const btn = header.querySelector('.code-copy-btn');
-                btn.addEventListener('click', async () => {
-                    try {
-                        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
-                        btn.classList.add('copied');
-                        btn.innerHTML = `<i class="bi bi-check-lg"></i><span>${copiedLabel}</span>`;
-                        setTimeout(() => {
-                            btn.classList.remove('copied');
-                            btn.innerHTML = `<i class="bi bi-clipboard"></i><span>${copyLabel}</span>`;
-                        }, 2000);
-                    } catch (error) {
-                        console.error('Failed to copy code:', error);
-                        showNotification(window.i18n?.t('notify.copyError', 'Ошибка копирования'), 'error');
-                    }
-                });
+                header.innerHTML = `<span class="code-lang">${lang || 'code'}</span>`;
 
                 pre.parentNode.insertBefore(wrapper, pre);
                 wrapper.appendChild(header);

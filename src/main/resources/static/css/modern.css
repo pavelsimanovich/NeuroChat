@@ -691,3 +691,162 @@ a:hover { color: var(--accent-2); }
     cursor: pointer;
 }
 .message-retry-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* ============ Workspace panel (code / table / doc side view) ============ */
+.workspace-panel {
+    display: none;
+    flex-direction: column;
+    width: min(46%, 760px);
+    min-width: 340px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    border-left: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    z-index: 60;
+}
+.workspace-panel.open { display: flex; }
+.chat-area { flex: 1 1 auto; min-width: 0; }
+
+.workspace-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--glass-bg, var(--bg-primary));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.workspace-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.workspace-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft, rgba(99, 102, 241, 0.15));
+    color: var(--accent, #6366f1);
+    flex-shrink: 0;
+}
+.workspace-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.workspace-actions .ws-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    opacity: 0.7;
+    padding: 6px 8px;
+    border-radius: var(--r-sm, 8px);
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+}
+.workspace-actions .ws-btn:hover {
+    opacity: 1;
+    background: var(--accent-soft, rgba(99, 102, 241, 0.12));
+}
+.workspace-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.workspace-preview {
+    flex: 1;
+    overflow: auto;
+    padding: 16px 20px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.workspace-editor {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    padding: 16px 20px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+.ws-pre {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: var(--r-md, 10px);
+    background: var(--bg-secondary, rgba(127, 127, 127, 0.08));
+    border: 1px solid var(--border-color);
+    overflow: auto;
+    font-size: 0.85rem;
+}
+.ws-table-wrap { overflow: auto; }
+.ws-table-wrap table { border-collapse: collapse; width: 100%; }
+.ws-table-wrap th, .ws-table-wrap td {
+    border: 1px solid var(--border-color);
+    padding: 6px 10px;
+    text-align: left;
+}
+
+/* "Open in workspace" chips inside chat */
+.ws-open-btn {
+    border: none;
+    background: transparent;
+    color: inherit;
+    opacity: 0.75;
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--r-sm, 8px);
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+}
+.ws-open-btn:hover { opacity: 1; background: rgba(255, 255, 255, 0.12); }
+.ai-message .ws-open-btn:hover { background: var(--accent-soft, rgba(99, 102, 241, 0.12)); }
+.ws-table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin: 4px 0 -2px;
+}
+.ws-doc-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    opacity: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.ai-message { position: relative; }
+.ai-message:hover .ws-doc-btn { opacity: 0.9; }
+
+#workspaceToggleBtn.active { color: var(--accent, #6366f1); }
+
+@media (max-width: 991.98px) {
+    .workspace-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;
+        min-width: 0;
+        z-index: 1080;
+        box-shadow: -12px 0 40px rgba(0, 0, 0, 0.25);
+    }
+}
+
+/* Fix: .row > * forces width:100%/flex-shrink:0/gutters — panel was wrapping below viewport */
+.chat-area { width: auto; max-width: none; flex: 1 1 0; }
+.workspace-panel {
+    flex: 0 0 auto;
+    padding-left: 0;
+    padding-right: 0;
+    max-width: none;
+}

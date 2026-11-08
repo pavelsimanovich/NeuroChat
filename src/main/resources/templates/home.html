@@ -207,6 +207,9 @@
                     <button id="themeToggleBtn" class="btn btn-link text-decoration-none p-1 ms-2" data-i18n-title="chat.theme.toggle.title" title="Переключить тему">
                         <i class="bi bi-moon-stars"></i>
                     </button>
+                    <button id="workspaceToggleBtn" class="btn btn-link text-decoration-none p-1 ms-2" data-i18n-title="workspace.toggle.title" title="Панель результата">
+                        <i class="bi bi-window-sidebar"></i>
+                    </button>
                     <a sec:authorize="hasRole('ADMIN')" href="/admin" class="btn btn-outline-secondary btn-sm ms-2" data-i18n-title="chat.model.admin.title" title="Админ-панель">
                         <i class="bi bi-shield-lock"></i>
                         <span class="d-none d-md-inline" data-i18n="chat.model.admin">Админ</span>
@@ -402,6 +405,35 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Workspace panel: code / table / doc side view -->
+        <div class="workspace-panel" id="workspacePanel" aria-hidden="true">
+            <div class="workspace-header">
+                <div class="workspace-title">
+                    <i class="bi bi-window-sidebar"></i>
+                    <span id="workspaceTitle"></span>
+                    <span class="workspace-badge" id="workspaceBadge"></span>
+                </div>
+                <div class="workspace-actions">
+                    <button type="button" class="ws-btn" id="workspaceEditBtn" data-i18n-title="workspace.edit" title="Редактировать">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="ws-btn" id="workspaceCopyBtn" data-i18n-title="code.copy" title="Копировать">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                    <button type="button" class="ws-btn" id="workspaceDownloadBtn" data-i18n-title="workspace.download" title="Скачать">
+                        <i class="bi bi-download"></i>
+                    </button>
+                    <button type="button" class="ws-btn" id="workspaceCloseBtn" data-i18n-title="workspace.close" title="Закрыть">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="workspace-body">
+                <div class="workspace-preview" id="workspacePreview"></div>
+                <textarea class="workspace-editor d-none" id="workspaceEditor" spellcheck="false"></textarea>
             </div>
         </div>
     </div>
@@ -685,5 +717,6 @@
 <script type="text/javascript" th:src="@{/js/sidebar-resize.js}"></script>
 <script type="text/javascript" th:src="@{/js/sidebar.js}"></script>
 <script type="text/javascript" th:src="@{/js/modern-features.js}"></script>
+<script type="text/javascript" th:src="@{/js/workspace.js}"></script>
 </body>
 </html>
